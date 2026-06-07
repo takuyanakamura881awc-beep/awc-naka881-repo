@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useGame } from "../../state/GameContext";
 import { listBetsByHorse, listLogsByHorse } from "../../db/repo";
 import { careerStarts, horseAlerts, rensRate } from "../../domain/lifecycle";
+import { findComment } from "../../data/comments";
 import { summarizeBets, supportProgress } from "../../domain/betting";
 import type { Bet, RaceLog } from "../../domain/types";
 import type { View } from "../nav";
@@ -110,7 +111,20 @@ export function HorseDetail({ id, go }: { id: string; go: (v: View) => void }) {
           <KV k="毛色" v={horse.coat} />
           <KV k="継承型" v={horse.inheritType} />
         </div>
-        {horse.birthComment && <p className="note-line comment-line">「{horse.birthComment}」</p>}
+        {horse.birthComment && (
+          <p className="note-line comment-line">
+            {(() => {
+              const m = findComment(horse.birthComment);
+              return m ? (
+                <>
+                  <b>{m.key}</b>
+                  {m.notable && <span className="komefuki-tag">コメ付き</span>}{" "}
+                </>
+              ) : null;
+            })()}
+            「{horse.birthComment}」
+          </p>
+        )}
         {horse.abilityNote && <p className="note-line">表パラ：{horse.abilityNote}</p>}
         {horse.note && <p className="note-line muted">メモ：{horse.note}</p>}
         <button className="ghost-btn full" onClick={() => go({ edit: horse.id })}>

@@ -1,6 +1,7 @@
 import { useGame } from "../../state/GameContext";
 import { horseLimit, isPro } from "../../domain/plan";
 import { horseAlerts } from "../../domain/lifecycle";
+import { findComment } from "../../data/comments";
 import type { Horse } from "../../domain/types";
 import type { View } from "../nav";
 
@@ -88,7 +89,10 @@ function HorseCard({ horse, onClick }: { horse: Horse; onClick: () => void }) {
           {horse.name}
           <span className="sex-tag">{horse.sex}</span>
         </span>
-        <span className="hc-rating">{horse.soshitsu}</span>
+        <span className="hc-rating">
+          {findComment(horse.birthComment)?.notable && <span className="komefuki-tag">コメ付き</span>}
+          {horse.soshitsu}
+        </span>
       </div>
       <div className="hc-parents muted">
         {horse.sireName || "?"} × {horse.damName || "?"}

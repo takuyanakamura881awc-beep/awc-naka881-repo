@@ -3,7 +3,7 @@ import { useGame, type HorseDraft } from "../../state/GameContext";
 import { ChipGroup, NumberField, TextField } from "../controls";
 import { DEFAULT_MAX_WEEKS } from "../../domain/lifecycle";
 import { CPU_SIRES, CPU_DAMS } from "../../data/cpuHorses";
-import { BIRTH_COMMENTS } from "../../data/comments";
+import { BIRTH_COMMENTS, findComment } from "../../data/comments";
 import {
   APTITUDE_KEYS,
   COAT_KEYS,
@@ -200,10 +200,20 @@ export function HorseForm({
         />
         <datalist id="birth-comments">
           {BIRTH_COMMENTS.map((c) => (
-            <option key={c} value={c} />
+            <option key={c.key} value={c.text}>{c.key}</option>
           ))}
         </datalist>
-        <p className="field-hint muted xsmall">素質を示唆。対応は諸説あり（参考）。</p>
+        {(() => {
+          const m = findComment(birthComment);
+          if (!m) return <p className="field-hint muted xsmall">仔馬生産〜条件戦クリア時のコメント。</p>;
+          return (
+            <p className="field-hint xsmall">
+              <b>{m.key}</b>
+              {m.notable && <span className="komefuki-tag">コメ付き</span>}
+              {m.hint && <span className="muted"> ／ {m.hint}</span>}
+            </p>
+          );
+        })()}
       </div>
       <TextField label="表パラメモ（任意）" value={abilityNote} onChange={setAbilityNote} placeholder="SP/ST/パワー等、実機の数値を自由に" />
 
