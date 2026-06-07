@@ -61,8 +61,8 @@ export type Soshitsu = (typeof SOSHITSU_KEYS)[number];
 export const INHERIT_KEYS = ["H/H", "平均", "堅実", "不明"] as const;
 export type InheritType = (typeof INHERIT_KEYS)[number];
 
-// 気性（実機3種）
-export const TEMPER_KEYS = ["穏やか", "普通", "荒い", "不明"] as const;
+// 気性（公式3種：荒い・普通・温厚）
+export const TEMPER_KEYS = ["温厚", "普通", "荒い", "不明"] as const;
 export type Temper = (typeof TEMPER_KEYS)[number];
 
 // 毛色

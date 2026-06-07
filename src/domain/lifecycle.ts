@@ -2,8 +2,10 @@
 // 寿命/継承条件の実機値は不確実なため定数化（既定はシリーズ一般値。設定で変更可）。
 import type { Horse, RaceLog } from "./types";
 
-export const DEFAULT_MAX_WEEKS = 120; // 厩舎在籍の上限（要実機確認）
-export const INHERIT_WEEKS_THRESHOLD = 80; // 残りこの週以下の古馬は継承可（要実機確認）
+// 公式確定値（StarHorse PROGRESS Returns 公式サイト 引退ページ）。
+export const DEFAULT_MAX_WEEKS = 120; // 120週厩舎に滞在した馬は引退
+export const INHERIT_WEEKS_THRESHOLD = 80; // 残り80週(=40週経過)を切った古馬は継承可
+export const INHERIT_MEDAL_COST = 40; // 次世代馬作成に必要なメダル
 export const RETIRE_SOON_WEEKS = 12; // 「残りわずか」警告のしきい値
 export const ROTATION_GAP_WEEKS = 3; // 中2週（レース→調教2回→レース）
 
@@ -38,8 +40,8 @@ export function horseAlerts(horse: Horse): Alert[] {
     out.push({ level: "warn", message: `残り${horse.weeksLeft}週。ローテに注意` });
   }
   if (canInherit(horse)) {
-    const why = horse.g1Wins > 0 ? "G1勝利" : `残${horse.weeksLeft}週`;
-    out.push({ level: "info", message: `継承可能（${why}）。次代の親に使えます` });
+    const why = horse.g1Wins > 0 || horse.wbcWins > 0 ? "GⅠ勝利" : `残${horse.weeksLeft}週`;
+    out.push({ level: "info", message: `継承引退できます（${why}）。次世代馬の作成にメダル${INHERIT_MEDAL_COST}枚` });
   }
   return out;
 }
