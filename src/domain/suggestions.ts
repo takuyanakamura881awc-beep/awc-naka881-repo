@@ -76,7 +76,7 @@ export function suggestRaces(
   const style = bestStyle(horse);
   const scored = races.map((race) => {
     const perf = estimatePerformance(horse, race, style);
-    const ratio = perf / (race.fieldStrength * 1200);
+    const ratio = perf / race.rivalPerf;
     return { race, ratio, note: noteForRatio(ratio) };
   });
   return scored

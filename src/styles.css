@@ -658,3 +658,26 @@ button {
   gap: 8px;
   flex-wrap: wrap;
 }
+
+.gen-badge {
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--accent-2);
+  color: #07140c;
+  padding: 1px 6px;
+  border-radius: 999px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.tag.potency {
+  background: #3a2c00;
+  border-color: var(--gold);
+  color: var(--gold);
+}
+.stud-hint {
+  background: var(--panel-2);
+  border-left: 3px solid var(--gold);
+  padding: 8px 10px;
+  border-radius: 6px;
+  margin: 8px 0;
+}

@@ -6,7 +6,6 @@ import { SuggestionPanel } from "../SuggestionPanel";
 import { isTrainable } from "../../domain/training";
 import { bestStyle } from "../../domain/raceSim";
 import { ratingScore } from "../../domain/suggestions";
-import { getSireDam } from "../../data/sires_dams";
 import { RACES, getRace } from "../../data/races";
 import {
   STAT_LABELS,
@@ -86,9 +85,6 @@ export function HorseDetail({ id, go }: { id: string; go: (v: View) => void }) {
     go("home");
   }
 
-  const sire = getSireDam(horse.sireId);
-  const dam = getSireDam(horse.damId);
-
   return (
     <div className="screen">
       <button className="link-btn back" onClick={() => go("home")}>
@@ -100,7 +96,7 @@ export function HorseDetail({ id, go }: { id: string; go: (v: View) => void }) {
         <span className="hc-rating">総合 {ratingScore(horse)}</span>
       </div>
       <p className="muted">
-        {sire?.name} × {dam?.name} ・ 第{horse.generation}世代
+        {horse.sireName} × {horse.damName} ・ 第{horse.generation}世代
       </p>
 
       <div className="condition-row">
@@ -108,6 +104,13 @@ export function HorseDetail({ id, go }: { id: string; go: (v: View) => void }) {
         <span>コンディション {horse.energy}</span>
         {horse.retired && <span className="retired-badge">育成完了</span>}
       </div>
+
+      {horse.retired && (
+        <p className="stud-hint muted small">
+          🐴 この馬は引退済み。育成馬を作成するとき、父または母として
+          <strong>継承配合</strong>に使えます（成績が良いほど強い子が生まれます）。
+        </p>
+      )}
 
       <section className="panel">
         <h3 className="section-head">能力</h3>

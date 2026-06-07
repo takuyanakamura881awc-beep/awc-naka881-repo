@@ -11,9 +11,9 @@ import {
 } from "./types";
 
 export const DEFAULT_MAX_TURNS = 24;
-const TRAIN_ENERGY_COST = 22;
-const REST_ENERGY_GAIN = 45;
-const BASE_GAIN = 92;
+const TRAIN_ENERGY_COST = 18;
+const REST_ENERGY_GAIN = 55;
+const BASE_GAIN = 135;
 
 // 主能力に対する波及先（相互強化）。
 const SPILLOVER: Record<StatKey, StatKey> = {
@@ -35,9 +35,9 @@ function clamp(v: number, min: number, max: number): number {
 }
 
 function energyFactor(energy: number): number {
-  if (energy >= 60) return 1;
-  if (energy <= 0) return 0.3;
-  return 0.3 + (energy / 60) * 0.7;
+  if (energy >= 50) return 1;
+  if (energy <= 0) return 0.45;
+  return 0.45 + (energy / 50) * 0.55;
 }
 
 export function isTrainable(horse: PlayerHorse): boolean {

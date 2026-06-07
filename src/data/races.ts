@@ -16,7 +16,7 @@ function race(
   surface: RaceDef["surface"],
   fieldSize: number,
   prize: number,
-  fieldStrength: number,
+  rivalPerf: number,
 ): RaceDef {
   return {
     id,
@@ -27,22 +27,24 @@ function race(
     surface,
     fieldSize,
     prize,
-    fieldStrength,
+    rivalPerf,
   };
 }
 
+// rivalPerf は perf スケールの相手基準（balance.ts で校正）。
+// 勝てる階段：条件300 → OP360 → G3 420 → G2 475 → G1 540〜580。
 export const RACES: RaceDef[] = [
-  race("r-maiden-turf", "新緑メイクデビュー", "条件", 1600, "turf", 12, 50, 0.42),
-  race("r-maiden-dirt", "黎明ダートデビュー", "条件", 1400, "dirt", 12, 50, 0.42),
-  race("r-sprint-op", "スプリングダッシュOP", "OP", 1200, "turf", 14, 180, 0.62),
-  race("r-mile-g3", "クリアスカイ記念", "G3", 1600, "turf", 16, 380, 0.72),
-  race("r-dirt-g3", "サンドストームC", "G3", 1800, "dirt", 16, 380, 0.72),
-  race("r-middle-g2", "エメラルドステークス", "G2", 2000, "turf", 16, 650, 0.8),
-  race("r-long-g2", "ロングホープ賞", "G2", 2600, "turf", 16, 650, 0.8),
-  race("r-sprint-g1", "ソニックブースト杯", "G1", 1200, "turf", 18, 1500, 0.88),
-  race("r-mile-g1", "ルミナスマイル", "G1", 1600, "turf", 18, 1600, 0.9),
-  race("r-classic-g1", "オーロラクラシック", "G1", 2400, "turf", 18, 2000, 0.92),
-  race("r-dirt-g1", "ダストクラウンC", "G1", 2000, "dirt", 16, 1500, 0.88),
+  race("r-maiden-turf", "新緑メイクデビュー", "条件", 1600, "turf", 12, 50, 300),
+  race("r-maiden-dirt", "黎明ダートデビュー", "条件", 1400, "dirt", 12, 50, 300),
+  race("r-sprint-op", "スプリングダッシュOP", "OP", 1200, "turf", 14, 180, 360),
+  race("r-mile-g3", "クリアスカイ記念", "G3", 1600, "turf", 16, 380, 420),
+  race("r-dirt-g3", "サンドストームC", "G3", 1800, "dirt", 16, 380, 420),
+  race("r-middle-g2", "エメラルドステークス", "G2", 2000, "turf", 16, 650, 475),
+  race("r-long-g2", "ロングホープ賞", "G2", 2600, "turf", 16, 650, 475),
+  race("r-sprint-g1", "ソニックブースト杯", "G1", 1200, "turf", 18, 1500, 540),
+  race("r-mile-g1", "ルミナスマイル", "G1", 1600, "turf", 18, 1600, 550),
+  race("r-classic-g1", "オーロラクラシック", "G1", 2400, "turf", 18, 2000, 580),
+  race("r-dirt-g1", "ダストクラウンC", "G1", 2000, "dirt", 16, 1500, 540),
 ];
 
 const BY_ID: Record<string, RaceDef> = Object.fromEntries(RACES.map((r) => [r.id, r]));

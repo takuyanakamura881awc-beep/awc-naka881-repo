@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createRng, hashSeed } from "./rng";
-import { breed } from "./genetics";
+import { breed, sireDamGenes } from "./genetics";
 import { applyTraining, DEFAULT_MAX_TURNS } from "./training";
 import { simulateRace } from "./raceSim";
 import { SCHEMA_VERSION } from "../db/schema";
@@ -9,14 +9,16 @@ import { RACES } from "../data/races";
 import { STAT_KEYS, type PlayerHorse } from "./types";
 
 function makeHorse(seed = "horse-1"): PlayerHorse {
-  const bred = breed(SIRES[2], DAMS[2], seed);
+  const bred = breed(sireDamGenes(SIRES[2]), sireDamGenes(DAMS[2]), seed);
   return {
     id: seed,
     schema_version: SCHEMA_VERSION,
     name: "テスト",
     sireId: SIRES[2].id,
     damId: DAMS[2].id,
-    generation: 1,
+    sireName: SIRES[2].name,
+    damName: DAMS[2].name,
+    generation: bred.generation,
     stats: bred.stats,
     potential: bred.potential,
     aptitudes: bred.aptitudes,
@@ -42,17 +44,27 @@ describe("rng", () => {
 
 describe("genetics", () => {
   it("同一シード入力で再現", () => {
-    const x = breed(SIRES[0], DAMS[0], "seed-X");
-    const y = breed(SIRES[0], DAMS[0], "seed-X");
+    const x = breed(sireDamGenes(SIRES[0]), sireDamGenes(DAMS[0]), "seed-X");
+    const y = breed(sireDamGenes(SIRES[0]), sireDamGenes(DAMS[0]), "seed-X");
     expect(x).toEqual(y);
   });
   it("初期能力はポテンシャル以下、範囲内", () => {
-    const b = breed(SIRES[0], DAMS[1], "seed-Y");
+    const b = breed(sireDamGenes(SIRES[0]), sireDamGenes(DAMS[1]), "seed-Y");
     for (const k of STAT_KEYS) {
       expect(b.stats[k]).toBeLessThanOrEqual(b.potential[k]);
       expect(b.potential[k]).toBeLessThanOrEqual(1200);
       expect(b.stats[k]).toBeGreaterThan(0);
     }
+  });
+  it("継承potencyで子のポテンシャルが底上げされ、世代が進む", () => {
+    const base = breed(sireDamGenes(SIRES[1]), sireDamGenes(DAMS[1]), "seed-Z");
+    const a = { ...sireDamGenes(SIRES[1]), potency: 0.08 };
+    const b = { ...sireDamGenes(DAMS[1]), potency: 0.08 };
+    const boosted = breed(a, b, "seed-Z");
+    const sum = (s: Record<string, number>) =>
+      STAT_KEYS.reduce((x, k) => x + s[k], 0);
+    expect(sum(boosted.potential)).toBeGreaterThan(sum(base.potential));
+    expect(base.generation).toBe(1);
   });
 });
 

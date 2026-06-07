@@ -67,11 +67,10 @@ export function simulateRace(
   const variance = 0.04 + horse.temperament * 0.08;
   const perf = Math.max(1, basePerf * rng.gaussian(1, variance));
 
-  // 相手生成：グレード基準の強さ＋個体ばらつき。
-  const opponentBase = race.fieldStrength * 1200;
+  // 相手生成：グレード基準の強さ（perfスケール）＋個体ばらつき。
   let beaten = 0;
   for (let i = 0; i < race.fieldSize - 1; i++) {
-    const opp = opponentBase * rng.gaussian(1, 0.06);
+    const opp = race.rivalPerf * rng.gaussian(1, 0.06);
     if (opp > perf) beaten++;
   }
   const position = beaten + 1;

@@ -76,8 +76,8 @@ export interface RaceDef {
   surface: SurfaceKey;
   fieldSize: number;
   prize: number; // 1着賞金（万円）
-  // 出走の目安となる相手の強さ（0..1、グレードに応じた基準能力）
-  fieldStrength: number;
+  // 相手の基準性能（perfスケールの絶対値）。simulateRace/suggestions が共有。
+  rivalPerf: number;
 }
 
 // プレイヤーが作成・育成する馬
@@ -87,6 +87,8 @@ export interface PlayerHorse {
   name: string;
   sireId: string;
   damId: string;
+  sireName: string;
+  damName: string;
   generation: number;
   stats: Stats; // 現在値
   potential: Stats; // 成長上限（遺伝で決定）

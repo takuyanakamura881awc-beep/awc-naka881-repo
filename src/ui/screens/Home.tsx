@@ -1,7 +1,6 @@
 import { useGame } from "../../state/GameContext";
 import { ratingScore } from "../../domain/suggestions";
 import { isPro, stableLimit, suggestionsRemaining } from "../../domain/plan";
-import { getSireDam } from "../../data/sires_dams";
 import type { PlayerHorse } from "../../domain/types";
 import type { View } from "../nav";
 
@@ -65,17 +64,18 @@ export function Home({ go }: { go: (v: View) => void }) {
 }
 
 function HorseCard({ horse, onClick }: { horse: PlayerHorse; onClick: () => void }) {
-  const sire = getSireDam(horse.sireId);
-  const dam = getSireDam(horse.damId);
   const progress = Math.round((horse.turn / horse.maxTurns) * 100);
   return (
     <button className="horse-card" onClick={onClick}>
       <div className="hc-head">
-        <span className="hc-name">{horse.name}</span>
+        <span className="hc-name">
+          {horse.generation >= 2 && <span className="gen-badge">G{horse.generation}</span>}
+          {horse.name}
+        </span>
         <span className="hc-rating">総合 {ratingScore(horse)}</span>
       </div>
       <div className="hc-parents muted">
-        {sire?.name ?? "?"} × {dam?.name ?? "?"}
+        {horse.sireName} × {horse.damName}
       </div>
       <div className="hc-foot">
         {horse.retired ? (

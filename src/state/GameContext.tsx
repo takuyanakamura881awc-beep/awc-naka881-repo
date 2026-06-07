@@ -10,7 +10,13 @@ import {
 import * as repo from "../db/repo";
 import { newId } from "../domain/ids";
 import { hashSeed } from "../domain/rng";
-import { breed } from "../domain/genetics";
+import {
+  breed,
+  horseGenes,
+  sireDamGenes,
+  type ParentGenes,
+} from "../domain/genetics";
+import { breedingPotency, type ParentRef } from "../domain/breeding";
 import { applyTraining, DEFAULT_MAX_TURNS, isTrainable } from "../domain/training";
 import { bestStyle, simulateRace } from "../domain/raceSim";
 import { canCreateHorse, consumeSuggestion, stableLimit } from "../domain/plan";
@@ -36,7 +42,11 @@ interface GameState {
   horses: PlayerHorse[];
   usage: UsageMeta | null;
   refresh: () => Promise<void>;
-  createHorse: (sireId: string, damId: string, name: string) => Promise<ActionResult>;
+  createHorse: (
+    sire: ParentRef,
+    dam: ParentRef,
+    name: string,
+  ) => Promise<ActionResult>;
   train: (horseId: string, action: TrainingAction) => Promise<ActionResult>;
   runRace: (
     horseId: string,
@@ -69,12 +79,34 @@ export function GameProvider({ children }: { children: ReactNode }) {
     })();
   }, [refresh]);
 
+  const resolveParent = useCallback(
+    async (ref: ParentRef): Promise<ParentGenes | null> => {
+      if (ref.kind === "master") {
+        const sd = getSireDam(ref.id);
+        return sd ? sireDamGenes(sd) : null;
+      }
+      const horse = await repo.getHorse(ref.id);
+      if (!horse || !horse.retired) return null;
+      const entries = await repo.listRaceEntriesByHorse(ref.id);
+      return horseGenes(horse, breedingPotency(entries));
+    },
+    [],
+  );
+
+  const parentName = useCallback(async (ref: ParentRef): Promise<string> => {
+    if (ref.kind === "master") return getSireDam(ref.id)?.name ?? "?";
+    return (await repo.getHorse(ref.id))?.name ?? "?";
+  }, []);
+
   const createHorse = useCallback(
-    async (sireId: string, damId: string, name: string): Promise<ActionResult> => {
-      const sire = getSireDam(sireId);
-      const dam = getSireDam(damId);
-      if (!sire || sire.sex !== "sire") return { ok: false, error: "父馬を選択してください" };
-      if (!dam || dam.sex !== "dam") return { ok: false, error: "母馬を選択してください" };
+    async (sire: ParentRef, dam: ParentRef, name: string): Promise<ActionResult> => {
+      if (sire.kind === "horse" && dam.kind === "horse" && sire.id === dam.id) {
+        return { ok: false, error: "同じ馬を父母には指定できません" };
+      }
+      const sireGenes = await resolveParent(sire);
+      const damGenes = await resolveParent(dam);
+      if (!sireGenes) return { ok: false, error: "父馬を選択してください" };
+      if (!damGenes) return { ok: false, error: "母馬を選択してください" };
       const trimmed = name.trim();
       if (!trimmed) return { ok: false, error: "馬名を入力してください" };
 
@@ -89,13 +121,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
       }
 
       const id = newId();
-      const bred = breed(sire, dam, `${id}:${sireId}:${damId}`);
+      const bred = breed(sireGenes, damGenes, `${id}:${sire.id}:${dam.id}`);
       const horse: PlayerHorse = {
         id,
         schema_version: SCHEMA_VERSION,
         name: trimmed,
-        sireId,
-        damId,
+        sireId: sire.id,
+        damId: dam.id,
+        sireName: await parentName(sire),
+        damName: await parentName(dam),
         generation: bred.generation,
         stats: bred.stats,
         potential: bred.potential,
@@ -111,7 +145,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       await refresh();
       return { ok: true };
     },
-    [refresh],
+    [refresh, resolveParent, parentName],
   );
 
   const train = useCallback(
