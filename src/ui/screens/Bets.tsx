@@ -92,6 +92,7 @@ export function Bets({ horseId, go }: { horseId: string; go: (v: View) => void }
               次「{support.next.name}」まであと <b>{support.remaining.toLocaleString()}</b> 枚
             </p>
           )}
+          <p className="muted xsmall">※1枠（味噌汁枠）に入ると必要ベット数が約1/6に軽減</p>
         </div>
       </section>
 

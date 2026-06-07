@@ -40,8 +40,8 @@ describe("betting", () => {
     expect(p0.remaining).toBe(50);
 
     const p1 = supportProgress(1200);
-    expect(p1.unlocked.map((i) => i.threshold)).toEqual([100, 300, 1000]);
-    expect(p1.next?.threshold).toBe(3000);
+    expect(p1.unlocked.map((i) => i.threshold)).toEqual([100, 500, 1000]);
+    expect(p1.next?.threshold).toBe(2000);
   });
 });
 

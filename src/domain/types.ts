@@ -6,8 +6,8 @@
 export const SEX_KEYS = ["牡", "牝", "セン"] as const;
 export type Sex = (typeof SEX_KEYS)[number];
 
-// 脚質（実機4種）
-export const LEG_KEYS = ["逃げ", "先行", "差し", "追込"] as const;
+// 脚質（通常4＋特殊3＝7種。大逃げ/まくり/自在は特殊脚質）
+export const LEG_KEYS = ["逃げ", "先行", "差し", "追込", "大逃げ", "まくり", "自在"] as const;
 export type Leg = (typeof LEG_KEYS)[number];
 
 // 成長タイプ

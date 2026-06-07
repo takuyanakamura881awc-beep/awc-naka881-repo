@@ -8,12 +8,14 @@ export interface SupportItem {
   name: string;
 }
 
+// 出典: ぽにょのスタホ日記「基本情報」(応援餌)。他サテライトからの累計ベット枚数で解放。
+// ※1枠（味噌汁枠）に入ると必要ベット数が約1/6に軽減される。
 export const SUPPORT_ITEMS: SupportItem[] = [
   { threshold: 100, name: "応援ミルク" },
-  { threshold: 300, name: "応援うちわ" },
+  { threshold: 500, name: "応援飲料" },
   { threshold: 1000, name: "応援ゼリー" },
-  { threshold: 3000, name: "応援りんご汁" },
-  { threshold: 5000, name: "応援アイテム（最上位）" },
+  { threshold: 2000, name: "応援味噌汁" },
+  { threshold: 5000, name: "応援カクテル" },
 ];
 
 export interface BetSummary {

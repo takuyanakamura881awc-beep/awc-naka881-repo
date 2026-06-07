@@ -5,6 +5,13 @@ import { DEFAULT_MAX_WEEKS } from "../../domain/lifecycle";
 import { CPU_SIRES, CPU_DAMS } from "../../data/cpuHorses";
 import { BIRTH_COMMENTS, findComment } from "../../data/comments";
 import {
+  judgeSoshitsu,
+  PAY_KEYS,
+  ROTATION_KEYS,
+  type Pay,
+  type Rotation,
+} from "../../domain/soshitsu";
+import {
   APTITUDE_KEYS,
   COAT_KEYS,
   DISTANCE_HINT,
@@ -174,7 +181,8 @@ export function HorseForm({
       <NumberField label="代（世代）" value={generation} onChange={setGeneration} min={1} />
 
       <h3 className="section-head">能力・適性</h3>
-      <ChipGroup label="素質" options={SOSHITSU_KEYS} value={soshitsu} onChange={(v) => setSoshitsu(v as Soshitsu)} hint="皐月賞オッズ等で判定（2.8≒MAX上）" />
+      <ChipGroup label="素質" options={SOSHITSU_KEYS} value={soshitsu} onChange={(v) => setSoshitsu(v as Soshitsu)} />
+      <SoshitsuHelper onApply={(r) => setSoshitsu(r as Soshitsu)} />
       <ChipGroup label="脚質" options={LEG_KEYS} value={leg} onChange={(v) => setLeg(v as Leg)} />
       <ChipGroup label="成長" options={GROWTH_KEYS} value={growth} onChange={(v) => setGrowth(v as Growth)} />
       <ChipGroup
@@ -248,6 +256,61 @@ export function HorseForm({
           {editing ? "更新" : "登録"}
         </button>
       </div>
+    </div>
+  );
+}
+
+function SoshitsuHelper({ onApply }: { onApply: (rank: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [pay, setPay] = useState<Pay>("90");
+  const [rotation, setRotation] = useState<Rotation>("弥生→皐月");
+  const [yayoi, setYayoi] = useState<number | null>(1);
+  const [odds, setOdds] = useState<number | null>(null);
+
+  const result =
+    yayoi != null && odds != null
+      ? judgeSoshitsu({ pay, rotation, yayoiFinish: yayoi, odds })
+      : null;
+  const applicable = result && result.rank !== "準MAX未満";
+
+  if (!open) {
+    return (
+      <button type="button" className="ghost-btn full" onClick={() => setOpen(true)}>
+        🧮 オッズから素質を判定する
+      </button>
+    );
+  }
+  return (
+    <div className="panel soshitsu-helper">
+      <h3 className="section-head">素質判定（弥生賞→皐月賞）</h3>
+      <ChipGroup label="ペイアウト率" options={PAY_KEYS} value={pay} onChange={(v) => setPay(v as Pay)} />
+      <ChipGroup label="ローテ" options={ROTATION_KEYS} value={rotation} onChange={(v) => setRotation(v as Rotation)} />
+      <div className="two-col">
+        <NumberField label="弥生賞の着順" value={yayoi} onChange={setYayoi} min={1} max={18} />
+        <NumberField label={`${rotation === "弥生→桜花" ? "桜花賞" : "皐月賞"}オッズ`} value={odds} onChange={setOdds} min={1} />
+      </div>
+      {result && (
+        <div className={`judge-result ${applicable ? "ok" : "ng"}`}>
+          判定：<b>{result.rank}</b>
+          {result.note && <span className="muted xsmall"> {result.note}</span>}
+        </div>
+      )}
+      <div className="two-col">
+        <button type="button" className="ghost-btn" onClick={() => setOpen(false)}>
+          閉じる
+        </button>
+        <button
+          type="button"
+          className="primary-btn"
+          disabled={!applicable}
+          onClick={() => result && onApply(result.rank)}
+        >
+          素質に反映
+        </button>
+      </div>
+      <p className="field-hint muted xsmall">
+        初戦が弥生賞(orスプリングS)のローテ前提。共同→弥生→皐月などは非対応。
+      </p>
     </div>
   );
 }
