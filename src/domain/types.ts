@@ -1,149 +1,126 @@
-// ゲームのドメイン型。DB保存形と画面で共有する。
+// スタホR（StarHorse PROGRESS Returns）コンパニオン/管理ツールのドメイン型。
+// 実機でプレイした内容を「選択式」で記録・管理する。
 
-export const STAT_KEYS = ["speed", "stamina", "power", "guts", "wit"] as const;
-export type StatKey = (typeof STAT_KEYS)[number];
-export type Stats = Record<StatKey, number>;
+// 性別
+export const SEX_KEYS = ["牡", "牝", "セン"] as const;
+export type Sex = (typeof SEX_KEYS)[number];
 
-export const STAT_LABELS: Record<StatKey, string> = {
-  speed: "スピード",
-  stamina: "スタミナ",
-  power: "パワー",
-  guts: "根性",
-  wit: "賢さ",
-};
+// 脚質（スタホR：通常4＋特殊3）
+export const LEG_KEYS = [
+  "逃げ",
+  "先行",
+  "差し",
+  "追込",
+  "大逃げ",
+  "まくり",
+  "自在",
+] as const;
+export type Leg = (typeof LEG_KEYS)[number];
 
-export const STAT_MAX = 1200;
+// 距離適性区分
+export const DISTANCE_KEYS = ["短距離", "マイル", "中距離", "長距離"] as const;
+export type Distance = (typeof DISTANCE_KEYS)[number];
 
-// 距離適性カテゴリ
-export const DISTANCE_KEYS = ["short", "mile", "middle", "long"] as const;
-export type DistanceKey = (typeof DISTANCE_KEYS)[number];
-export type DistanceApt = Record<DistanceKey, number>; // 0..1
+// 馬場適性
+export const SURFACE_KEYS = ["芝", "ダート", "芝・ダート"] as const;
+export type Surface = (typeof SURFACE_KEYS)[number];
 
-export const DISTANCE_LABELS: Record<DistanceKey, string> = {
-  short: "短距離",
-  mile: "マイル",
-  middle: "中距離",
-  long: "長距離",
-};
+// 素質ランク（皐月賞オッズ等で判定する隠しグレード）
+export const SOSHITSU_KEYS = [
+  "MAX上",
+  "MAX中",
+  "MAX下",
+  "準MAX",
+  "2落ち",
+  "3落ち",
+  "4落ち",
+  "不明",
+] as const;
+export type Soshitsu = (typeof SOSHITSU_KEYS)[number];
 
-// 馬場
-export const SURFACE_KEYS = ["turf", "dirt"] as const;
-export type SurfaceKey = (typeof SURFACE_KEYS)[number];
-export type SurfaceApt = Record<SurfaceKey, number>; // 0..1
+// 継承型（配合時のブレ幅）
+export const INHERIT_KEYS = ["H/H", "平均", "堅実", "不明"] as const;
+export type InheritType = (typeof INHERIT_KEYS)[number];
 
-export const SURFACE_LABELS: Record<SurfaceKey, string> = {
-  turf: "芝",
-  dirt: "ダート",
-};
+// 気性
+export const TEMPER_KEYS = ["穏やか", "普通", "荒い", "激しい", "不明"] as const;
+export type Temper = (typeof TEMPER_KEYS)[number];
 
-// 脚質
-export const STYLE_KEYS = ["nige", "senko", "sashi", "oikomi"] as const;
-export type StyleKey = (typeof STYLE_KEYS)[number];
-export type StyleApt = Record<StyleKey, number>; // 0..1
+// 馬の状態
+export const STATUS_KEYS = ["育成中", "引退", "殿堂"] as const;
+export type HorseStatus = (typeof STATUS_KEYS)[number];
 
-export const STYLE_LABELS: Record<StyleKey, string> = {
-  nige: "逃げ",
-  senko: "先行",
-  sashi: "差し",
-  oikomi: "追込",
-};
+// グレード
+export const GRADE_KEYS = ["G1", "G2", "G3", "OP", "条件", "未勝利", "新馬", "障害", "WBC", "SWBC"] as const;
+export type Grade = (typeof GRADE_KEYS)[number];
 
-export interface Aptitudes {
-  distance: DistanceApt;
-  surface: SurfaceApt;
-  style: StyleApt;
-}
+// 馬場状態
+export const CONDITION_KEYS = ["良", "稍重", "重", "不良"] as const;
+export type TrackCondition = (typeof CONDITION_KEYS)[number];
 
-// 種馬マスタ（独自データ。実名・実データは使わない）
-export interface SireDam {
+// 親の指定（CPUマスタ馬 or 自分の所有馬）
+export type ParentRef =
+  | { kind: "cpu"; id: string }
+  | { kind: "owned"; id: string }
+  | { kind: "none" };
+
+// 所有馬カルテ
+export interface Horse {
   id: string;
-  name: string;
-  sex: "sire" | "dam";
-  // 子に受け継ぐ能力ポテンシャルの基準値
-  potential: Stats;
-  aptitudes: Aptitudes;
-  temperament: number; // 0..1（高いほど変動が大きい/気性難寄り）
-  note?: string;
-}
-
-// レースマスタ
-export interface RaceDef {
-  id: string;
-  name: string;
-  grade: "G1" | "G2" | "G3" | "OP" | "条件";
-  distance: number; // メートル
-  distanceKey: DistanceKey;
-  surface: SurfaceKey;
-  fieldSize: number;
-  prize: number; // 1着賞金（万円）
-  // 相手の基準性能（perfスケールの絶対値）。simulateRace/suggestions が共有。
-  rivalPerf: number;
-}
-
-// プレイヤーが作成・育成する馬
-export interface PlayerHorse {
-  id: string; // ULID
   schema_version: number;
   name: string;
-  sireId: string;
-  damId: string;
+  sex: Sex;
+  generation: number; // 代
+  // 血統
+  sire: ParentRef;
   sireName: string;
+  dam: ParentRef;
   damName: string;
-  generation: number;
-  stats: Stats; // 現在値
-  potential: Stats; // 成長上限（遺伝で決定）
-  aptitudes: Aptitudes;
-  temperament: number;
-  energy: number; // 0..100（育成のコンディション）
-  turn: number; // 経過ターン
-  maxTurns: number; // 育成期間
+  inheritType: InheritType; // この馬の継承型（次代の親に使うとき用）
+  // 能力・適性
+  soshitsu: Soshitsu;
+  leg: Leg;
+  distance: Distance;
+  surface: Surface;
+  temper: Temper;
+  abilityNote: string; // 表パラ（SP/ST/パワー等）の自由メモ
+  // 寿命・状態
+  weeksLeft: number; // 残り週
+  maxWeeks: number; // 寿命（実機値が不確実なため可変。既定120）
+  status: HorseStatus;
+  g1Wins: number; // 継承条件の判定に使用
+  note: string;
   createdAt: number;
-  retired: boolean;
+  updatedAt: number;
 }
 
-export type TrainingAction =
-  | "speed"
-  | "stamina"
-  | "power"
-  | "guts"
-  | "wit"
-  | "rest";
-
-export interface TrainingLogEntry {
+// 出走記録／ローテ予定（status で区別）
+export interface RaceLog {
   id: string;
   schema_version: number;
   horseId: string;
-  turn: number;
-  action: TrainingAction;
-  delta: Partial<Stats>; // 各能力の変動
-  energyAfter: number;
+  raceId: string | null; // レースマスタ参照（無ければnull）
+  raceName: string;
+  grade: Grade;
+  distance: Distance;
+  surface: Surface;
+  status: "予定" | "完了";
+  // 結果（完了時）
+  position: number | null; // 着順
+  fieldSize: number | null;
+  odds: number | null;
+  popularity: number | null; // 人気
+  prize: number | null; // 獲得メダル
+  condition: TrackCondition | null;
+  atWeek: number | null; // その時の残り週
+  note: string;
   at: number;
 }
 
-export interface RaceResult {
-  position: number;
-  fieldSize: number;
-  timeSeconds: number;
-  performance: number;
-  prize: number; // 獲得賞金（万円）
-}
-
-export interface RaceEntry {
-  id: string;
-  schema_version: number;
-  horseId: string;
-  raceId: string;
-  style: StyleKey;
-  seed: number;
-  result: RaceResult;
-  at: number;
-}
-
+// 課金/利用メタ（singleton）
 export interface UsageMeta {
   id: "singleton";
   schema_version: number;
-  suggestionWeekKey: string; // 例 "2026-W23"
-  suggestionCount: number;
-  proUntil: number | null; // epoch ms。null=無料
+  proUntil: number | null;
   lastCheckedAt: number;
 }

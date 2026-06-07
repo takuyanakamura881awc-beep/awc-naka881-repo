@@ -1,27 +1,25 @@
 import { useGame } from "../../state/GameContext";
-import { ratingScore } from "../../domain/suggestions";
-import { isPro, stableLimit, suggestionsRemaining } from "../../domain/plan";
-import type { PlayerHorse } from "../../domain/types";
+import { horseLimit, isPro } from "../../domain/plan";
+import { horseAlerts } from "../../domain/lifecycle";
+import type { Horse } from "../../domain/types";
 import type { View } from "../nav";
 
 export function Home({ go }: { go: (v: View) => void }) {
   const { horses, usage } = useGame();
   const now = Date.now();
   const pro = usage ? isPro(usage, now) : false;
-  const limit = usage ? stableLimit(usage, now) : 2;
-  const remaining = usage ? suggestionsRemaining(usage, now) : 0;
+  const limit = usage ? horseLimit(usage, now) : 2;
   const atLimit = horses.length >= limit;
+
+  const active = horses.filter((h) => h.status === "育成中");
+  const others = horses.filter((h) => h.status !== "育成中");
 
   return (
     <div className="screen">
       <div className="home-status">
         <div>
-          <span className={`plan-badge ${pro ? "pro" : "free"}`}>
-            {pro ? "PRO" : "無料"}
-          </span>
-          <span className="status-text">
-            厩舎 {horses.length}/{limit}頭 ・ 提案 残{remaining === Infinity ? "∞" : remaining}
-          </span>
+          <span className={`plan-badge ${pro ? "pro" : "free"}`}>{pro ? "PRO" : "無料"}</span>
+          <span className="status-text">管理 {horses.length}/{limit}頭</span>
         </div>
         <button className="link-btn" onClick={() => go("settings")}>
           設定
@@ -30,30 +28,40 @@ export function Home({ go }: { go: (v: View) => void }) {
 
       {horses.length === 0 ? (
         <div className="empty">
-          <p>まだ育成馬がいません。</p>
-          <p className="muted">父・母を選んで、自分だけの一頭を作りましょう。</p>
+          <p>まだ登録した馬がいません。</p>
+          <p className="muted">実機で育てている馬のカルテを作りましょう。</p>
         </div>
       ) : (
-        <div className="horse-list">
-          {horses.map((h) => (
-            <HorseCard key={h.id} horse={h} onClick={() => go({ horse: h.id })} />
-          ))}
-        </div>
+        <>
+          {active.length > 0 && (
+            <div className="horse-list">
+              {active.map((h) => (
+                <HorseCard key={h.id} horse={h} onClick={() => go({ horse: h.id })} />
+              ))}
+            </div>
+          )}
+          {others.length > 0 && (
+            <>
+              <h3 className="section-head">引退・殿堂</h3>
+              <div className="horse-list">
+                {others.map((h) => (
+                  <HorseCard key={h.id} horse={h} onClick={() => go({ horse: h.id })} />
+                ))}
+              </div>
+            </>
+          )}
+        </>
       )}
 
       <div className="fab-area">
-        <button
-          className="primary-btn"
-          disabled={atLimit}
-          onClick={() => go("create")}
-        >
-          ＋ 育成馬を作成
+        <button className="primary-btn" disabled={atLimit} onClick={() => go("create")}>
+          ＋ 馬を登録
         </button>
         {atLimit && (
           <p className="limit-note">
-            厩舎枠（{limit}頭）が上限です。
+            管理枠（{limit}頭）が上限です。
             <button className="link-btn" onClick={() => go("settings")}>
-              アップグレード
+              PROにアップグレード
             </button>
             で30頭まで。
           </p>
@@ -63,32 +71,54 @@ export function Home({ go }: { go: (v: View) => void }) {
   );
 }
 
-function HorseCard({ horse, onClick }: { horse: PlayerHorse; onClick: () => void }) {
-  const progress = Math.round((horse.turn / horse.maxTurns) * 100);
+function HorseCard({ horse, onClick }: { horse: Horse; onClick: () => void }) {
+  const alerts = horseAlerts(horse);
+  const urgent = alerts.find((a) => a.level !== "info");
+  const inherit = alerts.find((a) => a.level === "info");
+  const weekPct = Math.round((horse.weeksLeft / Math.max(1, horse.maxWeeks)) * 100);
+
   return (
     <button className="horse-card" onClick={onClick}>
       <div className="hc-head">
         <span className="hc-name">
           {horse.generation >= 2 && <span className="gen-badge">G{horse.generation}</span>}
           {horse.name}
+          <span className="sex-tag">{horse.sex}</span>
         </span>
-        <span className="hc-rating">総合 {ratingScore(horse)}</span>
+        <span className="hc-rating">{horse.soshitsu}</span>
       </div>
       <div className="hc-parents muted">
-        {horse.sireName} × {horse.damName}
+        {horse.sireName || "?"} × {horse.damName || "?"}
       </div>
-      <div className="hc-foot">
-        {horse.retired ? (
-          <span className="retired-badge">育成完了</span>
-        ) : (
-          <span className="muted">
-            育成 {horse.turn}/{horse.maxTurns}ターン
-          </span>
-        )}
-        <div className="mini-track">
-          <div className="mini-fill" style={{ width: `${progress}%` }} />
+      <div className="hc-tags">
+        <span className="tag">{horse.leg}</span>
+        <span className="tag">{horse.distance}</span>
+        <span className="tag">{horse.surface}</span>
+      </div>
+      {horse.status === "育成中" ? (
+        <div className="hc-foot">
+          <span className="muted small">残り{horse.weeksLeft}週</span>
+          <div className="mini-track">
+            <div
+              className={`mini-fill ${horse.weeksLeft <= 12 ? "low" : ""}`}
+              style={{ width: `${weekPct}%` }}
+            />
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="hc-foot">
+          <span className={`status-badge ${horse.status === "殿堂" ? "hall" : ""}`}>
+            {horse.status}
+          </span>
+          <span className="muted small">G1 {horse.g1Wins}勝</span>
+        </div>
+      )}
+      {(urgent || inherit) && (
+        <div className="hc-alerts">
+          {urgent && <span className={`alert-pill ${urgent.level}`}>{urgent.message}</span>}
+          {inherit && <span className="alert-pill info">{inherit.message}</span>}
+        </div>
+      )}
     </button>
   );
 }

@@ -11,10 +11,8 @@ export function getDB(): Promise<IDBPDatabase<StableDB>> {
         // v0 -> v1: 初期スキーマ。将来の版は oldVersion で分岐して追加する。
         if (oldVersion < 1) {
           db.createObjectStore(STORES.horses, { keyPath: "id" });
-          const training = db.createObjectStore(STORES.training, { keyPath: "id" });
-          training.createIndex("byHorse", "horseId");
-          const races = db.createObjectStore(STORES.races, { keyPath: "id" });
-          races.createIndex("byHorse", "horseId");
+          const logs = db.createObjectStore(STORES.raceLogs, { keyPath: "id" });
+          logs.createIndex("byHorse", "horseId");
           db.createObjectStore(STORES.usage, { keyPath: "id" });
         }
       },
@@ -23,7 +21,6 @@ export function getDB(): Promise<IDBPDatabase<StableDB>> {
   return dbPromise;
 }
 
-// テスト等でリセットするためのヘルパ。
 export function resetDBHandle(): void {
   dbPromise = null;
 }

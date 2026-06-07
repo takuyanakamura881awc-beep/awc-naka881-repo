@@ -1,53 +1,70 @@
-// レースマスタ（独自データ・架空）。出走レース選択肢の母体。
-import type { DistanceKey, RaceDef } from "../domain/types";
+// レースマスタ（スタホR：実名JRA準拠＋障害＋架空最上位WBC/SWBC）。
+// グレード・距離は概算。実機での確認・追加はユーザー側で可能（自由入力も可）。
+import type { Distance, Grade, Surface } from "../domain/types";
 
-function distanceKey(distance: number): DistanceKey {
-  if (distance <= 1400) return "short";
-  if (distance <= 1800) return "mile";
-  if (distance <= 2200) return "middle";
-  return "long";
+export interface RaceDef {
+  id: string;
+  name: string;
+  grade: Grade;
+  distance: number; // m
+  distanceKey: Distance;
+  surface: Surface;
 }
 
-function race(
-  id: string,
-  name: string,
-  grade: RaceDef["grade"],
-  distance: number,
-  surface: RaceDef["surface"],
-  fieldSize: number,
-  prize: number,
-  rivalPerf: number,
-): RaceDef {
-  return {
-    id,
-    name,
-    grade,
-    distance,
-    distanceKey: distanceKey(distance),
-    surface,
-    fieldSize,
-    prize,
-    rivalPerf,
-  };
+function distanceKey(m: number): Distance {
+  if (m <= 1400) return "短距離";
+  if (m <= 1800) return "マイル";
+  if (m <= 2200) return "中距離";
+  return "長距離";
 }
 
-// rivalPerf は perf スケールの相手基準（balance.ts で校正）。
-// 勝てる階段：条件300 → OP360 → G3 420 → G2 475 → G1 540〜580。
+function r(id: string, name: string, grade: Grade, distance: number, surface: Surface): RaceDef {
+  return { id, name, grade, distance, distanceKey: distanceKey(distance), surface };
+}
+
 export const RACES: RaceDef[] = [
-  race("r-maiden-turf", "新緑メイクデビュー", "条件", 1600, "turf", 12, 50, 300),
-  race("r-maiden-dirt", "黎明ダートデビュー", "条件", 1400, "dirt", 12, 50, 300),
-  race("r-sprint-op", "スプリングダッシュOP", "OP", 1200, "turf", 14, 180, 360),
-  race("r-mile-g3", "クリアスカイ記念", "G3", 1600, "turf", 16, 380, 420),
-  race("r-dirt-g3", "サンドストームC", "G3", 1800, "dirt", 16, 380, 420),
-  race("r-middle-g2", "エメラルドステークス", "G2", 2000, "turf", 16, 650, 475),
-  race("r-long-g2", "ロングホープ賞", "G2", 2600, "turf", 16, 650, 475),
-  race("r-sprint-g1", "ソニックブースト杯", "G1", 1200, "turf", 18, 1500, 540),
-  race("r-mile-g1", "ルミナスマイル", "G1", 1600, "turf", 18, 1600, 550),
-  race("r-classic-g1", "オーロラクラシック", "G1", 2400, "turf", 18, 2000, 580),
-  race("r-dirt-g1", "ダストクラウンC", "G1", 2000, "dirt", 16, 1500, 540),
+  // クラシック三冠
+  r("satsuki", "皐月賞", "G1", 2000, "芝"),
+  r("derby", "東京優駿（日本ダービー）", "G1", 2400, "芝"),
+  r("kikuka", "菊花賞", "G1", 3000, "芝"),
+  // 牝馬三冠
+  r("oka", "桜花賞", "G1", 1600, "芝"),
+  r("oaks", "優駿牝馬（オークス）", "G1", 2400, "芝"),
+  r("shuka", "秋華賞", "G1", 2000, "芝"),
+  // 三冠トライアル/3歳
+  r("yayoi", "弥生賞", "G2", 2000, "芝"),
+  r("spring-s", "スプリングステークス", "G2", 1800, "芝"),
+  r("kyoto-shimbun", "京都新聞杯", "G2", 2200, "芝"),
+  r("kobe-shimbun", "神戸新聞杯", "G2", 2400, "芝"),
+  // 古馬G1
+  r("tenno-spring", "天皇賞（春）", "G1", 3200, "芝"),
+  r("tenno-autumn", "天皇賞（秋）", "G1", 2000, "芝"),
+  r("japan-cup", "ジャパンカップ", "G1", 2400, "芝"),
+  r("arima", "有馬記念", "G1", 2500, "芝"),
+  r("takarazuka", "宝塚記念", "G1", 2200, "芝"),
+  r("victoria-mile", "ヴィクトリアマイル", "G1", 1600, "芝"),
+  // 短距離・マイルG1
+  r("takamatsu", "高松宮記念", "G1", 1200, "芝"),
+  r("sprinters", "スプリンターズステークス", "G1", 1200, "芝"),
+  r("yasuda", "安田記念", "G1", 1600, "芝"),
+  r("mile-cs", "マイルチャンピオンシップ", "G1", 1600, "芝"),
+  // ダートG1
+  r("february-s", "フェブラリーステークス", "G1", 1600, "ダート"),
+  r("champions-c", "チャンピオンズカップ", "G1", 1800, "ダート"),
+  // 重賞（一部）
+  r("osaka-hai", "大阪杯", "G1", 2000, "芝"),
+  r("nakayama-kinen", "中山記念", "G2", 1800, "芝"),
+  r("mainichi-okan", "毎日王冠", "G2", 1800, "芝"),
+  // 障害（スタホR目玉）
+  r("nakayama-daishogai", "中山大障害", "障害", 4100, "芝"),
+  r("nakayama-grand-jump", "中山グランドジャンプ", "障害", 4250, "芝"),
+  r("far-east-grand-jump", "FAR EAST GRAND JUMP", "障害", 4000, "芝"),
+  // 架空最上位
+  r("wbc", "WBC（ワールドブリーダーズカップ）", "WBC", 2400, "芝"),
+  r("swbc", "SWBC（スーパーWBC）", "SWBC", 2400, "芝"),
 ];
 
-const BY_ID: Record<string, RaceDef> = Object.fromEntries(RACES.map((r) => [r.id, r]));
+const BY_ID: Record<string, RaceDef> = Object.fromEntries(RACES.map((x) => [x.id, x]));
 
 export function getRace(id: string): RaceDef | undefined {
   return BY_ID[id];

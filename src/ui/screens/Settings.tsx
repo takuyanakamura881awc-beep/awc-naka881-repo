@@ -94,7 +94,7 @@ export function Settings({ go }: { go: (v: View) => void }) {
           )}
         </p>
         <p className="muted small">
-          無料：厩舎枠2頭・提案 週2回 ／ PRO：厩舎枠30頭・提案 無制限
+          無料：管理枠2頭 ／ PRO：管理枠30頭
         </p>
         {pro ? (
           <button className="ghost-btn" onClick={cancelPro}>
