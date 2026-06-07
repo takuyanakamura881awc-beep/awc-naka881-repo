@@ -49,7 +49,7 @@ function h(id: string, name: string, sex: Sex, v: CpuInput = {}): CpuHorse {
 export const CPU_SIRES: CpuHorse[] = [
   // 攻略ボードから読み取れた値を反映。
   h("s-agnes-world", "アグネスワールド", "牡", { inheritType: "平均", growth: "早熟", distance: "中短距離", coat: "栗毛" }),
-  h("s-agnes-digital", "アグネスデジタル", "牡", { inheritType: "堅実", growth: "普通", distance: "中短距離", dirtApt: "◎", temper: "普通", coat: "栗毛" }),
+  h("s-agnes-digital", "アグネスデジタル", "牡", { inheritType: "堅実", growth: "普通", distance: "中短距離", dirtApt: "得意", temper: "普通", coat: "栗毛" }),
   h("s-afleet", "アフリート", "牡", { inheritType: "H/H", distance: "中距離", temper: "荒い", coat: "黒鹿毛" }),
   h("s-war-emblem", "ウォーエンブレム", "牡", { inheritType: "H/H", growth: "普通", distance: "中長距離", temper: "普通", coat: "鹿毛" }),
   h("s-elisio", "エリシオ", "牡", { inheritType: "平均", growth: "普通", distance: "中長距離", temper: "普通", coat: "鹿毛" }),

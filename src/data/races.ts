@@ -47,7 +47,9 @@ export const RACES: RaceDef[] = [
   r("centaur", "セントウルステークス", "G2", 1200, "芝", "阪神"),
   // 秋
   r("sprinters", "スプリンターズステークス", "G1", 1200, "芝", "中山"),
-  r("wbc-classic", "WBC CLASSIC", "WBC", 2000, "ダート", "—"),
+  r("wbc-classic", "WBC CLASSIC", "WBC", 2000, "芝", "—"),
+  r("kinko", "金鯱賞", "G2", 2000, "芝", "中京"),
+  r("asahi-cc", "朝日チャレンジカップ", "G3", 2000, "芝", "阪神"),
   r("kyoto-daishoten", "京都大賞典", "G2", 2400, "芝", "京都"),
   r("mainichi-okan", "毎日王冠", "G2", 1800, "芝", "東京"),
   r("fuji-s", "富士ステークス", "G3", 1600, "芝", "東京"),

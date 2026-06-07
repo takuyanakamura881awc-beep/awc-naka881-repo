@@ -66,13 +66,21 @@ export function HorseForm({
   const [distance, setDistance] = useState<Distance>(existing?.distance ?? "中距離");
   const [dirtApt, setDirtApt] = useState<Aptitude>(existing?.dirtApt ?? "不明");
   const [mudApt, setMudApt] = useState<Aptitude>(existing?.mudApt ?? "不明");
+  const [startApt, setStartApt] = useState<Aptitude>(existing?.startApt ?? "不明");
   const [temper, setTemper] = useState<Temper>(existing?.temper ?? "不明");
   const [coat, setCoat] = useState<Coat>(existing?.coat ?? "不明");
+  const [birthComment, setBirthComment] = useState(existing?.birthComment ?? "");
   const [abilityNote, setAbilityNote] = useState(existing?.abilityNote ?? "");
+  const [first, setFirst] = useState<number | null>(existing?.first ?? 0);
+  const [second, setSecond] = useState<number | null>(existing?.second ?? 0);
+  const [third, setThird] = useState<number | null>(existing?.third ?? 0);
+  const [unplaced, setUnplaced] = useState<number | null>(existing?.unplaced ?? 0);
+  const [g1Wins, setG1Wins] = useState<number | null>(existing?.g1Wins ?? 0);
+  const [wbcWins, setWbcWins] = useState<number | null>(existing?.wbcWins ?? 0);
+  const [prizeMedals, setPrizeMedals] = useState<number | null>(existing?.prizeMedals ?? 0);
   const [weeksLeft, setWeeksLeft] = useState<number | null>(existing?.weeksLeft ?? DEFAULT_MAX_WEEKS);
   const [maxWeeks, setMaxWeeks] = useState<number | null>(existing?.maxWeeks ?? DEFAULT_MAX_WEEKS);
   const [status, setStatus] = useState<HorseStatus>(existing?.status ?? "育成中");
-  const [g1Wins, setG1Wins] = useState<number | null>(existing?.g1Wins ?? 0);
   const [note, setNote] = useState(existing?.note ?? "");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -95,13 +103,21 @@ export function HorseForm({
       distance,
       dirtApt,
       mudApt,
+      startApt,
       temper,
       coat,
+      birthComment,
       abilityNote,
+      first: first ?? 0,
+      second: second ?? 0,
+      third: third ?? 0,
+      unplaced: unplaced ?? 0,
+      g1Wins: g1Wins ?? 0,
+      wbcWins: wbcWins ?? 0,
+      prizeMedals: prizeMedals ?? 0,
       weeksLeft: weeksLeft ?? 0,
       maxWeeks: maxWeeks ?? DEFAULT_MAX_WEEKS,
       status,
-      g1Wins: g1Wins ?? 0,
       note,
     };
     if (editing && existing) {
@@ -158,11 +174,32 @@ export function HorseForm({
         onChange={(v) => setDistance(v as Distance)}
         hint={DISTANCE_HINT[distance] ? `${distance}：${DISTANCE_HINT[distance]}` : undefined}
       />
-      <ChipGroup label="ダート適性" options={APTITUDE_KEYS} value={dirtApt} onChange={(v) => setDirtApt(v as Aptitude)} />
-      <ChipGroup label="道悪適性" options={APTITUDE_KEYS} value={mudApt} onChange={(v) => setMudApt(v as Aptitude)} hint="馬場が悪い状態を走る適性" />
+      <ChipGroup label="ダート" options={APTITUDE_KEYS} value={dirtApt} onChange={(v) => setDirtApt(v as Aptitude)} />
+      <ChipGroup label="重馬場" options={APTITUDE_KEYS} value={mudApt} onChange={(v) => setMudApt(v as Aptitude)} hint="馬場が悪い状態を走る適性" />
+      <ChipGroup label="スタート" options={APTITUDE_KEYS} value={startApt} onChange={(v) => setStartApt(v as Aptitude)} />
       <ChipGroup label="気性" options={TEMPER_KEYS} value={temper} onChange={(v) => setTemper(v as Temper)} />
       <ChipGroup label="毛色" options={COAT_KEYS} value={coat} onChange={(v) => setCoat(v as Coat)} />
+      <TextField
+        label="誕生/評価コメント（任意）"
+        value={birthComment}
+        onChange={setBirthComment}
+        placeholder="例：この馬ならWBC三冠も狙えるかも"
+        hint="素質を示唆するコメント"
+      />
       <TextField label="表パラメモ（任意）" value={abilityNote} onChange={setAbilityNote} placeholder="SP/ST/パワー等、実機の数値を自由に" />
+
+      <h3 className="section-head">通算成績</h3>
+      <div className="four-col">
+        <NumberField label="1着" value={first} onChange={setFirst} min={0} />
+        <NumberField label="2着" value={second} onChange={setSecond} min={0} />
+        <NumberField label="3着" value={third} onChange={setThird} min={0} />
+        <NumberField label="着外" value={unplaced} onChange={setUnplaced} min={0} />
+      </div>
+      <div className="two-col">
+        <NumberField label="GI勝" value={g1Wins} onChange={setG1Wins} min={0} hint="継承可否の判定に使用" />
+        <NumberField label="WBC勝" value={wbcWins} onChange={setWbcWins} min={0} />
+      </div>
+      <NumberField label="獲得賞金（枚）" value={prizeMedals} onChange={setPrizeMedals} min={0} />
 
       <h3 className="section-head">状態・寿命</h3>
       <ChipGroup label="状態" options={STATUS_KEYS} value={status} onChange={(v) => setStatus(v as HorseStatus)} />
@@ -170,7 +207,6 @@ export function HorseForm({
         <NumberField label="残り週" value={weeksLeft} onChange={setWeeksLeft} min={0} />
         <NumberField label="寿命(週)" value={maxWeeks} onChange={setMaxWeeks} min={1} />
       </div>
-      <NumberField label="G1勝利数" value={g1Wins} onChange={setG1Wins} min={0} hint="継承可否の判定に使用" />
       <TextField label="メモ（任意）" value={note} onChange={setNote} placeholder="配合方針・狙うレース等" />
 
       {error && <p className="error-text">{error}</p>}

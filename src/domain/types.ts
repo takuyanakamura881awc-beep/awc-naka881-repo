@@ -36,8 +36,8 @@ export const DISTANCE_HINT: Record<Distance, string> = {
   不明: "",
 };
 
-// 適性ランク（ダート適性・道悪適性）
-export const APTITUDE_KEYS = ["◎", "○", "△", "▲", "×", "不明"] as const;
+// 適性ランク（実機表記：ダート/重馬場/スタート）
+export const APTITUDE_KEYS = ["得意", "普通", "不得意", "不明"] as const;
 export type Aptitude = (typeof APTITUDE_KEYS)[number];
 
 // レースの馬場種別（コース）
@@ -125,21 +125,30 @@ export interface Horse {
   dam: ParentRef;
   damName: string;
   inheritType: InheritType; // この馬の継承型（次代の親に使うとき用）
-  // 能力・適性
+  // 能力・適性（「馬の情報」画面に準拠）
   soshitsu: Soshitsu;
   leg: Leg;
   growth: Growth;
-  distance: Distance;
-  dirtApt: Aptitude; // ダート適性
-  mudApt: Aptitude; // 道悪（重馬場）適性
-  temper: Temper;
-  coat: Coat;
+  distance: Distance; // 得意距離
+  dirtApt: Aptitude; // ダート
+  mudApt: Aptitude; // 重馬場
+  startApt: Aptitude; // スタート
+  temper: Temper; // 気性
+  coat: Coat; // 毛色
+  birthComment: string; // 誕生/評価コメント（素質示唆）
   abilityNote: string; // 表パラ等の自由メモ
+  // 通算成績スナップショット（引退/継承時に確認できる値）
+  first: number; // 1着
+  second: number; // 2着
+  third: number; // 3着
+  unplaced: number; // 着外
+  g1Wins: number; // GI勝（継承条件の判定に使用）
+  wbcWins: number; // WBC勝（別カウント）
+  prizeMedals: number; // 獲得賞金（枚）
   // 寿命・状態
   weeksLeft: number; // 残り週
   maxWeeks: number; // 寿命（要実機確認。既定120）
   status: HorseStatus;
-  g1Wins: number; // 継承条件の判定に使用
   note: string;
   createdAt: number;
   updatedAt: number;
@@ -163,6 +172,8 @@ export interface RaceLog {
   popularity: number | null; // 人気
   prize: number | null; // 獲得メダル
   condition: TrackCondition | null;
+  weightKg: number | null; // 馬体重
+  jockey: string; // 騎手
   atWeek: number | null; // その時の残り週
   note: string;
   at: number;

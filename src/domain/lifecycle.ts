@@ -9,7 +9,16 @@ export const ROTATION_GAP_WEEKS = 3; // 中2週（レース→調教2回→レ�
 
 // G1勝利、または残り週が一定以下で継承（次代の親に）できる。
 export function canInherit(horse: Horse): boolean {
-  return horse.g1Wins > 0 || horse.weeksLeft <= INHERIT_WEEKS_THRESHOLD;
+  return horse.g1Wins > 0 || horse.wbcWins > 0 || horse.weeksLeft <= INHERIT_WEEKS_THRESHOLD;
+}
+
+// 通算成績スナップショットから出走数・連対率を求める。
+export function careerStarts(h: Horse): number {
+  return h.first + h.second + h.third + h.unplaced;
+}
+export function rensRate(h: Horse): number {
+  const s = careerStarts(h);
+  return s > 0 ? (h.first + h.second) / s : 0;
 }
 
 export type AlertLevel = "info" | "warn" | "urgent";

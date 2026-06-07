@@ -4,6 +4,7 @@ import { ChipGroup, NumberField, TextField } from "../controls";
 import { newId } from "../../domain/ids";
 import { SCHEMA_VERSION } from "../../db/schema";
 import { RACES, getRace } from "../../data/races";
+import { JOCKEYS } from "../../data/jockeys";
 import {
   CONDITION_KEYS,
   GRADE_KEYS,
@@ -39,6 +40,8 @@ export function LogForm({
   const [popularity, setPopularity] = useState<number | null>(existing?.popularity ?? null);
   const [prize, setPrize] = useState<number | null>(existing?.prize ?? null);
   const [condition, setCondition] = useState<TrackCondition>(existing?.condition ?? "良");
+  const [weightKg, setWeightKg] = useState<number | null>(existing?.weightKg ?? null);
+  const [jockey, setJockey] = useState(existing?.jockey ?? "");
   const [atWeek, setAtWeek] = useState<number | null>(existing?.atWeek ?? null);
   const [note, setNote] = useState(existing?.note ?? "");
   const [busy, setBusy] = useState(false);
@@ -76,6 +79,8 @@ export function LogForm({
       popularity: logStatus === "完了" ? popularity : null,
       prize: logStatus === "完了" ? prize : null,
       condition: logStatus === "完了" ? condition : null,
+      weightKg: logStatus === "完了" ? weightKg : null,
+      jockey: logStatus === "完了" ? jockey : "",
       atWeek,
       note,
       at: existing?.at ?? Date.now(),
@@ -130,6 +135,18 @@ export function LogForm({
           </div>
           <NumberField label="獲得メダル" value={prize} onChange={setPrize} min={0} />
           <ChipGroup label="馬場状態" options={CONDITION_KEYS} value={condition} onChange={(v) => setCondition(v as TrackCondition)} />
+          <div className="two-col">
+            <NumberField label="馬体重(kg)" value={weightKg} onChange={setWeightKg} min={300} max={700} />
+            <div className="field">
+              <label className="field-label">騎手</label>
+              <select className="text-input" value={jockey} onChange={(e) => setJockey(e.target.value)}>
+                <option value="">未選択</option>
+                {JOCKEYS.map((j) => (
+                  <option key={j} value={j}>{j}</option>
+                ))}
+              </select>
+            </div>
+          </div>
         </>
       )}
 

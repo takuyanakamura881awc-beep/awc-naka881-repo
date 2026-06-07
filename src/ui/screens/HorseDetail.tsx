@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useGame } from "../../state/GameContext";
 import { listBetsByHorse, listLogsByHorse } from "../../db/repo";
-import { horseAlerts, summarize } from "../../domain/lifecycle";
+import { careerStarts, horseAlerts, rensRate } from "../../domain/lifecycle";
 import { summarizeBets, supportProgress } from "../../domain/betting";
 import type { Bet, RaceLog } from "../../domain/types";
 import type { View } from "../nav";
@@ -34,7 +34,8 @@ export function HorseDetail({ id, go }: { id: string; go: (v: View) => void }) {
   }
 
   const alerts = horseAlerts(horse);
-  const rec = summarize(logs);
+  const starts = careerStarts(horse);
+  const rens = rensRate(horse);
   const betSum = summarizeBets(bets);
   const support = supportProgress(betSum.staked);
   const planned = logs.filter((l) => l.status === "予定");
@@ -100,14 +101,15 @@ export function HorseDetail({ id, go }: { id: string; go: (v: View) => void }) {
           <KV k="素質" v={horse.soshitsu} />
           <KV k="脚質" v={horse.leg} />
           <KV k="成長" v={horse.growth} />
-          <KV k="距離適性" v={horse.distance} />
-          <KV k="ダート適性" v={horse.dirtApt} />
-          <KV k="道悪適性" v={horse.mudApt} />
+          <KV k="得意距離" v={horse.distance} />
+          <KV k="ダート" v={horse.dirtApt} />
+          <KV k="重馬場" v={horse.mudApt} />
+          <KV k="スタート" v={horse.startApt} />
           <KV k="気性" v={horse.temper} />
           <KV k="毛色" v={horse.coat} />
           <KV k="継承型" v={horse.inheritType} />
-          <KV k="G1勝利" v={`${horse.g1Wins}勝`} />
         </div>
+        {horse.birthComment && <p className="note-line comment-line">「{horse.birthComment}」</p>}
         {horse.abilityNote && <p className="note-line">表パラ：{horse.abilityNote}</p>}
         {horse.note && <p className="note-line muted">メモ：{horse.note}</p>}
         <button className="ghost-btn full" onClick={() => go({ edit: horse.id })}>
@@ -116,14 +118,17 @@ export function HorseDetail({ id, go }: { id: string; go: (v: View) => void }) {
       </section>
 
       <section className="panel">
-        <h3 className="section-head">成績</h3>
+        <h3 className="section-head">通算成績</h3>
+        <p className="career-line">
+          {horse.first}-{horse.second}-{horse.third}-{horse.unplaced}
+          <span className="muted small">（{starts}戦）</span>
+        </p>
         <div className="record-row">
-          <Stat n={rec.starts} label="出走" />
-          <Stat n={rec.wins} label="勝利" />
-          <Stat n={rec.top3} label="複勝" />
-          <Stat n={rec.g1Wins} label="G1" />
+          <Stat n={horse.g1Wins} label="GI勝" />
+          <Stat n={horse.wbcWins} label="WBC勝" />
+          <Stat n={Math.round(rens * 1000) / 10} label="連対率%" />
+          <Stat n={horse.prizeMedals} label="賞金(枚)" />
         </div>
-        <p className="muted small">獲得メダル合計 {rec.prize.toLocaleString()}</p>
       </section>
 
       <section className="panel">
@@ -196,7 +201,9 @@ export function HorseDetail({ id, go }: { id: string; go: (v: View) => void }) {
                 <span className={`grade grade-${l.grade}`}>{l.grade}</span>
                 <span className="race-name">{l.raceName}</span>
                 <span className="muted small">
-                  {l.odds != null ? `${l.odds}倍` : ""} {l.prize ? `${l.prize.toLocaleString()}M` : ""}
+                  {l.distanceM}m{l.popularity != null ? ` ${l.popularity}人気` : ""}
+                  {l.weightKg != null ? ` ${l.weightKg}kg` : ""}
+                  {l.jockey ? ` ${l.jockey}` : ""}
                 </span>
                 <button className="link-btn" onClick={() => go({ log: { horseId: id, logId: l.id } })}>
                   編集
