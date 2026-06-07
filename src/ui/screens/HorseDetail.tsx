@@ -71,6 +71,7 @@ export function HorseDetail({ id, go }: { id: string; go: (v: View) => void }) {
       <p className="muted">
         {horse.sireName || "?"} × {horse.damName || "?"} ・ 継承{horse.inheritType} ・ 第{horse.generation}世代
       </p>
+      {horse.password && <p className="password-line">🔑 放牧PW：<b>{horse.password}</b></p>}
 
       {alerts.length > 0 && (
         <section className="panel alerts">

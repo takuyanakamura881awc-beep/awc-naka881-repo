@@ -3,6 +3,7 @@ import { useGame, type HorseDraft } from "../../state/GameContext";
 import { ChipGroup, NumberField, TextField } from "../controls";
 import { DEFAULT_MAX_WEEKS } from "../../domain/lifecycle";
 import { CPU_SIRES, CPU_DAMS } from "../../data/cpuHorses";
+import { BIRTH_COMMENTS } from "../../data/comments";
 import {
   APTITUDE_KEYS,
   COAT_KEYS,
@@ -57,6 +58,7 @@ export function HorseForm({
   const [name, setName] = useState(existing?.name ?? "");
   const [sex, setSex] = useState<Sex>(existing?.sex ?? "牡");
   const [generation, setGeneration] = useState<number | null>(existing?.generation ?? 1);
+  const [password, setPassword] = useState(existing?.password ?? "");
   const [sire, setSire] = useState<ParentRef>(existing?.sire ?? initialSire ?? { kind: "none" });
   const [dam, setDam] = useState<ParentRef>(existing?.dam ?? initialDam ?? { kind: "none" });
   const [inheritType, setInheritType] = useState<InheritType>(existing?.inheritType ?? "不明");
@@ -94,6 +96,7 @@ export function HorseForm({
       name,
       sex,
       generation: generation ?? 1,
+      password,
       sire,
       dam,
       inheritType,
@@ -138,6 +141,13 @@ export function HorseForm({
 
       <TextField label="馬名" value={name} onChange={setName} maxLength={18} placeholder="例：ミラクルスター" />
       <ChipGroup label="性別" options={SEX_KEYS} value={sex} onChange={(v) => setSex(v as Sex)} />
+      <TextField
+        label="放牧パスワード（任意）"
+        value={password}
+        onChange={setPassword}
+        placeholder="例：9997-59-3588"
+        hint="放牧（保存）時に表示される再開用コード"
+      />
 
       <h3 className="section-head">血統（配合）</h3>
       <ParentPicker
@@ -179,13 +189,22 @@ export function HorseForm({
       <ChipGroup label="スタート" options={APTITUDE_KEYS} value={startApt} onChange={(v) => setStartApt(v as Aptitude)} />
       <ChipGroup label="気性" options={TEMPER_KEYS} value={temper} onChange={(v) => setTemper(v as Temper)} />
       <ChipGroup label="毛色" options={COAT_KEYS} value={coat} onChange={(v) => setCoat(v as Coat)} />
-      <TextField
-        label="誕生/評価コメント（任意）"
-        value={birthComment}
-        onChange={setBirthComment}
-        placeholder="例：この馬ならWBC三冠も狙えるかも"
-        hint="素質を示唆するコメント"
-      />
+      <div className="field">
+        <label className="field-label">誕生/評価コメント（任意）</label>
+        <input
+          className="text-input"
+          list="birth-comments"
+          value={birthComment}
+          onChange={(e) => setBirthComment(e.target.value)}
+          placeholder="既知コメントから選択 or 自由入力"
+        />
+        <datalist id="birth-comments">
+          {BIRTH_COMMENTS.map((c) => (
+            <option key={c} value={c} />
+          ))}
+        </datalist>
+        <p className="field-hint muted xsmall">素質を示唆。対応は諸説あり（参考）。</p>
+      </div>
       <TextField label="表パラメモ（任意）" value={abilityNote} onChange={setAbilityNote} placeholder="SP/ST/パワー等、実機の数値を自由に" />
 
       <h3 className="section-head">通算成績</h3>

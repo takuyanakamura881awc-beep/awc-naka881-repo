@@ -10,6 +10,7 @@ function horse(over: Partial<Horse> = {}): Horse {
     name: "テスト",
     sex: "牡",
     generation: 1,
+    password: "",
     sire: { kind: "none" },
     sireName: "",
     dam: { kind: "none" },

@@ -119,6 +119,7 @@ export interface Horse {
   name: string;
   sex: Sex;
   generation: number; // 代
+  password: string; // 放牧パスワード（保存・再開用コード）
   // 血統
   sire: ParentRef;
   sireName: string;

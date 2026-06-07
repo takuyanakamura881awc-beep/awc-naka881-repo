@@ -25,7 +25,8 @@ export function LogForm({
   existing?: RaceLog;
   go: (v: View) => void;
 }) {
-  const { saveLog } = useGame();
+  const { saveLog, updateHorse, horses } = useGame();
+  const horse = horses.find((h) => h.id === horseId);
   const editing = !!existing;
 
   const [raceId, setRaceId] = useState<string>(existing?.raceId ?? RACES[0].id);
@@ -42,8 +43,9 @@ export function LogForm({
   const [condition, setCondition] = useState<TrackCondition>(existing?.condition ?? "良");
   const [weightKg, setWeightKg] = useState<number | null>(existing?.weightKg ?? null);
   const [jockey, setJockey] = useState(existing?.jockey ?? "");
-  const [atWeek, setAtWeek] = useState<number | null>(existing?.atWeek ?? null);
+  const [atWeek, setAtWeek] = useState<number | null>(existing?.atWeek ?? horse?.weeksLeft ?? null);
   const [note, setNote] = useState(existing?.note ?? "");
+  const [decrementWeek, setDecrementWeek] = useState<"はい" | "いいえ">("はい");
   const [busy, setBusy] = useState(false);
 
   const isOther = raceId === "__other__";
@@ -86,6 +88,10 @@ export function LogForm({
       at: existing?.at ?? Date.now(),
     };
     await saveLog(log);
+    // 1レース＝残り週-1。新規の完了記録のみ自動で減らす。
+    if (!editing && logStatus === "完了" && decrementWeek === "はい" && horse && horse.weeksLeft > 0) {
+      await updateHorse({ ...horse, weeksLeft: horse.weeksLeft - 1 });
+    }
     setBusy(false);
     go({ horse: horseId });
   }
@@ -151,6 +157,15 @@ export function LogForm({
       )}
 
       <NumberField label="その時の残り週（任意）" value={atWeek} onChange={setAtWeek} min={0} />
+      {!editing && logStatus === "完了" && (
+        <ChipGroup
+          label="残り週を-1する"
+          options={["はい", "いいえ"]}
+          value={decrementWeek}
+          onChange={(v) => setDecrementWeek(v as "はい" | "いいえ")}
+          hint="1レースで残り週が1減ります"
+        />
+      )}
       <TextField label="メモ（任意）" value={note} onChange={setNote} />
 
       <div className="sticky-actions">

@@ -728,6 +728,14 @@ button {
   color: var(--gold);
   font-weight: 600;
 }
+.password-line {
+  font-size: 13px;
+  background: var(--panel-2);
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin: 6px 0;
+  letter-spacing: 1px;
+}
 select.text-input {
   appearance: none;
   -webkit-appearance: none;
