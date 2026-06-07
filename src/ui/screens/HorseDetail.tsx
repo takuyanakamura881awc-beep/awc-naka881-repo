@@ -111,6 +111,11 @@ export function HorseDetail({ id, go }: { id: string; go: (v: View) => void }) {
           <KV k="毛色" v={horse.coat} />
           <KV k="継承型" v={horse.inheritType} />
         </div>
+        {[horse.trainGrade, horse.weightStyle, horse.trainStyle].some((x) => x !== "-") && (
+          <p className="note-line muted">
+            育成：{[horse.trainGrade, horse.weightStyle, horse.trainStyle].filter((x) => x !== "-").join(" ")}
+          </p>
+        )}
         {horse.birthComment && (
           <p className="note-line comment-line">
             {(() => {

@@ -78,6 +78,14 @@ export const COAT_KEYS = [
 ] as const;
 export type Coat = (typeof COAT_KEYS)[number];
 
+// 育成方針（戦略：素質貯蓄／着恩恵の取り方）
+export const TRAIN_GRADE_KEYS = ["G1", "G2", "G3", "障害", "-"] as const;
+export type TrainGrade = (typeof TRAIN_GRADE_KEYS)[number];
+export const TRAIN_STYLE_KEYS = ["徹底", "ロード", "-"] as const;
+export type TrainStyle = (typeof TRAIN_STYLE_KEYS)[number];
+export const WEIGHT_STYLE_KEYS = ["適正", "デブ", "ガリ", "-"] as const;
+export type WeightStyle = (typeof WEIGHT_STYLE_KEYS)[number];
+
 // 馬の状態
 export const STATUS_KEYS = ["育成中", "引退", "殿堂"] as const;
 export type HorseStatus = (typeof STATUS_KEYS)[number];
@@ -138,6 +146,10 @@ export interface Horse {
   coat: Coat; // 毛色
   birthComment: string; // 誕生/評価コメント（素質示唆）
   abilityNote: string; // 表パラ等の自由メモ
+  // 育成方針（戦略メモ）
+  trainGrade: TrainGrade; // 主に使うグレード
+  trainStyle: TrainStyle; // 徹底/ロード
+  weightStyle: WeightStyle; // 適正/デブ/ガリ
   // 通算成績スナップショット（引退/継承時に確認できる値）
   first: number; // 1着
   second: number; // 2着

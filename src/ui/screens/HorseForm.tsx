@@ -23,6 +23,9 @@ import {
   SOSHITSU_KEYS,
   STATUS_KEYS,
   TEMPER_KEYS,
+  TRAIN_GRADE_KEYS,
+  TRAIN_STYLE_KEYS,
+  WEIGHT_STYLE_KEYS,
   type Aptitude,
   type Coat,
   type Distance,
@@ -35,6 +38,9 @@ import {
   type Sex,
   type Soshitsu,
   type Temper,
+  type TrainGrade,
+  type TrainStyle,
+  type WeightStyle,
 } from "../../domain/types";
 import type { View } from "../nav";
 
@@ -80,6 +86,9 @@ export function HorseForm({
   const [coat, setCoat] = useState<Coat>(existing?.coat ?? "不明");
   const [birthComment, setBirthComment] = useState(existing?.birthComment ?? "");
   const [abilityNote, setAbilityNote] = useState(existing?.abilityNote ?? "");
+  const [trainGrade, setTrainGrade] = useState<TrainGrade>(existing?.trainGrade ?? "-");
+  const [trainStyle, setTrainStyle] = useState<TrainStyle>(existing?.trainStyle ?? "-");
+  const [weightStyle, setWeightStyle] = useState<WeightStyle>(existing?.weightStyle ?? "-");
   const [first, setFirst] = useState<number | null>(existing?.first ?? 0);
   const [second, setSecond] = useState<number | null>(existing?.second ?? 0);
   const [third, setThird] = useState<number | null>(existing?.third ?? 0);
@@ -118,6 +127,9 @@ export function HorseForm({
       coat,
       birthComment,
       abilityNote,
+      trainGrade,
+      trainStyle,
+      weightStyle,
       first: first ?? 0,
       second: second ?? 0,
       third: third ?? 0,
@@ -238,6 +250,11 @@ export function HorseForm({
       </div>
       <NumberField label="獲得賞金（枚）" value={prizeMedals} onChange={setPrizeMedals} min={0} />
 
+      <h3 className="section-head">育成方針（任意）</h3>
+      <ChipGroup label="主グレード" options={TRAIN_GRADE_KEYS} value={trainGrade} onChange={(v) => setTrainGrade(v as TrainGrade)} />
+      <ChipGroup label="体重" options={WEIGHT_STYLE_KEYS} value={weightStyle} onChange={(v) => setWeightStyle(v as WeightStyle)} hint="デブ/ガリ＝適正外で素質カット減（素質貯蓄）" />
+      <ChipGroup label="スタイル" options={TRAIN_STYLE_KEYS} value={trainStyle} onChange={(v) => setTrainStyle(v as TrainStyle)} hint="徹底＝同格でオッズを極める／ロード＝極まで上げてからグレードUP" />
+
       <h3 className="section-head">状態・寿命</h3>
       <ChipGroup label="状態" options={STATUS_KEYS} value={status} onChange={(v) => setStatus(v as HorseStatus)} />
       <div className="two-col">
@@ -266,6 +283,7 @@ function SoshitsuHelper({ onApply }: { onApply: (rank: string) => void }) {
   const [rotation, setRotation] = useState<Rotation>("弥生→皐月");
   const [yayoi, setYayoi] = useState<number | null>(1);
   const [odds, setOdds] = useState<number | null>(null);
+  const [collide, setCollide] = useState<"なし" | "あり">("なし");
 
   const result =
     yayoi != null && odds != null
@@ -289,10 +307,22 @@ function SoshitsuHelper({ onApply }: { onApply: (rank: string) => void }) {
         <NumberField label="弥生賞の着順" value={yayoi} onChange={setYayoi} min={1} max={18} />
         <NumberField label={`${rotation === "弥生→桜花" ? "桜花賞" : "皐月賞"}オッズ`} value={odds} onChange={setOdds} min={1} />
       </div>
+      <ChipGroup
+        label="近いC馬オッズ(±0.2)"
+        options={["なし", "あり"]}
+        value={collide}
+        onChange={(v) => setCollide(v as "なし" | "あり")}
+        hint="自馬と近いオッズのCPU馬がいると『弾き』で±0.2ずれることが"
+      />
       {result && (
         <div className={`judge-result ${applicable ? "ok" : "ng"}`}>
           判定：<b>{result.rank}</b>
           {result.note && <span className="muted xsmall"> {result.note}</span>}
+          {collide === "あり" && (
+            <p className="muted xsmall">
+              ⚠『弾き』の可能性。実オッズが±0.2ずれていれば隣ランクかも。前走(弥生)のC馬オッズも確認を。
+            </p>
+          )}
         </div>
       )}
       <div className="two-col">
