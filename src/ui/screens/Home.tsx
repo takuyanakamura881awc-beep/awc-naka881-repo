@@ -54,6 +54,9 @@ export function Home({ go }: { go: (v: View) => void }) {
       )}
 
       <div className="fab-area">
+        <button className="ghost-btn full" onClick={() => go("breed")}>
+          配合プランナー
+        </button>
         <button className="primary-btn" disabled={atLimit} onClick={() => go("create")}>
           ＋ 馬を登録
         </button>
@@ -93,7 +96,7 @@ function HorseCard({ horse, onClick }: { horse: Horse; onClick: () => void }) {
       <div className="hc-tags">
         <span className="tag">{horse.leg}</span>
         <span className="tag">{horse.distance}</span>
-        <span className="tag">{horse.surface}</span>
+        {horse.growth !== "不明" && <span className="tag">{horse.growth}</span>}
       </div>
       {horse.status === "育成中" ? (
         <div className="hc-foot">

@@ -1,17 +1,21 @@
 import { useCallback, useEffect, useState } from "react";
 import { useGame } from "../../state/GameContext";
-import { listLogsByHorse } from "../../db/repo";
+import { listBetsByHorse, listLogsByHorse } from "../../db/repo";
 import { horseAlerts, summarize } from "../../domain/lifecycle";
-import type { RaceLog } from "../../domain/types";
+import { summarizeBets, supportProgress } from "../../domain/betting";
+import type { Bet, RaceLog } from "../../domain/types";
 import type { View } from "../nav";
 
 export function HorseDetail({ id, go }: { id: string; go: (v: View) => void }) {
   const { horses, removeHorse, deleteLog } = useGame();
   const horse = horses.find((h) => h.id === id);
   const [logs, setLogs] = useState<RaceLog[]>([]);
+  const [bets, setBets] = useState<Bet[]>([]);
 
   const load = useCallback(async () => {
-    setLogs(await listLogsByHorse(id));
+    const [l, b] = await Promise.all([listLogsByHorse(id), listBetsByHorse(id)]);
+    setLogs(l);
+    setBets(b);
   }, [id]);
 
   useEffect(() => {
@@ -31,6 +35,8 @@ export function HorseDetail({ id, go }: { id: string; go: (v: View) => void }) {
 
   const alerts = horseAlerts(horse);
   const rec = summarize(logs);
+  const betSum = summarizeBets(bets);
+  const support = supportProgress(betSum.staked);
   const planned = logs.filter((l) => l.status === "予定");
   const done = logs.filter((l) => l.status === "完了").sort((a, b) => b.at - a.at);
   const weekPct = Math.round((horse.weeksLeft / Math.max(1, horse.maxWeeks)) * 100);
@@ -93,9 +99,12 @@ export function HorseDetail({ id, go }: { id: string; go: (v: View) => void }) {
           <KV k="状態" v={horse.status} />
           <KV k="素質" v={horse.soshitsu} />
           <KV k="脚質" v={horse.leg} />
+          <KV k="成長" v={horse.growth} />
           <KV k="距離適性" v={horse.distance} />
-          <KV k="馬場適性" v={horse.surface} />
+          <KV k="ダート適性" v={horse.dirtApt} />
+          <KV k="道悪適性" v={horse.mudApt} />
           <KV k="気性" v={horse.temper} />
+          <KV k="毛色" v={horse.coat} />
           <KV k="継承型" v={horse.inheritType} />
           <KV k="G1勝利" v={`${horse.g1Wins}勝`} />
         </div>
@@ -115,6 +124,43 @@ export function HorseDetail({ id, go }: { id: string; go: (v: View) => void }) {
           <Stat n={rec.g1Wins} label="G1" />
         </div>
         <p className="muted small">獲得メダル合計 {rec.prize.toLocaleString()}</p>
+      </section>
+
+      <section className="panel">
+        <h3 className="section-head">この馬への投資（ベット）</h3>
+        <div className="record-row">
+          <Stat n={betSum.staked} label="投入枚数" />
+          <Stat n={betSum.count} label="ベット数" />
+          <Stat n={betSum.hits} label="的中" />
+        </div>
+        <p className={`bet-net ${betSum.net >= 0 ? "plus" : "minus"}`}>
+          収支 {betSum.net >= 0 ? "+" : ""}
+          {betSum.net.toLocaleString()} 枚
+          <span className="muted small">（払戻 {betSum.returned.toLocaleString()}）</span>
+        </p>
+        <div className="support-box">
+          <div className="support-unlocked">
+            応援アイテム：
+            {support.unlocked.length === 0 ? (
+              <span className="muted">未解放</span>
+            ) : (
+              support.unlocked.map((s) => (
+                <span key={s.name} className="support-pill">
+                  {s.name}
+                </span>
+              ))
+            )}
+          </div>
+          {support.next && (
+            <p className="muted small">
+              次「{support.next.name}」まであと <b>{support.remaining.toLocaleString()}</b> 枚
+              （累計{support.next.threshold.toLocaleString()}枚で解放）
+            </p>
+          )}
+        </div>
+        <button className="primary-btn full" onClick={() => go({ bets: horse.id })}>
+          ベットを記録 / 一覧
+        </button>
       </section>
 
       {planned.length > 0 && (

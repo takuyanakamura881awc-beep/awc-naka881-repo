@@ -4,6 +4,8 @@ import { Home } from "./ui/screens/Home";
 import { HorseForm } from "./ui/screens/HorseForm";
 import { HorseDetail } from "./ui/screens/HorseDetail";
 import { LogForm } from "./ui/screens/LogForm";
+import { Bets } from "./ui/screens/Bets";
+import { BreedPlanner } from "./ui/screens/BreedPlanner";
 import { Settings } from "./ui/screens/Settings";
 import { getLog } from "./db/repo";
 import type { RaceLog } from "./domain/types";
@@ -18,7 +20,11 @@ function Router() {
   if (view === "home") return <Home go={setView} />;
   if (view === "create") return <HorseForm go={setView} />;
   if (view === "settings") return <Settings go={setView} />;
+  if (view === "breed") return <BreedPlanner go={setView} />;
 
+  if (typeof view === "object" && "create" in view) {
+    return <HorseForm initialSire={view.create.sire} initialDam={view.create.dam} go={setView} />;
+  }
   if (typeof view === "object" && "horse" in view) {
     return <HorseDetail id={view.horse} go={setView} />;
   }
@@ -26,6 +32,9 @@ function Router() {
     const horse = horses.find((h) => h.id === view.edit);
     if (!horse) return <Home go={setView} />;
     return <HorseForm existing={horse} go={setView} />;
+  }
+  if (typeof view === "object" && "bets" in view) {
+    return <Bets horseId={view.bets} go={setView} />;
   }
   if (typeof view === "object" && "log" in view) {
     return <LogRoute horseId={view.log.horseId} logId={view.log.logId} go={setView} />;

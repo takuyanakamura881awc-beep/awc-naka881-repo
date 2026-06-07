@@ -12,7 +12,7 @@ import { newId } from "../domain/ids";
 import { canAddHorse, horseLimit } from "../domain/plan";
 import { SCHEMA_VERSION } from "../db/schema";
 import { getCpuHorse } from "../data/cpuHorses";
-import type { Horse, ParentRef, RaceLog, UsageMeta } from "../domain/types";
+import type { Bet, Horse, ParentRef, RaceLog, UsageMeta } from "../domain/types";
 
 export type HorseDraft = Omit<
   Horse,
@@ -35,6 +35,8 @@ interface GameState {
   removeHorse: (id: string) => Promise<void>;
   saveLog: (log: RaceLog) => Promise<void>;
   deleteLog: (id: string) => Promise<void>;
+  saveBet: (bet: Bet) => Promise<void>;
+  deleteBet: (id: string) => Promise<void>;
   upgradeToPro: (days: number) => Promise<void>;
   cancelPro: () => Promise<void>;
 }
@@ -135,6 +137,22 @@ export function GameProvider({ children }: { children: ReactNode }) {
     [refresh],
   );
 
+  const saveBet = useCallback(
+    async (bet: Bet) => {
+      await repo.putBet(bet);
+      await refresh();
+    },
+    [refresh],
+  );
+
+  const deleteBet = useCallback(
+    async (id: string) => {
+      await repo.deleteBet(id);
+      await refresh();
+    },
+    [refresh],
+  );
+
   const upgradeToPro = useCallback(async (days: number) => {
     const now = Date.now();
     const meta = await repo.getUsage(now);
@@ -163,6 +181,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
       removeHorse,
       saveLog,
       deleteLog,
+      saveBet,
+      deleteBet,
       upgradeToPro,
       cancelPro,
     }),
@@ -177,6 +197,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
       removeHorse,
       saveLog,
       deleteLog,
+      saveBet,
+      deleteBet,
       upgradeToPro,
       cancelPro,
     ],

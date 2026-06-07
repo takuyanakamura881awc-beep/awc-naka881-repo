@@ -1,20 +1,59 @@
 // CPU馬マスタ（配合で父・母に選べる種牡馬・繁殖牝馬）。
-// スタホRのロスター（実名ベース）。継承型は実機での確認が必要なため既定「不明」。
-// 出典: ぽにょのスタホR日記（CPU馬の継承型）ほか。値はユーザーが実機で補正可能。
-import type { InheritType, Sex } from "../domain/types";
+// 攻略ボードの「繁殖牡馬/繁殖牝馬一覧」より。継承型・成長・距離・ダート・気性・毛色を保持。
+// 写真からの読み取りのため不確実な項目は「不明」。実機で補正可能。
+import type {
+  Aptitude,
+  Coat,
+  Distance,
+  Growth,
+  InheritType,
+  Sex,
+  Temper,
+} from "../domain/types";
 
 export interface CpuHorse {
   id: string;
   name: string;
   sex: Sex;
   inheritType: InheritType;
+  growth: Growth;
+  distance: Distance;
+  dirtApt: Aptitude;
+  temper: Temper;
+  coat: Coat;
 }
 
-function h(id: string, name: string, sex: Sex, inheritType: InheritType = "不明"): CpuHorse {
-  return { id, name, sex, inheritType };
+interface CpuInput {
+  inheritType?: InheritType;
+  growth?: Growth;
+  distance?: Distance;
+  dirtApt?: Aptitude;
+  temper?: Temper;
+  coat?: Coat;
+}
+
+function h(id: string, name: string, sex: Sex, v: CpuInput = {}): CpuHorse {
+  return {
+    id,
+    name,
+    sex,
+    inheritType: v.inheritType ?? "不明",
+    growth: v.growth ?? "不明",
+    distance: v.distance ?? "不明",
+    dirtApt: v.dirtApt ?? "不明",
+    temper: v.temper ?? "不明",
+    coat: v.coat ?? "不明",
+  };
 }
 
 export const CPU_SIRES: CpuHorse[] = [
+  // 攻略ボードから読み取れた値を反映。
+  h("s-agnes-world", "アグネスワールド", "牡", { inheritType: "平均", growth: "早熟", distance: "中短距離", coat: "栗毛" }),
+  h("s-agnes-digital", "アグネスデジタル", "牡", { inheritType: "堅実", growth: "普通", distance: "中短距離", dirtApt: "◎", temper: "普通", coat: "栗毛" }),
+  h("s-afleet", "アフリート", "牡", { inheritType: "H/H", distance: "中距離", temper: "荒い", coat: "黒鹿毛" }),
+  h("s-war-emblem", "ウォーエンブレム", "牡", { inheritType: "H/H", growth: "普通", distance: "中長距離", temper: "普通", coat: "鹿毛" }),
+  h("s-elisio", "エリシオ", "牡", { inheritType: "平均", growth: "普通", distance: "中長距離", temper: "普通", coat: "鹿毛" }),
+  // 以下はロスター名のみ（数値は要実機確認）。
   h("s-deep", "ディープインパクト", "牡"),
   h("s-king-kamehameha", "キングカメハメハ", "牡"),
   h("s-symboli-rudolf", "シンボリルドルフ", "牡"),
@@ -22,31 +61,16 @@ export const CPU_SIRES: CpuHorse[] = [
   h("s-narita-brian", "ナリタブライアン", "牡"),
   h("s-silence-suzuka", "サイレンススズカ", "牡"),
   h("s-stay-gold", "ステイゴールド", "牡"),
-  h("s-hearts-cry", "ハーツクライ", "牡"),
-  h("s-t-m-opera-o", "テイエムオペラオー", "牡"),
-  h("s-tap-dance-city", "タップダンスシチー", "牡"),
-  h("s-opera-house", "オペラハウス", "牡"),
-  h("s-oguri-cap", "オグリキャップ", "牡"),
   h("s-mejiro-mcqueen", "メジロマックイーン", "牡"),
   h("s-sakura-bakushinoh", "サクラバクシンオー", "牡"),
-  h("s-fuji-kiseki", "フジキセキ", "牡"),
-  h("s-dance-in-the-dark", "ダンスインザダーク", "牡"),
   h("s-tanino-gimlet", "タニノギムレット", "牡"),
-  h("s-agnes-digital", "アグネスデジタル", "牡"),
   h("s-brians-time", "ブライアンズタイム", "牡"),
   h("s-tony-bin", "トニービン", "牡"),
-  h("s-afleet", "アフリート", "牡"),
-  h("s-war-emblem", "ウォーエンブレム", "牡"),
-  h("s-elisio", "エリシオ", "牡"),
-  h("s-rahy", "ラムタラ", "牡"),
-  h("s-yamanin-zephyr", "ヤマニンゼファー", "牡"),
-  h("s-narita-top-road", "ナリタトップロード", "牡"),
 ];
 
 export const CPU_DAMS: CpuHorse[] = [
   h("d-air-groove", "エアグルーヴ", "牝"),
   h("d-vodka", "ウオッカ", "牝"),
-  h("d-line-craft", "ラインクラフト", "牝"),
   h("d-still-in-love", "スティルインラブ", "牝"),
   h("d-mejiro-ramonu", "メジロラモーヌ", "牝"),
   h("d-mejiro-dober", "メジロドーベル", "牝"),
@@ -57,8 +81,6 @@ export const CPU_DAMS: CpuHorse[] = [
   h("d-nishino-flower", "ニシノフラワー", "牝"),
   h("d-seeking-the-pearl", "シーキングザパール", "牝"),
   h("d-daiichi-ruby", "ダイイチルビー", "牝"),
-  h("d-pacificus", "パシフィカス", "牝"),
-  h("d-tanino-sister", "タニノシスター", "牝"),
 ];
 
 const BY_ID: Record<string, CpuHorse> = Object.fromEntries(

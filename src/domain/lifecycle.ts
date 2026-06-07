@@ -62,7 +62,7 @@ export function summarize(logs: RaceLog[]): RaceRecord {
     if (pos === 1) wins++;
     if (pos <= 3) top3++;
     prize += l.prize ?? 0;
-    if (pos === 1 && (l.grade === "G1" || l.grade === "WBC" || l.grade === "SWBC")) g1Wins++;
+    if (pos === 1 && (l.grade === "G1" || l.grade === "J-G1" || l.grade === "WBC")) g1Wins++;
   }
   return { starts: done.length, wins, top3, prize, g1Wins };
 }

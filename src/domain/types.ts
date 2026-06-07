@@ -1,27 +1,46 @@
 // スタホR（StarHorse PROGRESS Returns）コンパニオン/管理ツールのドメイン型。
-// 実機でプレイした内容を「選択式」で記録・管理する。
+// 実機の公式仕様に準拠（脚質4・成長3・距離6区分・ダート/道悪適性・気性3・毛色）。
+// 出典: 店舗設置の公式攻略ボード（馬データ/レーシングプログラム/ベット説明）。
 
 // 性別
 export const SEX_KEYS = ["牡", "牝", "セン"] as const;
 export type Sex = (typeof SEX_KEYS)[number];
 
-// 脚質（スタホR：通常4＋特殊3）
-export const LEG_KEYS = [
-  "逃げ",
-  "先行",
-  "差し",
-  "追込",
-  "大逃げ",
-  "まくり",
-  "自在",
-] as const;
+// 脚質（実機4種）
+export const LEG_KEYS = ["逃げ", "先行", "差し", "追込"] as const;
 export type Leg = (typeof LEG_KEYS)[number];
 
-// 距離適性区分
-export const DISTANCE_KEYS = ["短距離", "マイル", "中距離", "長距離"] as const;
+// 成長タイプ
+export const GROWTH_KEYS = ["早熟", "普通", "晩成", "不明"] as const;
+export type Growth = (typeof GROWTH_KEYS)[number];
+
+// 距離適性区分（実機の表記。括弧は目安距離）
+export const DISTANCE_KEYS = [
+  "短距離", // 〜1600m
+  "中短距離", // 1200〜2000m
+  "中距離", // 1800〜2200m
+  "中長距離", // 1800m〜
+  "長距離", // 2300m〜
+  "万能", // 全距離
+  "不明",
+] as const;
 export type Distance = (typeof DISTANCE_KEYS)[number];
 
-// 馬場適性
+export const DISTANCE_HINT: Record<Distance, string> = {
+  短距離: "〜1600m",
+  中短距離: "1200〜2000m",
+  中距離: "1800〜2200m",
+  中長距離: "1800m〜",
+  長距離: "2300m〜",
+  万能: "全距離",
+  不明: "",
+};
+
+// 適性ランク（ダート適性・道悪適性）
+export const APTITUDE_KEYS = ["◎", "○", "△", "▲", "×", "不明"] as const;
+export type Aptitude = (typeof APTITUDE_KEYS)[number];
+
+// レースの馬場種別（コース）
 export const SURFACE_KEYS = ["芝", "ダート", "芝・ダート"] as const;
 export type Surface = (typeof SURFACE_KEYS)[number];
 
@@ -42,21 +61,50 @@ export type Soshitsu = (typeof SOSHITSU_KEYS)[number];
 export const INHERIT_KEYS = ["H/H", "平均", "堅実", "不明"] as const;
 export type InheritType = (typeof INHERIT_KEYS)[number];
 
-// 気性
-export const TEMPER_KEYS = ["穏やか", "普通", "荒い", "激しい", "不明"] as const;
+// 気性（実機3種）
+export const TEMPER_KEYS = ["穏やか", "普通", "荒い", "不明"] as const;
 export type Temper = (typeof TEMPER_KEYS)[number];
+
+// 毛色
+export const COAT_KEYS = [
+  "鹿毛",
+  "黒鹿毛",
+  "栗毛",
+  "栃栗毛",
+  "芦毛",
+  "青毛",
+  "白毛",
+  "不明",
+] as const;
+export type Coat = (typeof COAT_KEYS)[number];
 
 // 馬の状態
 export const STATUS_KEYS = ["育成中", "引退", "殿堂"] as const;
 export type HorseStatus = (typeof STATUS_KEYS)[number];
 
-// グレード
-export const GRADE_KEYS = ["G1", "G2", "G3", "OP", "条件", "未勝利", "新馬", "障害", "WBC", "SWBC"] as const;
+// グレード（J-G=障害、WBC=架空最上位）
+export const GRADE_KEYS = [
+  "G1",
+  "G2",
+  "G3",
+  "OP",
+  "J-G1",
+  "J-G2",
+  "J-G3",
+  "WBC",
+  "条件",
+  "未勝利",
+  "新馬",
+] as const;
 export type Grade = (typeof GRADE_KEYS)[number];
 
 // 馬場状態
 export const CONDITION_KEYS = ["良", "稍重", "重", "不良"] as const;
 export type TrackCondition = (typeof CONDITION_KEYS)[number];
+
+// ベット種別（実機）
+export const BET_TYPE_KEYS = ["単勝", "複勝", "馬連", "ワイド", "ライド", "サイド"] as const;
+export type BetType = (typeof BET_TYPE_KEYS)[number];
 
 // 親の指定（CPUマスタ馬 or 自分の所有馬）
 export type ParentRef =
@@ -80,13 +128,16 @@ export interface Horse {
   // 能力・適性
   soshitsu: Soshitsu;
   leg: Leg;
+  growth: Growth;
   distance: Distance;
-  surface: Surface;
+  dirtApt: Aptitude; // ダート適性
+  mudApt: Aptitude; // 道悪（重馬場）適性
   temper: Temper;
-  abilityNote: string; // 表パラ（SP/ST/パワー等）の自由メモ
+  coat: Coat;
+  abilityNote: string; // 表パラ等の自由メモ
   // 寿命・状態
   weeksLeft: number; // 残り週
-  maxWeeks: number; // 寿命（実機値が不確実なため可変。既定120）
+  maxWeeks: number; // 寿命（要実機確認。既定120）
   status: HorseStatus;
   g1Wins: number; // 継承条件の判定に使用
   note: string;
@@ -102,7 +153,7 @@ export interface RaceLog {
   raceId: string | null; // レースマスタ参照（無ければnull）
   raceName: string;
   grade: Grade;
-  distance: Distance;
+  distanceM: number; // 距離(m)
   surface: Surface;
   status: "予定" | "完了";
   // 結果（完了時）
@@ -113,6 +164,20 @@ export interface RaceLog {
   prize: number | null; // 獲得メダル
   condition: TrackCondition | null;
   atWeek: number | null; // その時の残り週
+  note: string;
+  at: number;
+}
+
+// ベット記録（この馬に何枚投じたか）
+export interface Bet {
+  id: string;
+  schema_version: number;
+  horseId: string; // 対象の所有馬（サイド/応援の集計対象）
+  raceName: string;
+  betType: BetType;
+  stake: number; // 投入メダル枚数
+  hit: boolean; // 的中
+  payout: number; // 払い戻し（メダル）
   note: string;
   at: number;
 }

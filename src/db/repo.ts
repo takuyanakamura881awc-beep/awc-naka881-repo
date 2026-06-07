@@ -1,7 +1,7 @@
 // データアクセス層（CRUD）。UIはここ経由でのみ永続化に触れる。
 import { getDB } from "./idb";
 import { SCHEMA_VERSION, STORES } from "./schema";
-import type { Horse, RaceLog, UsageMeta } from "../domain/types";
+import type { Bet, Horse, RaceLog, UsageMeta } from "../domain/types";
 
 // --- 所有馬 ---
 export async function listHorses(): Promise<Horse[]> {
@@ -22,10 +22,13 @@ export async function putHorse(horse: Horse): Promise<void> {
 
 export async function deleteHorse(id: string): Promise<void> {
   const db = await getDB();
-  const tx = db.transaction([STORES.horses, STORES.raceLogs], "readwrite");
+  const tx = db.transaction([STORES.horses, STORES.raceLogs, STORES.bets], "readwrite");
   await tx.objectStore(STORES.horses).delete(id);
   for (const key of await tx.objectStore(STORES.raceLogs).index("byHorse").getAllKeys(id)) {
     await tx.objectStore(STORES.raceLogs).delete(key);
+  }
+  for (const key of await tx.objectStore(STORES.bets).index("byHorse").getAllKeys(id)) {
+    await tx.objectStore(STORES.bets).delete(key);
   }
   await tx.done;
 }
@@ -56,6 +59,28 @@ export async function putLog(log: RaceLog): Promise<void> {
 export async function deleteLog(id: string): Promise<void> {
   const db = await getDB();
   await db.delete(STORES.raceLogs, id);
+}
+
+// --- ベット記録 ---
+export async function listBetsByHorse(horseId: string): Promise<Bet[]> {
+  const db = await getDB();
+  const all = await db.getAllFromIndex(STORES.bets, "byHorse", horseId);
+  return all.sort((a, b) => b.at - a.at);
+}
+
+export async function getBet(id: string): Promise<Bet | undefined> {
+  const db = await getDB();
+  return db.get(STORES.bets, id);
+}
+
+export async function putBet(bet: Bet): Promise<void> {
+  const db = await getDB();
+  await db.put(STORES.bets, bet);
+}
+
+export async function deleteBet(id: string): Promise<void> {
+  const db = await getDB();
+  await db.delete(STORES.bets, id);
 }
 
 // --- 課金/利用メタ（singleton） ---

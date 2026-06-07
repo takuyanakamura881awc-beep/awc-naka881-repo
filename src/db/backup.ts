@@ -2,7 +2,7 @@
 // ローカル保管唯一の弱点＝データ消失への対策。アカウント不要。
 import { getDB } from "./idb";
 import { SCHEMA_VERSION, STORES } from "./schema";
-import type { Horse, RaceLog, UsageMeta } from "../domain/types";
+import type { Bet, Horse, RaceLog, UsageMeta } from "../domain/types";
 
 export interface BackupFile {
   app: "stable-saga";
@@ -11,6 +11,7 @@ export interface BackupFile {
   data: {
     horses: Horse[];
     race_logs: RaceLog[];
+    bets: Bet[];
     usage_meta: UsageMeta[];
   };
 }
@@ -24,6 +25,7 @@ export async function exportBackup(): Promise<BackupFile> {
     data: {
       horses: await db.getAll(STORES.horses),
       race_logs: await db.getAll(STORES.raceLogs),
+      bets: await db.getAll(STORES.bets),
       usage_meta: await db.getAll(STORES.usage),
     },
   };
@@ -38,12 +40,14 @@ export function isBackupFile(value: unknown): value is BackupFile {
 export async function importBackup(file: BackupFile): Promise<void> {
   if (!isBackupFile(file)) throw new Error("不正なバックアップファイルです");
   const db = await getDB();
-  const tx = db.transaction([STORES.horses, STORES.raceLogs, STORES.usage], "readwrite");
+  const tx = db.transaction([STORES.horses, STORES.raceLogs, STORES.bets, STORES.usage], "readwrite");
   await tx.objectStore(STORES.horses).clear();
   await tx.objectStore(STORES.raceLogs).clear();
+  await tx.objectStore(STORES.bets).clear();
   await tx.objectStore(STORES.usage).clear();
   for (const h of file.data.horses ?? []) tx.objectStore(STORES.horses).put(h);
   for (const l of file.data.race_logs ?? []) tx.objectStore(STORES.raceLogs).put(l);
+  for (const b of file.data.bets ?? []) tx.objectStore(STORES.bets).put(b);
   for (const u of file.data.usage_meta ?? []) tx.objectStore(STORES.usage).put(u);
   await tx.done;
 }

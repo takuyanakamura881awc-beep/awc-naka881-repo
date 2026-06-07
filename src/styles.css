@@ -876,13 +876,117 @@ select.text-input {
   margin-top: 10px;
 }
 
+/* betting */
+.bet-net {
+  font-weight: 700;
+  margin: 4px 0 8px;
+}
+.bet-net.plus,
+.rec-n.plus {
+  color: #6fcf97;
+}
+.bet-net.minus,
+.rec-n.minus {
+  color: #ff8a80;
+}
+.support-box {
+  background: var(--panel-2);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+}
+.support-unlocked {
+  font-size: 13px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+}
+.support-pill {
+  background: var(--gold);
+  color: #3a2c00;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.bet-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.bet-type {
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 4px;
+}
+.bet-result.hit {
+  color: #6fcf97;
+  font-size: 12px;
+}
+.bet-result.miss {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* breeding planner */
+.breed-compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.breed-col {
+  background: var(--panel-2);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.breed-col-head {
+  font-size: 12px;
+  color: var(--muted);
+}
+.breed-name {
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.breed-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 0;
+}
+.xsmall {
+  font-size: 11px;
+}
+.spread-label {
+  font-size: 18px;
+  font-weight: 800;
+  margin: 2px 0;
+}
+.panel.spread-wide {
+  border-left: 4px solid #ff8a80;
+}
+.panel.spread-stable {
+  border-left: 4px solid #6fcf97;
+}
+.panel.spread-mid {
+  border-left: 4px solid var(--gold);
+}
+.panel.spread-unknown {
+  border-left: 4px solid var(--line);
+}
+
 /* extra grade badges */
 .grade-条件,
 .grade-未勝利,
 .grade-新馬 {
   background: #2c4636;
 }
-.grade-障害 {
+.grade-障害,
+.grade-J-G1,
+.grade-J-G2,
+.grade-J-G3 {
   background: #5d4037;
   color: #ffccbc;
 }

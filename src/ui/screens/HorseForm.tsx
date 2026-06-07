@@ -4,24 +4,29 @@ import { ChipGroup, NumberField, TextField } from "../controls";
 import { DEFAULT_MAX_WEEKS } from "../../domain/lifecycle";
 import { CPU_SIRES, CPU_DAMS } from "../../data/cpuHorses";
 import {
+  APTITUDE_KEYS,
+  COAT_KEYS,
+  DISTANCE_HINT,
   DISTANCE_KEYS,
+  GROWTH_KEYS,
   INHERIT_KEYS,
   LEG_KEYS,
   SEX_KEYS,
   SOSHITSU_KEYS,
   STATUS_KEYS,
-  SURFACE_KEYS,
   TEMPER_KEYS,
+  type Aptitude,
+  type Coat,
   type Distance,
+  type Growth,
   type Horse,
+  type HorseStatus,
   type InheritType,
   type Leg,
   type ParentRef,
   type Sex,
   type Soshitsu,
-  type Surface,
   type Temper,
-  type HorseStatus,
 } from "../../domain/types";
 import type { View } from "../nav";
 
@@ -35,21 +40,34 @@ function valueToRef(v: string): ParentRef {
   return { kind: kind as "cpu" | "owned", id };
 }
 
-export function HorseForm({ existing, go }: { existing?: Horse; go: (v: View) => void }) {
+export function HorseForm({
+  existing,
+  initialSire,
+  initialDam,
+  go,
+}: {
+  existing?: Horse;
+  initialSire?: ParentRef;
+  initialDam?: ParentRef;
+  go: (v: View) => void;
+}) {
   const { addHorse, updateHorse, horses } = useGame();
   const editing = !!existing;
 
   const [name, setName] = useState(existing?.name ?? "");
   const [sex, setSex] = useState<Sex>(existing?.sex ?? "牡");
   const [generation, setGeneration] = useState<number | null>(existing?.generation ?? 1);
-  const [sire, setSire] = useState<ParentRef>(existing?.sire ?? { kind: "none" });
-  const [dam, setDam] = useState<ParentRef>(existing?.dam ?? { kind: "none" });
+  const [sire, setSire] = useState<ParentRef>(existing?.sire ?? initialSire ?? { kind: "none" });
+  const [dam, setDam] = useState<ParentRef>(existing?.dam ?? initialDam ?? { kind: "none" });
   const [inheritType, setInheritType] = useState<InheritType>(existing?.inheritType ?? "不明");
   const [soshitsu, setSoshitsu] = useState<Soshitsu>(existing?.soshitsu ?? "不明");
   const [leg, setLeg] = useState<Leg>(existing?.leg ?? "先行");
+  const [growth, setGrowth] = useState<Growth>(existing?.growth ?? "普通");
   const [distance, setDistance] = useState<Distance>(existing?.distance ?? "中距離");
-  const [surface, setSurface] = useState<Surface>(existing?.surface ?? "芝");
+  const [dirtApt, setDirtApt] = useState<Aptitude>(existing?.dirtApt ?? "不明");
+  const [mudApt, setMudApt] = useState<Aptitude>(existing?.mudApt ?? "不明");
   const [temper, setTemper] = useState<Temper>(existing?.temper ?? "不明");
+  const [coat, setCoat] = useState<Coat>(existing?.coat ?? "不明");
   const [abilityNote, setAbilityNote] = useState(existing?.abilityNote ?? "");
   const [weeksLeft, setWeeksLeft] = useState<number | null>(existing?.weeksLeft ?? DEFAULT_MAX_WEEKS);
   const [maxWeeks, setMaxWeeks] = useState<number | null>(existing?.maxWeeks ?? DEFAULT_MAX_WEEKS);
@@ -59,7 +77,6 @@ export function HorseForm({ existing, go }: { existing?: Horse; go: (v: View) =>
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  // 所有馬（自分自身は親候補から除外）。
   const ownedParents = horses.filter((h) => h.id !== existing?.id);
 
   async function onSave() {
@@ -74,9 +91,12 @@ export function HorseForm({ existing, go }: { existing?: Horse; go: (v: View) =>
       inheritType,
       soshitsu,
       leg,
+      growth,
       distance,
-      surface,
+      dirtApt,
+      mudApt,
       temper,
+      coat,
       abilityNote,
       weeksLeft: weeksLeft ?? 0,
       maxWeeks: maxWeeks ?? DEFAULT_MAX_WEEKS,
@@ -123,16 +143,25 @@ export function HorseForm({ existing, go }: { existing?: Horse; go: (v: View) =>
         options={INHERIT_KEYS}
         value={inheritType}
         onChange={(v) => setInheritType(v as InheritType)}
-        hint="H/H=ハイリスク、堅実=安定、平均=中庸"
+        hint="H/H=ブレ大、平均=中庸、堅実=安定"
       />
       <NumberField label="代（世代）" value={generation} onChange={setGeneration} min={1} />
 
       <h3 className="section-head">能力・適性</h3>
       <ChipGroup label="素質" options={SOSHITSU_KEYS} value={soshitsu} onChange={(v) => setSoshitsu(v as Soshitsu)} hint="皐月賞オッズ等で判定（2.8≒MAX上）" />
       <ChipGroup label="脚質" options={LEG_KEYS} value={leg} onChange={(v) => setLeg(v as Leg)} />
-      <ChipGroup label="距離適性" options={DISTANCE_KEYS} value={distance} onChange={(v) => setDistance(v as Distance)} />
-      <ChipGroup label="馬場適性" options={SURFACE_KEYS} value={surface} onChange={(v) => setSurface(v as Surface)} />
+      <ChipGroup label="成長" options={GROWTH_KEYS} value={growth} onChange={(v) => setGrowth(v as Growth)} />
+      <ChipGroup
+        label="距離適性"
+        options={DISTANCE_KEYS}
+        value={distance}
+        onChange={(v) => setDistance(v as Distance)}
+        hint={DISTANCE_HINT[distance] ? `${distance}：${DISTANCE_HINT[distance]}` : undefined}
+      />
+      <ChipGroup label="ダート適性" options={APTITUDE_KEYS} value={dirtApt} onChange={(v) => setDirtApt(v as Aptitude)} />
+      <ChipGroup label="道悪適性" options={APTITUDE_KEYS} value={mudApt} onChange={(v) => setMudApt(v as Aptitude)} hint="馬場が悪い状態を走る適性" />
       <ChipGroup label="気性" options={TEMPER_KEYS} value={temper} onChange={(v) => setTemper(v as Temper)} />
+      <ChipGroup label="毛色" options={COAT_KEYS} value={coat} onChange={(v) => setCoat(v as Coat)} />
       <TextField label="表パラメモ（任意）" value={abilityNote} onChange={setAbilityNote} placeholder="SP/ST/パワー等、実機の数値を自由に" />
 
       <h3 className="section-head">状態・寿命</h3>

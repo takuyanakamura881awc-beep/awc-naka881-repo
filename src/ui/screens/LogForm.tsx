@@ -6,10 +6,8 @@ import { SCHEMA_VERSION } from "../../db/schema";
 import { RACES, getRace } from "../../data/races";
 import {
   CONDITION_KEYS,
-  DISTANCE_KEYS,
   GRADE_KEYS,
   SURFACE_KEYS,
-  type Distance,
   type Grade,
   type RaceLog,
   type Surface,
@@ -32,7 +30,7 @@ export function LogForm({
   const [raceId, setRaceId] = useState<string>(existing?.raceId ?? RACES[0].id);
   const [raceName, setRaceName] = useState(existing?.raceName ?? "");
   const [grade, setGrade] = useState<Grade>(existing?.grade ?? "G1");
-  const [distance, setDistance] = useState<Distance>(existing?.distance ?? "中距離");
+  const [distanceM, setDistanceM] = useState<number | null>(existing?.distanceM ?? 2000);
   const [surface, setSurface] = useState<Surface>(existing?.surface ?? "芝");
   const [logStatus, setLogStatus] = useState<"予定" | "完了">(existing?.status ?? "完了");
   const [position, setPosition] = useState<number | null>(existing?.position ?? null);
@@ -52,8 +50,8 @@ export function LogForm({
     const def = getRace(id);
     if (def) {
       setGrade(def.grade);
-      setDistance(def.distanceKey);
-      setSurface(def.surface);
+      setDistanceM(def.distance);
+      setSurface(def.surface === "芝・ダート" ? "芝" : def.surface);
     }
   }
 
@@ -69,7 +67,7 @@ export function LogForm({
       raceId: isOther ? null : raceId,
       raceName: resolvedName,
       grade,
-      distance,
+      distanceM: distanceM ?? 0,
       surface,
       status: logStatus,
       position: logStatus === "完了" ? position : null,
@@ -96,7 +94,7 @@ export function LogForm({
         <select className="text-input" value={raceId} onChange={(e) => onSelectRace(e.target.value)}>
           {RACES.map((r) => (
             <option key={r.id} value={r.id}>
-              [{r.grade}] {r.name}
+              [{r.grade}] {r.name}（{r.course}{r.distance}m）
             </option>
           ))}
           <option value="__other__">その他（自由入力）</option>
@@ -107,7 +105,7 @@ export function LogForm({
         <>
           <TextField label="レース名" value={raceName} onChange={setRaceName} placeholder="レース名" />
           <ChipGroup label="グレード" options={GRADE_KEYS} value={grade} onChange={(v) => setGrade(v as Grade)} />
-          <ChipGroup label="距離" options={DISTANCE_KEYS} value={distance} onChange={(v) => setDistance(v as Distance)} />
+          <NumberField label="距離(m)" value={distanceM} onChange={setDistanceM} min={1000} />
           <ChipGroup label="馬場" options={SURFACE_KEYS} value={surface} onChange={(v) => setSurface(v as Surface)} />
         </>
       )}
