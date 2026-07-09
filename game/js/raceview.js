@@ -8,8 +8,28 @@
 "use strict";
 (function (SH) {
   const W = 1280, H = 720;
-  const PREROLL = 2.6;
+  const PREROLL = 5.4;      // タイトルカード2.8s + ゲートイン2.6s
+  const TITLE_END = -2.6;   // これよりtが小さい間はタイトルカード
   const FL = 830; // 焦点距離(px)
+
+  // タイム表記 (89.34 → "1:29.3")
+  function fmtTime(sec) {
+    if (!isFinite(sec) || sec <= 0) return "-:--.-";
+    const m = Math.floor(sec / 60), s = sec - m * 60;
+    return m + ":" + (s < 10 ? "0" : "") + s.toFixed(1);
+  }
+  // 着差表記(タイム差→馬身)
+  function marginLabel(d) {
+    if (d < 0.02) return "ハナ";
+    if (d < 0.05) return "アタマ";
+    if (d < 0.09) return "クビ";
+    if (d < 0.14) return "1/2馬身";
+    if (d < 0.19) return "3/4馬身";
+    const L = Math.round(d / 0.17 * 2) / 2;
+    if (L >= 10) return "大差";
+    const whole = Math.floor(L);
+    return (L === whole) ? whole + "馬身" : (whole ? whole + " " : "") + "1/2馬身";
+  }
 
   // ---------- 3Dベクトル ----------
   function v3(x, y, z) { return { x: x, y: y, z: z }; }
@@ -361,9 +381,11 @@
     })();
 
     let storyIdx = 0;
+    let lastStory = null; // 画面内テロップ用 {text, at}
     function pushStory(upTo) {
       while (storyIdx < sim.story.length && sim.story[storyIdx].t <= upTo) {
         commentBox.insertBefore(SH.el("div", { class: "cline", text: "🎙 " + sim.story[storyIdx].text }), commentBox.firstChild);
+        lastStory = { text: sim.story[storyIdx].text, at: upTo };
         storyIdx++;
       }
     }
@@ -400,16 +422,28 @@
 
     // ---------- カメラ ----------
     let camPos = null, camTgt = null, camMode = "";
-    function computeCam(t, pos, leadM) {
+    function computeCam(t, pos, leadM, camOver) {
       const remain = D - leadM;
+      const packC = leadM - 8;
       let mode, p, tg;
-      if (t < 0) {
+      if (camOver === "replay") {
+        // リプレイ: 外ラチ沿いの低いカメラで迫力の煽りアングル
+        mode = "replay";
+        p = course.pos(Math.min(leadM + 24, D + 26), -16, 1.9);
+        tg = course.pos(Math.min(leadM + 2, D + 6), 2, 1.6);
+      } else if (t < 0) {
         mode = "gate";
         p = course.pos(16, 2, 2.4); tg = course.pos(0, 0, 1.4);
       } else if (remain > 520) {
-        mode = "track";
-        const packC = leadM - 8;
-        p = course.pos(packC + 4, 38, 10); tg = course.pos(packC, 0, 1.6);
+        const prog = leadM / D;
+        if (D >= 1400 && prog > 0.40 && prog < 0.54) {
+          // 中盤はクレーン(空撮)カメラで隊列全体を見せる
+          mode = "crane";
+          p = course.pos(packC - 34, 58, 34); tg = course.pos(packC + 12, 0, 0);
+        } else {
+          mode = "track";
+          p = course.pos(packC + 4, 38, 10); tg = course.pos(packC, 0, 1.6);
+        }
       } else if (remain > 130) {
         mode = "stretch";
         p = course.pos(D + 60, 7, 3.2); tg = course.pos(Math.min(leadM + 15, D + 20), 0, 1.8);
@@ -419,11 +453,14 @@
       }
       if (mode !== camMode) { camMode = mode; camPos = p; camTgt = tg; }
       else { camPos = vlerp(camPos, p, 0.14); camTgt = vlerp(camTgt, tg, 0.2); }
-      const f = vnorm(vsub(camTgt, camPos));
+      // 手持ちカメラ風の微揺れ
+      const sway = mode === "track" ? 0.22 : mode === "stretch" ? 0.12 : mode === "replay" ? 0.16 : 0;
+      const cp = v3(camPos.x, camPos.y + Math.sin(t * 1.9) * sway, camPos.z + Math.cos(t * 1.3) * sway * 0.5);
+      const f = vnorm(vsub(camTgt, cp));
       const up = v3(0, 1, 0);
       const r = vnorm(vcross(up, f));
       const u = vcross(f, r);
-      return { pos: camPos, f: f, r: r, u: u, mode: mode };
+      return { pos: cp, f: f, r: r, u: u, mode: mode };
     }
     function project(cam, P) {
       const d = vsub(P, cam.pos);
@@ -435,11 +472,11 @@
     function hazeOf(z) { return SH.clamp((z - 140) / 720, 0, 0.55); }
 
     // ---------- シーン描画 ----------
-    function draw(t, dtWorld) {
+    function draw(t, dtWorld, camOver) {
       const pos = posAt(Math.max(0, t));
       const leadM = Math.max.apply(null, pos);
       const remain = Math.max(0, D - leadM);
-      const cam = computeCam(t, pos, leadM);
+      const cam = computeCam(t, pos, leadM, camOver);
 
       // 空
       const horizon = (function () {
@@ -604,14 +641,79 @@
         ctx.fillRect(0, 0, W, H);
         flash -= 0.06;
       }
-      if (t > winTime) {
+      if (camOver === "replay") {
+        drawReplayMark(t);
+      } else if (t > winTime) {
         if (photoFinish && t < winTime + 1.8) banner("写真判定", "#fff", "#1a1a1a");
         else {
           const wr = field.runners[sim.order[0]];
           banner("1着  " + wr.gate + " " + wr.name, SH.WAKU_COLORS[wr.waku - 1], SH.WAKU_TEXT[wr.waku - 1]);
         }
-      } else if (t < 0) banner("各馬ゲートイン", "rgba(0,0,0,.6)", "#fff");
+      } else if (t < TITLE_END) drawTitleCard(t);
+      else if (t < 0) banner("各馬ゲートイン", "rgba(0,0,0,.6)", "#fff");
       else if (t < 1.2) banner("スタート！", "rgba(0,0,0,.6)", "#ffd43b");
+    }
+
+    // ---------- タイトルカード(発走前のレース紹介) ----------
+    function drawTitleCard(t) {
+      const a = SH.clamp((t - (TITLE_END - 2.8)) / 0.4, 0, 1) * SH.clamp((TITLE_END - t) / 0.4, 0, 1) * 0.999 + 0.001;
+      ctx.fillStyle = "rgba(8,12,22,.88)";
+      ctx.fillRect(0, 0, W, H);
+      const gradeCol = race.grade === "G1" || race.grade === "WBC" || race.grade === "J-G1" ? "#1c7ed6"
+        : race.grade === "G2" || race.grade === "J-G2" ? "#e03131"
+          : race.grade === "G3" || race.grade === "J-G3" ? "#2f9e44" : "#555f6a";
+      // グレード帯
+      ctx.fillStyle = gradeCol;
+      ctx.fillRect(0, 150, W, 8);
+      ctx.fillRect(0, 340, W, 8);
+      ctx.font = "bold 34px sans-serif"; ctx.textAlign = "center";
+      ctx.fillStyle = gradeCol === "#555f6a" ? "#c8d2dc" : gradeCol;
+      ctx.fillText(race.grade, W / 2, 205);
+      // レース名
+      ctx.fillStyle = "#fff"; ctx.font = "bold 62px sans-serif";
+      ctx.fillText(race.name, W / 2, 285);
+      ctx.font = "26px sans-serif"; ctx.fillStyle = "#c8d2dc";
+      ctx.fillText(race.course + "競馬場  " + race.surface + " " + race.dist + "m  馬場:" + field.condition + "  " + n + "頭立て", W / 2, 328);
+      // コース図(大)
+      const mx = W / 2, my = 480, rx = 240, ry = 105;
+      ctx.strokeStyle = "rgba(255,255,255,.25)"; ctx.lineWidth = 30;
+      ctx.beginPath(); ctx.ellipse(mx, my, rx, ry, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = race.surface === "ダート" ? "#a5814a" : "#3f9142"; ctx.lineWidth = 22;
+      ctx.beginPath(); ctx.ellipse(mx, my, rx, ry, 0, 0, Math.PI * 2); ctx.stroke();
+      // 走行区間をハイライト(スタート→ゴール)
+      const th0 = Math.PI / 2 + course.lapFrac(0) * Math.PI * 2;
+      const thSpan = Math.min(D / course.lap, 1) * Math.PI * 2;
+      ctx.strokeStyle = "#ffd43b"; ctx.lineWidth = 10;
+      ctx.beginPath(); ctx.ellipse(mx, my, rx, ry, 0, th0, th0 + thSpan); ctx.stroke();
+      // スタート/ゴールマーカー
+      function mark(frac, label, col) {
+        const th = Math.PI / 2 + frac * Math.PI * 2;
+        const x = mx + rx * Math.cos(th), y = my + ry * Math.sin(th);
+        ctx.fillStyle = col;
+        ctx.beginPath(); ctx.arc(x, y, 12, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#fff"; ctx.font = "bold 20px sans-serif";
+        ctx.fillText(label, x, y - 20);
+      }
+      mark(course.lapFrac(0), "START", "#2f9e44");
+      mark(course.finishFrac, "GOAL", "#c9312e");
+      // 点滅
+      if (Math.sin(t * 5) > -0.3) {
+        ctx.fillStyle = "#ffd43b"; ctx.font = "bold 30px sans-serif";
+        ctx.fillText("まもなく発走", W / 2, 630);
+      }
+      ctx.textAlign = "left";
+    }
+
+    // ---------- リプレイ表示 ----------
+    function drawReplayMark(t) {
+      ctx.fillStyle = "rgba(10,14,18,.82)";
+      ctx.fillRect(W - 258, 16, 240, 58);
+      if (Math.sin(t * 6) > -0.2) {
+        ctx.fillStyle = "#e03131";
+        ctx.beginPath(); ctx.arc(W - 228, 45, 11, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.fillStyle = "#fff"; ctx.font = "bold 32px sans-serif";
+      ctx.fillText("REPLAY", W - 204, 57);
     }
 
     // ---------- 3Dオブジェクト ----------
@@ -827,6 +929,23 @@
       ctx.fillStyle = "#ffd43b"; ctx.font = "bold 35px sans-serif";
       const remShow = remain <= 0 ? "GOAL" : "残り " + (Math.ceil(remain / 10) * 10) + "m";
       ctx.fillText(remShow, W - 242, 59);
+      // 経過タイム
+      ctx.fillStyle = "rgba(10,14,18,.82)";
+      ctx.fillRect(W - 258, 80, 240, 42);
+      ctx.fillStyle = "#fff"; ctx.font = "bold 26px sans-serif";
+      ctx.fillText("TIME " + fmtTime(Math.min(t, winTime)), W - 242, 110);
+      // 実況テロップ(最新の一言を4.5秒表示)
+      if (lastStory && t - lastStory.at < 4.5 && t > 0.4) {
+        ctx.font = "bold 27px sans-serif";
+        const tw = ctx.measureText(lastStory.text).width;
+        const bx = W / 2 - tw / 2 - 18, by = H - 118;
+        ctx.fillStyle = "rgba(6,10,18,.78)";
+        ctx.fillRect(bx, by, tw + 36, 44);
+        ctx.fillStyle = "#ffd43b";
+        ctx.fillRect(bx, by, 6, 44);
+        ctx.fillStyle = "#fff";
+        ctx.fillText(lastStory.text, W / 2 - tw / 2, by + 32);
+      }
 
       // コースマップ
       const mx = W - 126, my = 168, rx = 92, ry = 44;
@@ -873,32 +992,113 @@
       ctx.fillText("現在の隊列 →", x0 - 10, H - 64);
     }
 
-    // ---------- 再生ループ ----------
+    // ---------- 着順確定掲示板 ----------
+    function drawBoard(bt) {
+      ctx.fillStyle = "rgba(5,9,20,.92)";
+      ctx.fillRect(0, 0, W, H);
+      // ヘッダ(「確定」ランプ)
+      ctx.fillStyle = "#101a30";
+      ctx.fillRect(140, 60, W - 280, 78);
+      ctx.strokeStyle = "#3a4a66"; ctx.lineWidth = 2;
+      ctx.strokeRect(140, 60, W - 280, 78);
+      if (Math.sin(bt * 4) > -0.4) {
+        ctx.fillStyle = "#e03131";
+        ctx.fillRect(170, 80, 96, 40);
+        ctx.fillStyle = "#fff"; ctx.font = "bold 28px sans-serif"; ctx.textAlign = "center";
+        ctx.fillText("確定", 218, 110);
+      }
+      ctx.fillStyle = "#fff"; ctx.font = "bold 36px sans-serif"; ctx.textAlign = "center";
+      ctx.fillText(race.name + "  レース結果", W / 2 + 40, 112);
+      ctx.textAlign = "left";
+      // 勝ちタイム
+      ctx.fillStyle = "#ffd43b"; ctx.font = "bold 30px sans-serif";
+      ctx.fillText("勝ちタイム " + fmtTime(winTime), 170, 190);
+      ctx.fillStyle = "#c8d2dc"; ctx.font = "22px sans-serif";
+      ctx.fillText(race.surface + race.dist + "m ／ 馬場:" + field.condition, 640, 190);
+      // 上位5頭
+      const rows = Math.min(5, sim.order.length);
+      for (let k = 0; k < rows; k++) {
+        const idx = sim.order[k];
+        const r = field.runners[idx];
+        const y = 226 + k * 84;
+        ctx.fillStyle = r.kind === "owned" ? "rgba(255,212,59,.12)" : "rgba(255,255,255,.05)";
+        ctx.fillRect(140, y, W - 280, 72);
+        // 着順
+        ctx.fillStyle = k === 0 ? "#ffd43b" : "#fff";
+        ctx.font = "bold 42px sans-serif"; ctx.textAlign = "center";
+        ctx.fillText(String(k + 1), 190, y + 50);
+        // 枠色の馬番
+        ctx.fillStyle = SH.WAKU_COLORS[r.waku - 1];
+        ctx.fillRect(240, y + 14, 46, 46);
+        ctx.fillStyle = SH.WAKU_TEXT[r.waku - 1]; ctx.font = "bold 28px sans-serif";
+        ctx.fillText(String(r.gate), 263, y + 48);
+        // 馬名・騎手
+        ctx.textAlign = "left";
+        ctx.fillStyle = r.kind === "owned" ? "#ffd43b" : "#fff";
+        ctx.font = "bold 32px sans-serif";
+        ctx.fillText(r.name + (r.kind === "owned" ? " ★" : ""), 316, y + 48);
+        ctx.fillStyle = "#98a6b6"; ctx.font = "22px sans-serif";
+        ctx.fillText(r.jockey.name, 700, y + 46);
+        // タイム・着差
+        ctx.fillStyle = "#dbe4ee"; ctx.font = "bold 26px sans-serif";
+        ctx.fillText(fmtTime(sim.times[idx]), 830, y + 47);
+        if (k > 0) {
+          const d = sim.times[idx] - sim.times[sim.order[k - 1]];
+          ctx.fillStyle = "#98a6b6"; ctx.font = "24px sans-serif";
+          ctx.fillText(marginLabel(d), 990, y + 47);
+        }
+      }
+      ctx.fillStyle = "#98a6b6"; ctx.font = "22px sans-serif"; ctx.textAlign = "center";
+      if (Math.sin(bt * 3) > -0.3) ctx.fillText("画面タップで払い戻しへ ▶", W / 2, 680);
+      ctx.textAlign = "left";
+    }
+
+    // ---------- 再生ループ(ライブ→リプレイ→掲示板) ----------
     let flash = 0;
     let last = performance.now();
     let goalFlashed = false;
+    view.phase = "live";
+    let replayT = 0, boardT = 0;
+    const REPLAY_FROM = Math.max(0.5, winTime - 7);
+
+    // タップでフェーズ送り(タイトル/リプレイ/掲示板のスキップ)
+    canvas.addEventListener("click", function () {
+      if (view.phase === "live" && view.t < 0) view.t = -0.01;      // 紹介スキップ
+      else if (view.phase === "replay") { view.phase = "board"; boardT = 0; }
+      else if (view.phase === "board") { view.cancel(); onDone(); }
+    });
+
     function loop(now) {
       if (view.done) return;
       const el = Math.min(0.1, (now - last) / 1000);
       last = now;
-      let sp = view.speed;
-      const posNow = posAt(Math.max(0, view.t));
-      const leadNow = Math.max.apply(null, posNow);
-      if (view.t >= 0 && D - leadNow < 90 && view.t < winTime) sp *= 0.32;
-      if (view.t < 0) sp = 1;
-      const dtWorld = el * sp;
-      view.t += dtWorld;
 
-      draw(view.t, dtWorld);
-      pushStory(view.t + 0.8);
-
-      if (!goalFlashed && view.t >= winTime) { flash = 0.85; goalFlashed = true; }
-
-      const endT = goalTime + (photoFinish ? 3.4 : 2.4);
-      if (view.t >= endT) {
-        view.done = true;
-        setTimeout(onDone, 300);
-        return;
+      if (view.phase === "live") {
+        let sp = view.speed;
+        const posNow = posAt(Math.max(0, view.t));
+        const leadNow = Math.max.apply(null, posNow);
+        if (view.t >= 0 && D - leadNow < 90 && view.t < winTime) sp *= 0.32;
+        if (view.t < 0) sp = 1;
+        const dtWorld = el * sp;
+        view.t += dtWorld;
+        draw(view.t, dtWorld);
+        pushStory(view.t + 0.8);
+        if (!goalFlashed && view.t >= winTime) { flash = 0.85; goalFlashed = true; }
+        const endT = goalTime + (photoFinish ? 3.4 : 2.4);
+        if (view.t >= endT) { view.phase = "replay"; replayT = REPLAY_FROM; camMode = ""; }
+      } else if (view.phase === "replay") {
+        const dtWorld = el * 1.2; // スローリプレイ
+        replayT += dtWorld;
+        draw(replayT, dtWorld, "replay");
+        if (replayT >= winTime + 0.8) { view.phase = "board"; boardT = 0; }
+      } else { // board
+        boardT += el;
+        drawBoard(boardT);
+        if (boardT >= 7) {
+          view.done = true;
+          setTimeout(onDone, 200);
+          return;
+        }
       }
       view.raf = requestAnimationFrame(loop);
     }
