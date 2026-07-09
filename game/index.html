@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>UMA STABLE プログレス — 競走馬メダルゲーム</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐎</text></svg>">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- タイトル画面 -->
+  <div id="title-screen"></div>
+
+  <!-- ゲーム本体 -->
+  <div id="app" style="display:none">
+    <div id="topbar">
+      <span class="medal">🪙 <span id="tb-medals">0</span>枚</span>
+      <span id="tb-ride" style="display:none"></span>
+      <span id="tb-week"></span>
+    </div>
+    <div id="tab-race"></div>
+    <div id="tab-stable" style="display:none"></div>
+    <div id="tab-breed" style="display:none"></div>
+    <div id="tab-hall" style="display:none"></div>
+    <div id="tab-settings" style="display:none"></div>
+    <nav id="nav"></nav>
+  </div>
+
+  <div id="toast"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/horse.js"></script>
+  <script src="js/race.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/ui-util.js"></script>
+  <script src="js/ui-race.js"></script>
+  <script src="js/ui-stable.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
