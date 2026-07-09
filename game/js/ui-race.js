@@ -38,7 +38,7 @@
     const root = SH.$("#tab-race");
     SH.clear(root);
     ensureWeek();
-    if (raceAnim) { cancelAnimationFrame(raceAnim.raf); raceAnim = null; }
+    if (raceAnim) { raceAnim.cancel(); raceAnim = null; }
     if (currentRaceId && weekCache.results[currentRaceId] && weekCache.watched[currentRaceId] === "result") {
       renderResult(root, SH.findRace(currentRaceId));
     } else if (currentRaceId) {
@@ -349,148 +349,17 @@
     SH.save();
   }
 
-  // ---------- Canvas 観戦 ----------
+  // ---------- Canvas 観戦(テレビ中継風ビュー: raceview.js) ----------
   function renderLive(race, field, sim) {
     const root = SH.$("#tab-race");
     SH.clear(root);
-    root.appendChild(SH.el("div", { class: "race-head" }, [
-      SH.gradeBadge(race.grade),
-      SH.el("div", {}, [
-        SH.el("div", { class: "race-name big", text: race.name }),
-        SH.el("div", { class: "race-sub", text: race.course + " " + race.surface + race.dist + "m ／ 馬場: " + field.condition }),
-      ]),
-    ]));
-    const canvas = SH.el("canvas", { id: "race-canvas", width: "900", height: "440" });
-    root.appendChild(SH.el("div", { class: "canvas-wrap" }, canvas));
-    const commentBox = SH.el("div", { class: "commentary" });
-    root.appendChild(commentBox);
-    const ctrl = SH.el("div", { class: "row" });
-    let speed = 6;
-    [["×3", 3], ["×6", 6], ["×12", 12]].forEach(function (pair) {
-      ctrl.appendChild(SH.el("button", { class: "chip" + (speed === pair[1] ? " on" : ""), text: pair[0], onclick: function () { speed = pair[1]; if (raceAnim) raceAnim.speed = pair[1]; SH.$$(".row .chip", root).forEach(function (c) { c.classList.toggle("on", c.textContent === pair[0]); }); } }));
-    });
-    ctrl.appendChild(SH.el("button", { class: "btn ghost", text: "スキップ ▶▶", onclick: function () { finishLive(); } }));
-    root.appendChild(ctrl);
-
-    const ctx = canvas.getContext("2d");
-    const frames = sim.frames;
-    const n = field.runners.length;
-    const laneH = Math.min(34, 360 / n);
-    let storyIdx = 0;
-
     function finishLive() {
-      if (raceAnim) { cancelAnimationFrame(raceAnim.raf); raceAnim = null; }
+      if (raceAnim) { raceAnim.cancel(); raceAnim = null; }
       weekCache.watched[race.id] = "result";
       SH.renderRaceTab();
       SH.updateTopBar();
     }
-
-    function draw(fi) {
-      const f = frames[Math.min(fi, frames.length - 1)];
-      const D = race.dist;
-      const W = canvas.width, Hh = canvas.height;
-      // カメラ: 先頭馬を右1/4に
-      const lead = Math.max.apply(null, f.pos);
-      const viewSpan = 420; // 表示する距離幅(m)
-      const camL = SH.clamp(lead - viewSpan * 0.72, -50, D - viewSpan + 60);
-      const xOf = function (m) { return (m - camL) / viewSpan * (W - 40) + 20; };
-
-      // 背景
-      ctx.fillStyle = race.surface === "ダート" ? "#b08d57" : "#3f9142";
-      ctx.fillRect(0, 0, W, Hh);
-      ctx.fillStyle = "rgba(255,255,255,.13)";
-      ctx.fillRect(0, 0, W, 46);
-      // ハロン棒(200mごと)
-      ctx.strokeStyle = "rgba(255,255,255,.5)";
-      ctx.fillStyle = "rgba(255,255,255,.85)";
-      ctx.font = "12px sans-serif";
-      for (let m = 0; m <= D; m += 200) {
-        const x = xOf(m);
-        if (x < -20 || x > W + 20) continue;
-        ctx.beginPath(); ctx.moveTo(x, 46); ctx.lineTo(x, Hh - 20); ctx.stroke();
-        ctx.fillText((D - m >= 1000 ? ((D - m) / 1000) + "km" : (D - m) + "m"), x + 3, 60);
-      }
-      // ゴール
-      const gx = xOf(D);
-      if (gx > -30 && gx < W + 30) {
-        ctx.fillStyle = "#fff";
-        for (let y = 46; y < Hh - 20; y += 16) { ctx.fillRect(gx - 3, y, 6, 8); ctx.fillStyle = ctx.fillStyle === "#fff" ? "#d33" : "#fff"; }
-        ctx.fillStyle = "#fff"; ctx.font = "bold 14px sans-serif"; ctx.fillText("GOAL", gx - 18, 42);
-      }
-      // 馬
-      f.pos.forEach(function (m, i) {
-        const r = field.runners[i];
-        const y = 70 + i * laneH;
-        const x = xOf(Math.min(m, D + 30));
-        if (x < -60 || x > W + 60) return;
-        const bob = Math.sin((f.t * 8) + i) * 2;
-        // 胴体
-        ctx.fillStyle = r.kind === "owned" ? "#ffd43b" : "#8b5a2b";
-        ctx.beginPath();
-        ctx.ellipse(x, y + bob, 16, 7, 0, 0, Math.PI * 2);
-        ctx.fill();
-        // 首・頭
-        ctx.beginPath();
-        ctx.ellipse(x + 14, y - 4 + bob, 6, 4, -0.5, 0, Math.PI * 2);
-        ctx.fill();
-        // 脚(簡易アニメ)
-        ctx.strokeStyle = "#5c3a17"; ctx.lineWidth = 2;
-        const ph = Math.sin(f.t * 14 + i * 2) * 5;
-        ctx.beginPath();
-        ctx.moveTo(x - 8, y + 5 + bob); ctx.lineTo(x - 8 + ph, y + 14 + bob);
-        ctx.moveTo(x + 8, y + 5 + bob); ctx.lineTo(x + 8 - ph, y + 14 + bob);
-        ctx.stroke();
-        // 騎手(枠色の勝負服)
-        ctx.fillStyle = SH.WAKU_COLORS[r.waku - 1];
-        ctx.beginPath(); ctx.arc(x + 2, y - 8 + bob, 5, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = "rgba(0,0,0,.35)"; ctx.lineWidth = 1; ctx.stroke();
-        // ゼッケン
-        ctx.fillStyle = "rgba(255,255,255,.92)";
-        ctx.fillRect(x - 24, y - 4 + bob, 12, 12);
-        ctx.fillStyle = "#222"; ctx.font = "bold 10px sans-serif";
-        ctx.fillText(String(r.gate), x - 21, y + 6 + bob);
-        // 馬名(上位4頭と自馬のみ表示して重なりを防ぐ)
-        const posRank = f.pos.filter(function (mm) { return mm > m; }).length + 1;
-        if (posRank <= 4 || r.kind === "owned") {
-          ctx.fillStyle = r.kind === "owned" ? "#ffd43b" : "rgba(255,255,255,.95)";
-          ctx.font = "11px sans-serif";
-          ctx.fillText(r.name, x - 24, y - 12 + bob);
-        }
-      });
-      // 進捗バー
-      ctx.fillStyle = "rgba(0,0,0,.35)";
-      ctx.fillRect(20, Hh - 14, W - 40, 6);
-      ctx.fillStyle = "#ffd43b";
-      ctx.fillRect(20, Hh - 14, (W - 40) * SH.clamp(lead / D, 0, 1), 6);
-    }
-
-    function pushStory(upTo) {
-      while (storyIdx < sim.story.length && sim.story[storyIdx].t <= upTo) {
-        const p = SH.el("div", { class: "cline", text: "🎙 " + sim.story[storyIdx].text });
-        commentBox.insertBefore(p, commentBox.firstChild);
-        storyIdx++;
-      }
-    }
-
-    const dtSim = 0.4;
-    raceAnim = { fi: 0, speed: speed, raf: 0, last: performance.now() };
-    function loop(now) {
-      if (!raceAnim) return;
-      const el = (now - raceAnim.last) / 1000;
-      raceAnim.last = now;
-      raceAnim.fi += el * raceAnim.speed / dtSim;
-      const fi = Math.floor(raceAnim.fi);
-      draw(fi);
-      pushStory(frames[Math.min(fi, frames.length - 1)].t + 1);
-      if (fi >= frames.length - 1) {
-        pushStory(1e9);
-        setTimeout(finishLive, 1400);
-        raceAnim = null;
-        return;
-      }
-      raceAnim.raf = requestAnimationFrame(loop);
-    }
-    raceAnim.raf = requestAnimationFrame(loop);
+    raceAnim = SH.createRaceView(root, race, field, sim, finishLive);
   }
 
   // ---------- 4) 結果画面 ----------
