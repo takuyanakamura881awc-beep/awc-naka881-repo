@@ -138,7 +138,9 @@ input[type="text"], textarea {
 /* ---- レース観戦 ---- */
 .canvas-wrap { border-radius: 10px; overflow: hidden; border: 2px solid var(--border); margin: 8px 0; }
 .canvas-wrap canvas { width: 100%; height: auto; display: block; background: #3f9142; }
-.canvas-wrap.tv { border-color: #000; box-shadow: 0 4px 20px rgba(0,0,0,.6); }
+.canvas-wrap.tv { border-color: #000; box-shadow: 0 4px 20px rgba(0,0,0,.6); position: relative; }
+/* 3層構成: 背景(2D)→馬(WebGL)→オーバーレイ(2D) */
+.canvas-wrap.tv canvas.layer { position: absolute; inset: 0; width: 100%; height: 100%; background: transparent; }
 .commentary { background: #0b0e11; border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; height: 120px; overflow-y: auto; font-size: 0.85rem; }
 .cline { padding: 3px 0; border-bottom: 1px dashed #22303c; }
 .cline:first-child { color: var(--accent); font-weight: 700; }

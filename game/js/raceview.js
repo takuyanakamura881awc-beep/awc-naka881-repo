@@ -343,8 +343,11 @@
 
   // ---------- ビュー本体 ----------
   SH.createRaceView = function (root, race, field, sim, onDone) {
+    // 3層キャンバス: 背景(2D) → 馬(WebGL) → オーバーレイ(2D)
     const canvas = SH.el("canvas", { width: String(W), height: String(H) });
-    const wrap = SH.el("div", { class: "canvas-wrap tv" }, canvas);
+    const glCanvas = SH.el("canvas", { class: "layer", width: String(W), height: String(H) });
+    const fgCanvas = SH.el("canvas", { class: "layer", width: String(W), height: String(H) });
+    const wrap = SH.el("div", { class: "canvas-wrap tv" }, [canvas, glCanvas, fgCanvas]);
     root.appendChild(wrap);
     const commentBox = SH.el("div", { class: "commentary" });
     root.appendChild(commentBox);
@@ -352,6 +355,21 @@
     root.appendChild(ctrl);
 
     const ctx = canvas.getContext("2d");
+    const octx = fgCanvas.getContext("2d");
+
+    // ---- WebGL(3D馬)初期化。失敗時はスプライトにフォールバック ----
+    let renderer = null, scene = null, camera3 = null, horses3 = null;
+    if (SH.Horse3D && SH.Horse3D.available()) {
+      renderer = SH.Horse3D.createRenderer(glCanvas);
+      if (renderer) {
+        scene = SH.Horse3D.buildScene(field.condition);
+        const fovY = 2 * Math.atan((H / 2) / FL) * 180 / Math.PI;
+        camera3 = new THREE.PerspectiveCamera(fovY, W / H, 0.5, 3000);
+        horses3 = [];
+      }
+    }
+    const use3d = !!renderer;
+    SH._render3d = use3d; // テスト用フラグ
     const D = race.dist;
     const n = field.runners.length;
     const frames = sim.frames;
@@ -360,12 +378,27 @@
     const turf = turfColors(race.surface, field.condition);
     const course = makeCourse(D);
 
+    // CPU馬の毛色は実際の出現率に寄せて鹿毛系を多めに
+    const COAT_POOL = ["鹿毛", "鹿毛", "鹿毛", "黒鹿毛", "黒鹿毛", "栗毛", "栗毛", "栃栗毛", "芦毛", "青毛"];
     const coatOf = field.runners.map(function (r, i) {
       if (r.kind === "owned") return COAT[r.ref.coat] || COAT["鹿毛"];
-      return COAT[COAT_KEYS[(i * 5 + r.name.length) % COAT_KEYS.length]];
+      return COAT[COAT_POOL[(i * 7 + r.name.length) % COAT_POOL.length]];
     });
     const lat = [];
     for (let i = 0; i < n; i++) lat.push(-8 + 16 * (i / Math.max(1, n - 1)));
+
+    // 3D馬の生成(枠色の勝負服・毛色・ゼッケン番号)
+    const H3_SCALE = 1.45; // 視認性のためやや大きめ(旧スプライトと同等の存在感)
+    if (use3d) {
+      field.runners.forEach(function (r, i) {
+        const coatHex = parseInt(coatOf[i].slice(1), 16);
+        const silksHex = parseInt(SH.WAKU_COLORS[r.waku - 1].slice(1), 16);
+        const h3 = SH.Horse3D.createHorse(coatHex, silksHex, r.gate);
+        h3.group.scale.setScalar(H3_SCALE);
+        scene.add(h3.group);
+        horses3.push(h3);
+      });
+    }
 
     // 蹴り上げパーティクル {m, lt, y, vm, vy, life, max}
     const parts = [];
@@ -422,6 +455,7 @@
 
     // ---------- カメラ ----------
     let camPos = null, camTgt = null, camMode = "";
+    let curFL = FL; // 動的焦点距離(直線正面は望遠レンズ)
     function computeCam(t, pos, leadM, camOver) {
       const remain = D - leadM;
       const packC = leadM - 8;
@@ -442,7 +476,7 @@
           p = course.pos(packC - 34, 58, 34); tg = course.pos(packC + 12, 0, 0);
         } else {
           mode = "track";
-          p = course.pos(packC + 4, 38, 10); tg = course.pos(packC, 0, 1.6);
+          p = course.pos(packC + 4, 30, 8.5); tg = course.pos(packC, 0, 1.6);
         }
       } else if (remain > 130) {
         mode = "stretch";
@@ -451,8 +485,16 @@
         mode = "goal";
         p = course.pos(D - 34, 38, 9); tg = course.pos(Math.min(leadM, D + 12), 0, 1.5);
       }
-      if (mode !== camMode) { camMode = mode; camPos = p; camTgt = tg; }
-      else { camPos = vlerp(camPos, p, 0.14); camTgt = vlerp(camTgt, tg, 0.2); }
+      // 焦点距離: 直線正面は被写体距離に応じた望遠(中継の圧縮効果)
+      let targetFL = FL;
+      if (mode === "stretch") {
+        const lp = course.pos(leadM, 0, 1.6);
+        const dx = lp.x - p.x, dz = lp.z - p.z;
+        const dist = Math.sqrt(dx * dx + dz * dz);
+        targetFL = SH.clamp(dist * 42, 950, 15000);
+      } else if (mode === "gate") targetFL = 1100;
+      if (mode !== camMode) { camMode = mode; camPos = p; camTgt = tg; curFL = targetFL; }
+      else { camPos = vlerp(camPos, p, 0.14); camTgt = vlerp(camTgt, tg, 0.2); curFL += (targetFL - curFL) * 0.1; }
       // 手持ちカメラ風の微揺れ
       const sway = mode === "track" ? 0.22 : mode === "stretch" ? 0.12 : mode === "replay" ? 0.16 : 0;
       const cp = v3(camPos.x, camPos.y + Math.sin(t * 1.9) * sway, camPos.z + Math.cos(t * 1.3) * sway * 0.5);
@@ -460,13 +502,15 @@
       const up = v3(0, 1, 0);
       const r = vnorm(vcross(up, f));
       const u = vcross(f, r);
-      return { pos: cp, f: f, r: r, u: u, mode: mode };
+      return { pos: cp, f: f, r: r, u: u, mode: mode, fl: curFL };
     }
     function project(cam, P) {
+      // 標準カメラ(Three.js)と一致する右手系スクリーン基底(x = -r方向)
       const d = vsub(P, cam.pos);
       const z = vdot(d, cam.f);
       if (z < 1.2) return null;
-      return { x: W / 2 + vdot(d, cam.r) * FL / z, y: H * 0.52 - vdot(d, cam.u) * FL / z, z: z, s: FL / z };
+      const fl = cam.fl || FL;
+      return { x: W / 2 - vdot(d, cam.r) * fl / z, y: H * 0.5 - vdot(d, cam.u) * fl / z, z: z, s: fl / z };
     }
     // 大気霞: 距離→アルファ減衰
     function hazeOf(z) { return SH.clamp((z - 140) / 720, 0, 0.55); }
@@ -477,6 +521,7 @@
       const leadM = Math.max.apply(null, pos);
       const remain = Math.max(0, D - leadM);
       const cam = computeCam(t, pos, leadM, camOver);
+      octx.clearRect(0, 0, W, H); // オーバーレイ層をクリア
 
       // 空
       const horizon = (function () {
@@ -557,10 +602,10 @@
           const base = project(cam, course.pos(m, railLat, 0));
           const top = project(cam, course.pos(m, railLat, 1.25));
           const mid = project(cam, course.pos(m, railLat, 0.7));
-          if (base && top) {
+          if (base && top && top.s < 220) { // カメラ直近の支柱は描かない(望遠時の巨大化防止)
             const hz = hazeOf(top.z);
             ctx.strokeStyle = "rgba(245,245,245," + (0.95 - hz) + ")";
-            ctx.lineWidth = Math.max(1, top.s * 0.08);
+            ctx.lineWidth = SH.clamp(top.s * 0.08, 1, 16);
             ctx.beginPath(); ctx.moveTo(base.x, base.y); ctx.lineTo(top.x, top.y); ctx.stroke();
             if (prevTop) {
               ctx.beginPath(); ctx.moveTo(prevTop.x, prevTop.y); ctx.lineTo(top.x, top.y); ctx.stroke();
@@ -602,6 +647,7 @@
         targetLat[hi] = 7.5 - 15 * (rank / Math.max(1, n - 1)) * (t < 0 ? 1 : 0.85);
       });
       for (let i = 0; i < n; i++) lat[i] += (targetLat[i] - lat[i]) * 0.02;
+      if (use3d) horses3.forEach(function (h3) { h3.group.visible = false; }); // 画面外は非表示
       for (let i = 0; i < n; i++) bills.push({ kind: "horse", i: i, m: Math.min(pos[i], D + 40) });
       parts.forEach(function (p) { bills.push({ kind: "part", p: p, m: p.m }); });
 
@@ -623,22 +669,32 @@
         else drawRunner(cam, b.i, pos, rankIdx, t, dtWorld);
       });
 
-      // 雨
+      // 3D馬レイヤーの描画(カメラ同期→レンダリング)
+      if (use3d) {
+        camera3.position.set(cam.pos.x, cam.pos.y, cam.pos.z);
+        camera3.up.set(0, 1, 0);
+        camera3.lookAt(cam.pos.x + cam.f.x, cam.pos.y + cam.f.y, cam.pos.z + cam.f.z);
+        camera3.fov = 2 * Math.atan((H / 2) / (cam.fl || FL)) * 180 / Math.PI; // 望遠と同期
+        camera3.updateProjectionMatrix();
+        renderer.render(scene, camera3);
+      }
+
+      // 雨(前面レイヤー)
       if (sky.rain) {
-        ctx.strokeStyle = "rgba(220,230,240," + (sky.rain === 2 ? 0.5 : 0.3) + ")";
-        ctx.lineWidth = 1.2;
+        octx.strokeStyle = "rgba(220,230,240," + (sky.rain === 2 ? 0.5 : 0.3) + ")";
+        octx.lineWidth = 1.2;
         for (let i = 0; i < sky.rain * 90; i++) {
           const rx = Math.random() * W, ry = Math.random() * H;
-          ctx.beginPath(); ctx.moveTo(rx, ry); ctx.lineTo(rx - 5, ry + 18); ctx.stroke();
+          octx.beginPath(); octx.moveTo(rx, ry); octx.lineTo(rx - 5, ry + 18); octx.stroke();
         }
       }
 
       drawOverlay(t, pos, rankIdx, remain);
-      ctx.drawImage(vig, 0, 0); // ビネット
+      octx.drawImage(vig, 0, 0); // ビネット
 
       if (flash > 0) {
-        ctx.fillStyle = "rgba(255,255,255," + flash + ")";
-        ctx.fillRect(0, 0, W, H);
+        octx.fillStyle = "rgba(255,255,255," + flash + ")";
+        octx.fillRect(0, 0, W, H);
         flash -= 0.06;
       }
       if (camOver === "replay") {
@@ -656,7 +712,7 @@
 
     // ---------- タイトルカード(発走前のレース紹介) ----------
     function drawTitleCard(t) {
-      const a = SH.clamp((t - (TITLE_END - 2.8)) / 0.4, 0, 1) * SH.clamp((TITLE_END - t) / 0.4, 0, 1) * 0.999 + 0.001;
+      const ctx = octx; // 前面レイヤーに描く
       ctx.fillStyle = "rgba(8,12,22,.88)";
       ctx.fillRect(0, 0, W, H);
       const gradeCol = race.grade === "G1" || race.grade === "WBC" || race.grade === "J-G1" ? "#1c7ed6"
@@ -706,6 +762,7 @@
 
     // ---------- リプレイ表示 ----------
     function drawReplayMark(t) {
+      const ctx = octx; // 前面レイヤーに描く
       ctx.fillStyle = "rgba(10,14,18,.82)";
       ctx.fillRect(W - 258, 16, 240, 58);
       if (Math.sin(t * 6) > -0.2) {
@@ -778,8 +835,8 @@
     function drawFurlong(cam, m, label) {
       const base = project(cam, course.pos(m, TRACK_HALF + 1.6, 0));
       const top = project(cam, course.pos(m, TRACK_HALF + 1.6, 2.6));
-      if (!base || !top) return;
-      ctx.strokeStyle = "#fff"; ctx.lineWidth = Math.max(1.5, top.s * 0.10);
+      if (!base || !top || top.s > 220) return;
+      ctx.strokeStyle = "#fff"; ctx.lineWidth = SH.clamp(top.s * 0.10, 1.5, 18);
       ctx.beginPath(); ctx.moveTo(base.x, base.y); ctx.lineTo(top.x, top.y); ctx.stroke();
       ctx.fillStyle = "#d33333";
       ctx.beginPath(); ctx.arc(top.x, top.y - top.s * 0.32, Math.max(2.5, top.s * 0.34), 0, Math.PI * 2); ctx.fill();
@@ -848,11 +905,12 @@
       const hz = hazeOf(pr.z);
 
       // 地面の投影影
+      const shSc = use3d ? sc * 1.35 : sc;
       ctx.save();
       ctx.globalAlpha = (1 - hz) * 0.30;
       ctx.fillStyle = "#0a0f08";
       ctx.beginPath();
-      ctx.ellipse(pr.x + sc * 2, pr.y + sc * 0.5, sc * 26, sc * 6, 0, 0, Math.PI * 2);
+      ctx.ellipse(pr.x + shSc * 2, pr.y + shSc * 0.5, shSc * 26, shSc * 6, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
 
@@ -871,31 +929,42 @@
         }
       }
 
-      ctx.save();
-      ctx.globalAlpha = 1 - hz * 0.8;
-      ctx.translate(pr.x, pr.y);
-      if (frontness < -0.78) spriteFront(ctx, sc, phase, coatOf[i], SH.WAKU_COLORS[r.waku - 1], r.gate, running);
-      else if (frontness > 0.78) spriteRear(ctx, sc, phase, coatOf[i], SH.WAKU_COLORS[r.waku - 1], r.gate, running);
-      else {
-        const xsq = SH.clamp(Math.abs(sideness), 0.45, 1); // 3/4視の圧縮
-        spriteSide(ctx, sc, sideness < 0, xsq, phase, coatOf[i], SH.WAKU_COLORS[r.waku - 1], r.gate, running);
+      if (use3d) {
+        // 3Dモデルの位置・向き・ポーズを更新(描画はレンダラーが一括)
+        const h3 = horses3[i];
+        h3.group.visible = true;
+        h3.pose(phase, running); // pose内でy(上下動)を設定
+        h3.group.position.x = wp.x;
+        h3.group.position.z = wp.z;
+        h3.group.rotation.y = Math.atan2(-h.z, h.x);
+      } else {
+        ctx.save();
+        ctx.globalAlpha = 1 - hz * 0.8;
+        ctx.translate(pr.x, pr.y);
+        if (frontness < -0.78) spriteFront(ctx, sc, phase, coatOf[i], SH.WAKU_COLORS[r.waku - 1], r.gate, running);
+        else if (frontness > 0.78) spriteRear(ctx, sc, phase, coatOf[i], SH.WAKU_COLORS[r.waku - 1], r.gate, running);
+        else {
+          const xsq = SH.clamp(Math.abs(sideness), 0.45, 1); // 3/4視の圧縮
+          spriteSide(ctx, sc, sideness > 0, xsq, phase, coatOf[i], SH.WAKU_COLORS[r.waku - 1], r.gate, running);
+        }
+        ctx.restore();
       }
-      ctx.restore();
 
       const rank = rankIdx.indexOf(i);
       if ((rank < 3 || r.kind === "owned") && t >= 0 && pr.s > 5) {
-        ctx.font = "bold 19px sans-serif";
-        const tw = ctx.measureText(r.name).width;
-        const ny = pr.y - 46 * sc - 14;
-        ctx.fillStyle = "rgba(0,0,0,.55)";
-        ctx.fillRect(pr.x - tw / 2 - 7, ny - 19, tw + 14, 26);
-        ctx.fillStyle = r.kind === "owned" ? "#ffd43b" : "#fff";
-        ctx.fillText(r.name, pr.x - tw / 2, ny);
+        octx.font = "bold 19px sans-serif";
+        const tw = octx.measureText(r.name).width;
+        const ny = pr.y - (use3d ? 62 : 46) * sc - 14;
+        octx.fillStyle = "rgba(0,0,0,.55)";
+        octx.fillRect(pr.x - tw / 2 - 7, ny - 19, tw + 14, 26);
+        octx.fillStyle = r.kind === "owned" ? "#ffd43b" : "#fff";
+        octx.fillText(r.name, pr.x - tw / 2, ny);
       }
     }
 
     // ---------- オーバーレイ ----------
     function banner(text, bg, fg) {
+      const ctx = octx; // 前面レイヤーに描く
       ctx.font = "bold 44px sans-serif";
       const tw = ctx.measureText(text).width;
       const bx = W / 2 - tw / 2 - 30, by = 280;
@@ -906,6 +975,7 @@
     }
 
     function drawOverlay(t, pos, rankIdx, remain) {
+      const ctx = octx; // 前面レイヤーに描く
       const gradeCol = race.grade === "G1" || race.grade === "WBC" || race.grade === "J-G1" ? "#1c7ed6"
         : race.grade === "G2" || race.grade === "J-G2" ? "#e03131"
           : race.grade === "G3" || race.grade === "J-G3" ? "#2f9e44" : "#555f6a";
@@ -994,6 +1064,7 @@
 
     // ---------- 着順確定掲示板 ----------
     function drawBoard(bt) {
+      const ctx = octx; // 前面レイヤーに描く
       ctx.fillStyle = "rgba(5,9,20,.92)";
       ctx.fillRect(0, 0, W, H);
       // ヘッダ(「確定」ランプ)
@@ -1062,7 +1133,7 @@
     const REPLAY_FROM = Math.max(0.5, winTime - 7);
 
     // タップでフェーズ送り(タイトル/リプレイ/掲示板のスキップ)
-    canvas.addEventListener("click", function () {
+    fgCanvas.addEventListener("click", function () {
       if (view.phase === "live" && view.t < 0) view.t = -0.01;      // 紹介スキップ
       else if (view.phase === "replay") { view.phase = "board"; boardT = 0; }
       else if (view.phase === "board") { view.cancel(); onDone(); }
