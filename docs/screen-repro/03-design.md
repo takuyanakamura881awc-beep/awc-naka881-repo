@@ -19,7 +19,7 @@
 | **新規** | `game/js/rv-quality.js` | E-15 動的品質スケーリング: 計測(EMA)・降格/昇格状態機械・stage0〜4 適用/復帰・強制フック | §7.2 |
 | **新規** | `game/js/raceview3d.js` | WebGL 経路のオーケストレータ: `SH.RaceView3D.create` = view 構造体・再生ループ・番組フェーズ(タイトル/ゲート/ライブ/リプレイ/掲示板)・デュアルビューポート描画・操作(速度/スキップ/クリック)・実況ボックス・`SH._rvState` 一元更新 | §1, §6(番組), §7.3 |
 | **変更(小)** | `game/js/raceview.js` | (a) `SH.createRaceView` 冒頭にディスパッチ数行を追加(下記 1.2)。(b) 末尾に共有ヘルパー公開 1 行(`SH.RV2D = {...}`)。**それ以外の全 1180 行は一切変更しない = 2D フォールバック経路として温存** | §8 |
-| **変更(小)** | `game/js/horse3d.js` | 追加のみ: `H3.createRig()`(ポーズリグ=パーツ名タグ付き階層+ノード表)、`pose(phase, running, opt)` の第3引数拡張(懸垂期/追う/流す)。既存 `createHorse`/`createRenderer`/`buildScene` は温存(フォールバックおよびリグの基盤) | §6.0, §6.6, §6.7 |
+| **変更(小)** | `game/js/horse3d.js` | 追加のみ: `H3.createRig()`(ポーズリグ=パーツ名タグ付き階層+ノード表。同一IIFE内の`geo()`/`G`幾何キャッシュを共有するため本ファイルに実装 — §2.3.0)、`pose(phase, running, opt)` の第3引数拡張(懸垂期/追う/流す)。既存 `createHorse`/`createRenderer`/`buildScene` は温存(フォールバック専用としてレガシー凍結・以後無変更。寸法はcreateRig初期実装時に転記するのみで同期対象ではない — §2.3.0) | §6.0, §6.6, §6.7 |
 | **変更(小)** | `game/js/data.js` | `SH.isNightRace` を 1 関数追加(既存値は不変) | §5 |
 | **変更(小)** | `game/index.html` | 新規 6 ファイルの script タグ追加(下記 1.3) | §1 |
 | 温存 | `game/js/race.js` `game/js/horse.js` `game/js/state.js` `game/js/ui-util.js` `game/js/ui-race.js` `game/js/ui-stable.js` `game/js/main.js` `game/css/style.css` | 変更なし。`ui-race.js` の `renderLive` → `SH.createRaceView` 呼び出しはそのまま | 要件§0-4 |
@@ -44,7 +44,7 @@ SH.createRaceView = function (root, race, field, sim, onDone) {
 SH.RV2D = { makeCourse, fmtTime, marginLabel, COAT, COAT_KEYS, skyColors, turfColors };
 ```
 
-- `SH.RaceView3D.create` は内部で `SH.RVWorld.createRenderer(glCanvas)` を try し、WebGL コンテキスト取得失敗なら DOM を後始末して `null` を返す(→上記で 2D 経路へ)。`THREE` 未定義(three.min.js 読込失敗)も同様に null。AC-16 は `SH._forceNoWebGL = true`(URL `?rvnogl=1`、§7 テストフック)で機械的に通す。
+- `SH.RaceView3D.create` は内部で `SH.RVWorld.createRenderer(glCanvas)` を try し、WebGL コンテキスト取得失敗なら**以下の順で後始末してから** `null` を返す(→上記で 2D 経路へ。B-MINOR4・確定、§6 R12 WebGLコンテキストリーク対策): (1) `renderer.dispose()`、(2) `renderer.forceContextLoss()`(コンテキストの明示解放要求)、(3) `create()` 内でここまでに生成した `<canvas>` を DOM から除去、(4) その時点までに生成済みのテクスチャ/ジオメトリ(CanvasTexture キャッシュ等)を `dispose()`。`THREE` 未定義(three.min.js 読込失敗)の場合は renderer 自体が存在しないため (1)(2) を省略し (3)(4) のみ実施する。AC-16 は `SH._forceNoWebGL = true`(URL `?rvnogl=1`、§7 テストフック)で機械的に通す。
 - 既存 2D 経路内の `use3d`(2D背景+個別Mesh馬のハイブリッド)は温存するが、WebGL 可の環境では新経路が先取するため実運用では通らない(コード削除はしない=回帰リスク回避)。
 
 ### 1.3 index.html の script 順(依存順)
@@ -78,9 +78,9 @@ SH.RV2D = { makeCourse, fmtTime, marginLabel, COAT, COAT_KEYS, skyColors, turfCo
 | `SH.createRaceView(root, race, field, sim, onDone)` | raceview.js | **不変**。ディスパッチャ。返り値 view(`.cancel()`/`.t`/`.speed`/`.phase`) |
 | `SH.RaceView3D.create(root, race, field, sim, onDone)` | raceview3d.js | WebGL経路本体。失敗時 `null` |
 | `SH.RVWorld.createRenderer(canvas)` | rv-world.js | 不透明クリアの WebGLRenderer(`antialias:true, powerPreference:"high-performance"`)。失敗時 null |
-| `SH.RVWorld.build(renderer, race, field)` | rv-world.js | → `world = {scene, course, night, themes, chunks, api}`(api: `updateVisibility`, `applyTone`, `scrollFx`, `setDensity`, `poleMs`, `nameMs`) |
+| `SH.RVWorld.build(renderer, race, field)` | rv-world.js | → `world = {scene, course, night, themes, updateVisibility(camLpos,camRpos), applyTone(sOfCamL), scrollFx(dt), setDensity(v), setFogSimple(bool), setGlare(bool), setShadows(bool), poleMs, nameMs, dispose()}`(**フラットAPI・裁定確定**。旧設計の `api` サブオブジェクトは廃止し、全メソッドを `world` 直下に統一する — B-MAJOR3。`world.glareFx.visible=...` 等の内部プロパティ直接参照は禁止、必ず `world.setGlare(bool)` 等のメソッド経由とする。`chunks` は rv-world.js 内部実装(§2.4.2)にとどめ、公開フィールドからは外す) |
 | `SH.RVHorses.create(scene, field, sim, course, coatOf)` | rv-horses.js | → `herd = {update(t,dt,pos,vArr,camL,camR), latOf(i), ownRootPos(out), setLowDetail(b), markerSprite}` |
-| `SH.RVCams.createL(course, D, world)` / `SH.RVCams.createR(course, D, world, ownIndex)` | rv-cams.js | → director(`update(ctx)` → `{cam, mode/type, fl, empty,...}`)。THREE.PerspectiveCamera を各自1個所有 |
+| `SH.RVCams.createL(course, D, world)` / `SH.RVCams.createR(course, D, world, ownIndex)` | rv-cams.js | → director(`update(ctx)` → `{cam, mode/type, fl, empty, ownInView,...}`。`ownInView`=自フレームの自馬視野内判定。§2.5.3)。THREE.PerspectiveCamera を各自1個所有 |
 | `SH.RVHud.create(fgCanvas, race, field, sim)` | rv-hud.js | → `hud = {drawLive(ctx), drawTitle, drawReplayMark, drawBoard, drawBanner, layout}`(内部にチップアニメ状態) |
 | `SH.RVQuality.create(renderer, world, herd, opts)` | rv-quality.js | → `quality = {sample(ms), level, viewMode(), force(level), q}` |
 | `SH.isNightRace(race)` | data.js | `race.grade==="WBC" || (race.week>=48 && race.grade==="G1")`(§5) |
@@ -128,8 +128,9 @@ scene
  ├ portable (Group): 発走ゲート(m=0基準・毎レース配置) / 紅白距離ポール(D-200k、lat=+12.6)
  │   / ゴール柱(s=369固定, lat=+13.2, 高4.2m)
  ├ glareFx (Group): 照明塔ハロ/光条Sprite(AdditiveBlending)。stage2で一括 visible=false
+ │   … 内部Groupであり外部へは公開しない。可視切替は `world.setGlare(bool)`(§1.4フラットAPI)経由のみ
  └ horsesRoot (Group): rv-horses が装着(§2.3)
-     ├ 馬体+騎手 InstancedMesh ×~21種 / 白斑 InstancedMesh ×3 / ブロブ影 InstancedMesh ×1
+     ├ 馬体+騎手 InstancedMesh ×34(ノードごとに独立・§2.3.1訂正) / 白斑 InstancedMesh ×3 / ブロブ影 InstancedMesh ×1
      ├ ゼッケン個別 Mesh ×2n / H-9 markerSprite ×1(自馬時のみ)
 ```
 
@@ -148,12 +149,13 @@ loop(now):
       leadM / R = D-leadM / p = leadM/D / rankIdx(posAt降順)
   (2) カメラ更新: dirL.update(ctx) → camL(位置lerp 0.14/注視0.2/FL 0.1、切替はハードカット)
                   dirR.update(ctx) → camR(三脚固定・カット即値)
+      view集約(§2.5.3・A-MINOR3): view.lastOwnInView = (dirL.ownInView || dirR.ownInView) ? view.t : view.lastOwnInView
       両ビュー共通制約チェック(§3.3): 位置距離<12m∧注視内積>0.98 → dirR.forceNext()
   (3) ポーズリグ評価→行列書込(herd.update):
       for i in 0..n-1: lat力学(§6.8) → rig.root配置(course.pos(m+i*0.02, lat[i]))
         → rig.pose(phase[i], running, {v,drive,easeUp}) → rig.root.updateWorldMatrix(false,true)
-        → 各PART_DEF: inst.setMatrixAt(base+k, node.matrixWorld) / ゼッケンMesh.matrix直接コピー
-      全InstancedMesh: instanceMatrix.needsUpdate = true(フレームに1回)
+        → 各PART_DEF・各ノードk: instArr[part][k].setMatrixAt(i, node.matrixWorld)(§2.3.1訂正: ノードごとに独立InstancedMesh・index=馬index) / ゼッケンMesh.matrix直接コピー
+      全 instArr[*][*]: instanceMatrix.needsUpdate = true(フレームに1回)
       markerSprite追従(自馬root+2.5m+浮遊) / ブロブ影行列
   (4) ワールド更新: world.updateVisibility(camL.position, camR.position)(±380m球判定)
       world.applyTone(sOf(camL)) / world.scrollFx(dt)(滝UV・ブラー用走路UV)
@@ -176,9 +178,20 @@ loop(now):
 
 ### 2.3 InstancedMesh 馬システム(rv-horses.js + horse3d.js 拡張、仕様§6.0)
 
+#### 2.3.0 createRig の配置と寸法管理(裁定確定・B-MAJOR1/B-MAJOR2)
+
+- **配置は horse3d.js に確定**: `H3.createRig()` は rv-horses.js ではなく **horse3d.js 内(既存 IIFE の中)に実装**する。rv-horses.js からは `SH.Horse3D.createRig()` を呼ぶだけの薄い呼び出しに留める。
+  - 理由(クロージャ境界): 幾何キャッシュ `geo()`/`G`(horse3d.js 70–72行目)およびマテリアルキャッシュ `matCache`/`mat()` は同ファイルの IIFE 内プライベート変数であり、`SH.Horse3D` として外部公開されていない。createRig をこの IIFE の外(rv-horses.js)に置くと、これらのキャッシュを再利用できず「幾何を再定義してキャッシュを二重化する」か「horse3d.js 側にキャッシュを公開する新規APIを追加する」のいずれかが必要になり、§1.1 が定めた horse3d.js の差分スコープ(**createRig追加+pose第3引数拡張のみ**)を逸脱する。同一クロージャ内に置けば `geo()` をそのまま呼べるため、この最小差分を維持できる。
+- **寸法の二重管理は「解消済みの懸念」として扱う**: `createHorse`(既存)と `createRig`(新設)はどちらもパーツ寸法値を持つが、両者を単一の共有定数へ統合する変更は行わない。
+  - `createHorse` は**レガシー凍結**(2Dフォールバック `use3d` 経路専用。以後無変更)。
+  - `createRig` が**新経路(WebGL主経路)の唯一の正**。初期実装時に `createHorse` の寸法値をそのまま転記するが、転記後は**両者は独立に進化してよい**。
+  - フォールバック(`createHorse` 経由の2D描画)と WebGL主経路(`createRig` 経由)の見た目が完全一致することは要件外である — フォールバックに課される要件は AC-16「(WebGL不可時に)動作すること」のみであり、寸法・見た目の一致は要求されていない。
+  - したがって、両者の寸法値を自動同期する仕組みや、ドリフトを検知するテスト/lintの類は**設けない**。二重管理はリスクではなく設計上許容された分岐として確定する。
+- **RIG_SCALE の適用範囲**: `RIG_SCALE=1.15`(§4.2、仕様§6.1 の実寸化係数)の見直しは**createRig 側(§2.3.2 の `root.scale`)にのみ適用**する。`createHorse` 側(2Dフォールバックの `use3d` 経路)のスケール挙動は変更しない。
+
 #### 2.3.1 パーツ種別一覧(PART_DEFS)
 
-ジオメトリ生成関数は既存 `createHorse` の寸法をそのまま流用(`geo()` キャッシュを共有)。§6.1 の実寸化(体高1.6m/視認スケール1.15)は**リグ root のスケール**で与えるため、パーツ寸法定義は不変。
+ジオメトリ生成関数は既存 `createHorse` の寸法を**初期転記のみ**で流用し、`geo()` キャッシュは createRig 実装(horse3d.js 内)から共有する(§2.3.0)。以後の寸法改修は createRig 側だけで完結してよく、`createHorse` への同期は不要。§6.1 の実寸化(体高1.6m/視認スケール1.15)は**リグ root のスケール**(`RIG_SCALE`、createRig側のみ適用)で与えるため、パーツ寸法定義自体は不変。
 
 | # | part名 | ジオメトリ生成(既存 geo キー/新規) | 個数/頭 | instanceColor | 備考 |
 |---|---|---|---|---|---|
@@ -205,8 +218,7 @@ loop(now):
 | 21 | blazeSnip | Sphere半球キャップ 新規 | 1 | 固定 白 | 鼻端 |
 | 22 | blobShadow | Circle(r1) 新規・y=0.02 | 1 | 固定 黒(opacity0.28) | E-13。接地追従・上下動非追従 |
 
-- InstancedMesh 数 = 22 / パス(+ゼッケン個別 Mesh 2n + markerSprite 1)。§7.1 内訳「≈40」以内。
-- **count = n × 個数/頭**。インスタンス index = `hi * perHorse + k`(固定レイアウト)。
+- **InstancedMesh 数(訂正・B-MINOR5確定)**: 上表の「個数/頭」列は「1頭あたりのノード数」であり、**ノードごとに独立した InstancedMesh を1個持つ**(同一パーツ種別内でも、例えば torsoSph の胴/胸/臀の3ノードはそれぞれ別の InstancedMesh)。各 InstancedMesh の `count = n`(頭数)固定・**インスタンス index = 馬 index(`hi`)のみ**(旧仕様の共有バッファ+`hi*perHorse+k`オフセット方式は廃止)。総 InstancedMesh 数 = Σ(個数/頭)≈36個/パス(+ゼッケン個別 Mesh 2n + markerSprite 1)。§7.1 内訳「≈40」以内、§2.3.2 の「≈36ノード×18頭」とも整合する。
 - マテリアル: パーツ種別ごとに共用 1 個。基調白の `MeshPhongMaterial({shininess:18, specular:弱})`(§6.2)。`vertexColors` 不要 — r147 の `instanceColor` は Lambert/Phong 対応(§6.0)。stage3 で共用マテリアルを Lambert へ差替(§7.2)。
 - **全馬パーツの `frustumCulled = false`**(InstancedMesh の境界球は原点基準でありデュアルカメラで誤カリングするため。馬は常時どちらかのカメラ近傍にいるので実害なし。§6-R2)。
 - `instanceMatrix.setUsage(THREE.DynamicDrawUsage)`。
@@ -215,19 +227,20 @@ loop(now):
 
 ```
 horse3d.js:  H3.createRig() → { root, pose(phase,running,opt), nodes: {torso:[o1,o2,o3], neck:[o], ...} }
-   … createHorse と同一階層・同一寸法。ただし Mesh を持たず Object3D のみ(マテリアル/テクスチャ非生成)。
+   … createHorse と同一階層・寸法は初期転記(§2.3.0、以後は独立に改修可)。Mesh を持たず Object3D のみ(マテリアル/テクスチャ非生成)。
      nodes は PART_DEFS と同順のノード配列表。root はシーンに add しない(updateWorldMatrix は独立動作)。
+     horse3d.js の同一IIFE内実装のため geo()/G キャッシュをそのまま参照する(§2.3.0のクロージャ境界理由)。
 
 rv-horses.js: リグは全馬で 1 体を共有し、毎フレーム n 回評価(§7.1「リグ1体をn回評価」):
   for hi in 0..n-1:
     root.position/quaternion ← course.pos(m_hi + hi*0.02, lat[hi]) / heading   (§6.8 Z-fight回避)
-    root.scale = RIG_SCALE(=1.15、§6.1)
+    root.scale = RIG_SCALE(=1.15、§6.1。createRig側のみに適用 — §2.3.0)
     pose(phase[hi], running_hi, {v:v_hi, drive, easeUp})
     root.updateWorldMatrix(false, true)          // 全ノードの matrixWorld を確定
     for part in PART_DEFS: for k,node of nodes[part]:
-       inst[part].setMatrixAt(hi*per[part]+k, node.matrixWorld)
+       instArr[part][k].setMatrixAt(hi, node.matrixWorld)   // パートのノードごとに独立したInstancedMesh(count=n)。index=馬index(hi)のみ(§2.3.1訂正)
     zekkenMesh[hi*2].matrix.copy(nodes.cloth[0].matrixWorld)  // 個別Mesh(matrixAutoUpdate=false)
-  全 inst: instanceMatrix.needsUpdate = true     // フレーム1回。2パスで共有
+  全 instArr[*][*]: instanceMatrix.needsUpdate = true     // フレーム1回・全InstancedMeshぶん。2パスで共有
 ```
 
 - 行列書込 ≈36ノード×18頭 ≒ 650 回/フレーム(§6.0 想定どおり)。一時 Matrix4 等は再利用しGCゼロ。
@@ -300,12 +313,12 @@ buildThemes():
         後述の instanceMesh を チャンク単位に分割生成する)
 ```
 
-- **チャンク化の実装**: テーマ内の InstancedMesh は「チャンク(50m)×パーツ種」でなく**テーマ単位で 1 個**とし、大物(スタンド/橋/壁/丘)のみ個別 Mesh をチャンク Group に入れる。カリングは 2 段: (a) 個別 Mesh・チャンク Group → `updateVisibility(camLpos, camRpos)` が境界球中心とカメラ位置の距離 ≤380m(いずれか)で `visible` 切替(±350m窓+マージン、§4.1)。(b) InstancedMesh(竹・木・岩等) → `frustumCulled=true` のまま(テーマ全体境界球を明示設定)+ 遠テーマは (a) と同式でテーマごと visible 切替。描画オブジェクト ≤150/ビューポート(§7.1)をこの2段で満たす。
+- **チャンク化の実装**: テーマ内の InstancedMesh は「チャンク(50m)×パーツ種」でなく**テーマ単位で 1 個**とし、大物(スタンド/橋/壁/丘)のみ個別 Mesh をチャンク Group に入れる。この `chunks`(テーマ→チャンクGroup登録表)は rv-world.js 内部実装にとどまり、`world.updateVisibility()` が内部で参照するのみで、公開 `world` オブジェクト(§1.4フラットAPI)のフィールドとしては露出しない。カリングは 2 段: (a) 個別 Mesh・チャンク Group → `updateVisibility(camLpos, camRpos)` が境界球中心とカメラ位置の距離 ≤380m(いずれか)で `visible` 切替(±350m窓+マージン、§4.1)。(b) InstancedMesh(竹・木・岩等) → `frustumCulled=true` のまま(テーマ全体境界球を明示設定)+ 遠テーマは (a) と同式でテーマごと visible 切替。描画オブジェクト ≤150/ビューポート(§7.1)をこの2段で満たす。
 - 可搬物(§4.1): 発走ゲート(既存 drawGates 様式の 3D 化: 枠Box×n、開扉は前面パネルの `open=min(1,t*3)` スライド)を `course.pos(-1.2, gateLat(i), ·)` に毎レース配置。紅白ポールは `for k=200;k<D;k+=200` の `m=D-k`、`lat=+12.6`(既存踏襲・§4.4)。
 
 ### 2.5 カメラシステム(rv-cams.js、仕様§3)
 
-各 director は `THREE.PerspectiveCamera` を 1 個ずつ所有(**左右で絶対に共有しない** — aspect/fov 書換リークの根絶、§6-R1)。`update(ctx)` の `ctx = {t, p, R, leadM, packC, ownM, D, dt, lShotIsAway}`。
+各 director は `THREE.PerspectiveCamera` を 1 個ずつ所有(**左右で絶対に共有しない** — aspect/fov 書換リークの根絶、§6-R1)。`update(ctx)` の `ctx = {t, p, R, leadM, packC, ownM, D, dt, lShotIsAway, lastOwnInView}`。`lastOwnInView` は前フレームまでに raceview3d が集約した値(§2.5.3)で、dirR の(c)判定にのみ使う。両 director とも `update(ctx)` は自フレームの `ownInView` 判定を戻り値で返すのみで、`lastOwnInView` 自体を書き換えない。
 
 #### 2.5.1 DirectorL(左・可変追走)状態機械
 
@@ -319,32 +332,50 @@ desiredShotL(ctx):
   if p < 0.08         → L1
   if p < 0.25         → L2   // 内部タイマ: 3sim秒ごとに 引き/寄り をトグル
   if p < 0.45         → L3
-  if p < 0.55         → (l4Time < 2.5 ? L4 : L6)   // L4はp≥0.45から先頭2.5sim秒のみ
+  if p < 0.55         → (!l4Done ? L4 : L6)   // l4Done ラッチ(下記)で L4 再訪を禁止。以前の l4Time<2.5 直接比較は廃止(A-MAJOR1)
   if p < 0.75         → L6
   else                → L7
 
 update(ctx):
   want = desiredShotL(ctx)
   if want != shot: shot = want; lerp状態リセット(即値代入); shotTimer=0
-  shotTimer += ctx.dt; if shot==L4: l4Time += ctx.dt
+  shotTimer += ctx.dt
+  if shot==L4:
+    l4Time += ctx.dt
+    if l4Time >= 2.5: l4Done = true        // (a) L4 を先頭2.5sim秒消化しきったら以降L4へ戻らない
+  if shot==L5: l4Done = true               // (b) L5へ遷移した時点でも即ラッチ(L5はL4より優先度が高く、
+                                            //     L4を2.5秒未満で打ち切って移った場合でも再訪を防ぐ)
   {posSpec, tgtSpec, fl, sway} = L_TABLE[shot](ctx)      // §4.3 カメラ定義テーブル
   camPos=lerp(camPos,posSpec,0.14); camTgt=lerp(camTgt,tgtSpec,0.2); curFL+=(fl-curFL)*0.1
   cp = camPos + (0, sin(t*1.9)*sway, cos(t*1.3)*sway*0.5)          // 既存sway式
   camera.position=cp; camera.lookAt(camTgt); camera.fov=2atan(360/curFL)deg; updateProjectionMatrix
   L5補正: leadMのlap-s が s=1040±250 なら camTgt を橋中心へ0.5合成(§4.2注記)
+  ownInView = ctx.ownM!=null && screenXofL(camera, ctx.ownM)∈[0,VW] && viewZofL(camera, ctx.ownM)>0  // 簡易フラスタム判定(A3): 画面x∈[0,VW]かつz>0(カメラ前方)
+  return {camera, mode:shot, fl:curFL, ownInView}          // ownInView はdirLが自ら判定して返すのみで、lastOwnInViewへの書込は行わない(§2.5.3 view集約)
 ```
 
+- `l4Done`(初期値 `false`)/`l4Time`(初期値 `0`)は director 生成時に確定する内部状態。ラッチ導入前の実装は「`p<0.55` の間、`l4Time<2.5` なら常にL4」という**時間だけの判定**だったため、L5(`p∈[0.47,0.53)`)を経由して `p` が一時的に 0.45〜0.47 側へ戻る、あるいは同一 `p<0.55` 窓内で `l4Time` が未達のまま再評価されるケースで **L6→L4 の逆戻り**が起こり得た。`l4Done` ラッチはショットの再訪自体を禁止することで、02-spec §3.1 の「L4/L5 は上限で自動的に L6 へカット」および「L4 は `p≥0.45` から先頭2.5 sim秒のみ(L5窓 `p≥0.47` 開始で打切り、残りは L6)」= **L4→L5→L6 の一方向遷移**という確定事項と一致する(L5直後は常にL6という結果も、`l4Done=true` により保証される)。
 - L8 は既存 `computeCam` の stretch/goal 2 段(残130mでgoalへ)と可変望遠 `clamp(dist*42,950,15000)` をそのまま移植(§3.1表)。
 - 1200m の L7 スキップ(R≤400 が p=0.667 で先行)はチェーン順で自然に成立。
 
 #### 2.5.2 DirectorR(右・定点カメラ列)状態機械
 
-状態: `{k(定点index), type, rrCursor(巡回位置), emptySince, lastOwnInView, ownHold, camIndex}`。カメラは**三脚固定**(lerpなし・sway 0。R-side/自馬パンは注視のみ毎フレーム更新)。
+状態: `{k(定点index), type, rrCursor(巡回位置), emptySince, ownHold, camIndex}`。カメラは**三脚固定**(lerpなし・sway 0。R-side/自馬パンは注視のみ毎フレーム更新)。`lastOwnInView` は dirR 単独の状態ではなく、dirL/dirR がそれぞれ返す `ownInView`(自フレームの自馬視野内判定)を raceview3d 側で統合した `view.lastOwnInView` に一本化する(§2.5.3)。
 
 - 定点位置: `Mcam(k) = k*200 + 40`(CAM_SPACING=200 / CAM_OFFSET=40)。型はラウンドロビン [R-front → R-side → R-diag] を基本に、`Mcam(k)` が名物 m(§3.4 逆写像で得る石橋 s=1040・スタンド s=355 の各 m、および残600mポール m=D−600)の ±100m 内なら **R-name** に強制。`R≤200` 圏は **R-goal** 固定。
 - カット条件と優先度(§3.2: e > d > c > a > b)は §3.1 擬似コードに全文を示す。
 - `empty` の定義(§3.2): 注視前方固定型 = `leadM < Mcam(k) - 140`、パン追従型(R-side/自馬パン) = 常に false。
 - 両ビュー制約(§3.3): (i) 位置距離<12m∧注視方向内積>0.98 → `forceNext()`(次定点へ即カット)。(ii) 左が L4/L5 の間は条件(a)のカットを 1 sim 秒抑止。
+
+#### 2.5.3 `lastOwnInView` 更新責務(A-MINOR3・確定)
+
+- DirectorL/DirectorR は**それぞれ自フレームの自馬視野内判定**を `update(ctx)` の戻り値 `ownInView`(bool)として返すだけで、`lastOwnInView`/`view.lastOwnInView` へは直接書き込まない(dirR が単独で保持していた旧設計の `lastOwnInView` 状態は廃止 — §2.5.2)。
+- 統合(view集約方式)は `raceview3d.js` が担う。§2.2 パイプライン (2) カメラ更新の直後、`publishState`(パイプライン (8))より前に以下を実行する:
+  ```
+  view.lastOwnInView = (dirL.ownInView || dirR.ownInView) ? ctx.t : view.lastOwnInView
+  ```
+- dirL 側の判定式(カメラフラスタム簡易判定): `screenXofL(camera, ownM)∈[0,VW] && viewZofL(camera, ownM)>0`(画面x∈[0,VW]かつz>0。§2.5.1 update() 末尾)。dirR 側は前方固定型=視野角×距離の簡易判定、`type==R_OWNPAN`=常に true(§3.1)。
+- これにより AC-23(自馬が一定間隔以内にどちらかのビューへ映る)の判定は、両 director の独立判定を単一の統合点でのみ確定させる一元管理になる(§7.1 `ownInViewSince` の供給源と一致)。
 
 ### 2.6 HUD レンダラ(rv-hud.js、仕様§2)
 
@@ -355,7 +386,7 @@ update(ctx):
 | 1 | `clear + drawSeparator` | 全消去 → x=1278..1282 の 4px 暗色 `#0a0e12` 縦帯 | ライブ・デュアル時のみ(stage4/全幅時は省略) |
 | 2 | `drawTopBand(α)` | H-1 緑グラデ帯(0,0,2560,60)+下端明線 | `α = hudAlpha`(§2.0) |
 | 3 | `drawDistSlide(α, R)` | H-2 白抜き数字+ポールアイコン、§3.2 擬似コードの x 計算 | hudAlpha、`R≤0`で非表示 |
-| 4 | `drawFormation(α, rankIdx)` | H-3 盾チップ(仕様の shield パス転記)+ H-4 自馬タグ(y∈[0,20]専用ゾーン・1.15倍) | hudAlpha、スライドアニメ§3.3 |
+| 4 | `drawFormation(α, rankIdx, t, xNum, numW)` | H-3 盾チップ(仕様の shield パス転記)+ H-4 自馬タグ(y∈[0,20]専用ゾーン・1.15倍)。`xNum`/`numW` は直前の `drawDistSlide` から渡し、cw を導出(§3.3) | hudAlpha、スライドアニメ§3.3 |
 | 5 | `drawLegend()` | H-5 左右分担グリッド(6列×⌈n/6⌉行、行高 rh=clamp(⌊88/Rrow⌋,34,44)、yLegTop公開) | 常時(t≥発走前から) |
 | 6 | `drawElapsed(t)` | H-6 `fmtElapsed`(40, yLegTop-52) | 常時(t≥0) |
 | 7 | `drawPass1000(t)` | H-7 見出し+赤帯 `fmtPass`(40, yLegTop-130)。D≥1600のみ。保持10sim秒+0.5sフェード | passTime1000m確定後 |
@@ -367,7 +398,7 @@ update(ctx):
 
 - **hudPhase 制御(§2.0)**: `hudPhase = p<0.085 ? "pre" : p<0.105 ? "fadein" : "on"`。`u=(p-0.085)/0.020`、`hudAlpha = pre?0 : on?1 : 1-(1-u)²`(ease-out)。対象 = H-1/H-2/H-3(+H-4)/H-8。H-5/H-6 は発走時から、H-7/H-9/H-10 は各自トリガ(§2.0)。
 - 新設フォーマッタ: `fmtElapsed(sec)` → `'03`/`1'15`(分0省略・秒切捨て2桁0詰め)。`fmtPass(sec)` → `'58.7`(`'ss.d`)。掲示板は `SH.RV2D.fmtTime` を使用(既存様式)。
-- 全枠色は `SH.WAKU_COLORS`/`SH.WAKU_TEXT` のみを参照(AC-6)。H-2 と H-3 の非重複は「H-3 左端 ≥ xNum+数字幅+40、干渉時 cw 縮小」(§2.1)を drawFormation 側で毎フレーム保証。
+- 全枠色は `SH.WAKU_COLORS`/`SH.WAKU_TEXT` のみを参照(AC-6)。H-2 と H-3 の非重複は `cw = clamp(floor((2540-(xNum+numW+40))/Nchip)-gap, 30, 46)`(§3.3 確定式)を drawFormation 側で毎フレーム保証。
 
 ### 2.7 E-15 品質コントローラ(rv-quality.js、仕様§7.2)
 
@@ -385,15 +416,16 @@ sample(ms):
 
 setLevel(v):                       // 昇降とも「全段を宣言的に適用」(差分適用の状態漏れ防止)
   level=v; console.info("[E-15] quality→", v)
-  renderer.shadowMap.enabled   = (v<1) && !night          // stage1: 影off(昼のshadowMapのみ)
-  world.glareFx.visible        = (v<2); world.setFogSimple(v>=2)   // stage2
-  herd.setLowDetail(v>=3); world.setDensity(v>=3 ? 0.5 : 1)        // stage3(共有ジオメトリ/マテリアル一括差替+間引き)
+  world.setShadows(v<1 && !world.night)                    // stage1: 影off(昼のshadowMapのみ)。renderer.shadowMap.enabled は world 内部で保持
+  world.setGlare(v<2); world.setFogSimple(v>=2)             // stage2(旧 world.glareFx.visible=... 直接代入は廃止 — B-MAJOR3)
+  herd.setLowDetail(v>=3); world.setDensity(v>=3 ? 0.5 : 1) // stage3(共有ジオメトリ/マテリアル一括差替+間引き)
   q = [1.0,1.0,0.75,0.6,0.5][v]; renderer.setSize(2560*q,720*q,false)
-  viewModeSingle = (v===4)                                 // stage4: 右パス停止(raceview3dが参照)
+  viewModeSingle = (v===4)                                 // stage4: 右パス停止(raceview3dが参照)。HUDレイアウトは不変(§2.6注記)
 ```
 
-- `herd.setLowDetail(true)`: 各 PART_DEFS の低セグメント版ジオメトリ(初回要求時に生成しキャッシュ)へ `inst.geometry` を差替(≈22回)+共用マテリアルを Phong→Lambert へ差替(§6.1/6.2)。復帰は逆差替。
+- `herd.setLowDetail(true)`: 各 PART_DEFS の低セグメント版ジオメトリ(初回要求時に生成しキャッシュ。パーツ種別ごとに1個、≈22種)を、対応する全ノードの `instArr[part][k].geometry` へ差替(≈36回・§2.3.1訂正の個数と一致)+共用マテリアルを Phong→Lambert へ差替(§6.1/6.2)。復帰は逆差替。
 - `world.setDensity(0.5)`: 竹/木/岩 InstancedMesh の `count` を半減(index前半を残す)、生垣インスタンス半減、観客テクスチャ半密度版へ swap。復帰は count 復元。
+- **stage4(`viewModeSingle`)時の HUD(A-MINOR5・確定)**: `viewModeSingle` は §2.2 パイプライン (5) の **3D描画のみ**に影響し(2パス→camLのみ全幅 `2560q×720q`)、**HUDレイアウトは一切変更しない**(凡例 H-5・チップ H-3・自馬タグ H-4・H-8 などは通常のデュアル時と同じ座標のまま描画。§2.6 表の 1 行目 `drawSeparator` のみ「dual時のみ」条件で自然に非表示になる)。理由: (a) stage4 は性能逼迫時の一時的な縮退であり常態ではないため、専用HUDレイアウトを別に持つと縮退復帰時の再計算コストとちらつきを招く、(b) HUD は fgCanvas 2560×720 固定で3D描画パイプラインと独立しているため、3D側のビュー数の変化はHUD座標系に影響しない。
 
 ### 2.8 `SH._rvState` 更新の一元化(仕様§7.3)
 
@@ -422,7 +454,9 @@ setLevel(v):                       // 昇降とも「全段を宣言的に適用
 ### 3.1 定点カメラ選択/再同期(DirectorR.update)
 
 ```
-update(ctx):  // ctx: {t, dt, leadM, R, D, ownM, lShotIsAway(=L4|L5), forceNextFlag}
+update(ctx):  // ctx: {t, dt, leadM, R, D, ownM, lShotIsAway(=L4|L5), forceNextFlag, lastOwnInView}
+  // ctx.lastOwnInView = 前フレームまでに raceview3d が集約した view.lastOwnInView(§2.5.3)。
+  // dirR はこれを読むだけで、自分の ownInView 判定結果を書き戻すことはしない。
   // --- 優先度 e > d > c > a > b (§3.2) ---
   // (e) ゴール固定
   if ctx.R <= 200 and type != R_GOAL:
@@ -430,7 +464,7 @@ update(ctx):  // ctx: {t, dt, leadM, R, D, ownM, lShotIsAway(=L4|L5), forceNextF
   elif type != R_GOAL:
     advanced = false
     // (c) 自馬フレームイン保証(25sim秒経過で次カットを自馬パンに)
-    if ownExists and (ctx.t - lastOwnInView) >= 25 and ownHold <= 0:
+    if ownExists and (ctx.t - ctx.lastOwnInView) >= 25 and ownHold <= 0:
       k = ceil((ctx.leadM + 30 - 40) / 200)        // 前方定点(§3.2 再同期式と同形)
       type = R_OWNPAN(R-side扱い); ownHold = 2.5; setFixedCam(k, lat=+22, y=3.2, FL=1400)
       advanced = true
@@ -455,8 +489,8 @@ update(ctx):  // ctx: {t, dt, leadM, R, D, ownM, lShotIsAway(=L4|L5), forceNextF
   // 注視更新(パン追従型のみ毎フレーム)
   if type in {R_SIDE, R_OWNPAN}: camera.lookAt(pos(type==R_OWNPAN? ctx.ownM : ctx.leadM-8, 0, 1.6))
   empty = (type in 前方固定型) ? (ctx.leadM < Mcam(k) - 140) : false
-  if 自馬が視野内(FOV×距離の簡易判定 or type==R_OWNPAN): lastOwnInView = ctx.t
-  return {camera, type, camIndex:k, empty, fl}
+  ownInView = (type in 前方固定型) ? 自馬が視野内(FOV×距離の簡易判定) : (type==R_OWNPAN ? true : 自馬が視野内(FOV×距離の簡易判定))
+  return {camera, type, camIndex:k, empty, fl, ownInView}   // lastOwnInViewへは書かない。統合はraceview3d側(§2.5.3)
 
 cutTo(k2):
   k = k2; lastCutT = ctx.t
@@ -482,20 +516,23 @@ drawDistSlide(α, R):
 ### 3.3 隊列チップ順位スライド(H-3、仕様§2.1)
 
 ```
-状態: chipAnim[runnerIdx] = {x(現表示x), from, to, t0} を rv-hud が保持
-drawFormation(α, rankIdx, t):
-  Nchip = min(n, 8); shown = rankIdx[0..Nchip)
-  cw = clamp((2540-(1580+70))/Nchip - 6, 30, 46)     // 領域超過時自動縮小
-  cw = min(cw, (2540 - (xNum+numW+40) - 2540域の調整))  // H-2非重複(§2.6)
+状態: chipAnim[runnerIdx] = {x(現表示x), alpha(0..1), from, to, t0} を rv-hud が保持
+drawFormation(α, rankIdx, t, xNum, numW):        // xNum/numW は同フレームの H-2(§3.2)から渡される
+  Nchip = min(n, 8); shown = rankIdx[0..Nchip); gap = 6
+  // H-3/H-2非重複(§2.6・A-MINOR4で確定): 左端 = 2540 − Nchip·(cw+gap) ≥ xNum+numW+40 を cw について解いた式
+  cw = clamp(floor((2540 - (xNum + numW + 40)) / Nchip) - gap, 30, 46)
   for slot in 0..Nchip-1:
-    i = rankIdx[slot]; targetX = 2540 - (slot+1)*(cw+6) + 6   // 右端=1位、左へ
+    i = rankIdx[slot]; targetX = 2540 - (slot+1)*(cw+gap) + gap   // 右端=1位、左へ
     a = chipAnim[i]
-    if a.to != targetX: a.from = a.x; a.to = targetX; a.t0 = t     // 順位変動検知
-    u = clamp((t - a.t0)/0.35, 0, 1); a.x = a.from + (a.to-a.from)*(1-(1-u)^2)  // ease-out 0.35sim秒
+    if a == undefined:                                             // 新規イン(A-MINOR4)
+      a = chipAnim[i] = {x: 2540+cw, alpha: 0, from: 2540+cw, to: targetX, t0: t}  // 初期位置=右端画面外(x=2540+cw)、alpha=0から開始
+    else if a.to != targetX: a.from = a.x; a.to = targetX; a.t0 = t     // 順位変動検知
+    u = clamp((t - a.t0)/0.35, 0, 1); ease = 1-(1-u)^2                  // 0.35sim秒 ease-out(位置・alpha共通)
+    a.x = a.from + (a.to-a.from)*ease; a.alpha = min(1, ease)
     own = (runners[i].kind==="owned")
-    drawShieldChip(a.x, cy=20, cw, chH = own?38*1.15:38, waku色, 馬番, α)  // shieldパスは§2.1転記
-    if own: drawOwnTag(a.x, y=0, w=cw, h=20, text=String(slot+1), α)       // H-4 専用ゾーン
-  // ウィンドウ外へ落ちた馬の chipAnim は破棄(次回インは右端フェードイン)
+    drawShieldChip(a.x, cy=20, cw, chH = own?38*1.15:38, waku色, 馬番, α*a.alpha)  // shieldパスは§2.1転記
+    if own: drawOwnTag(a.x, y=0, w=cw, h=20, text=String(slot+1), α*a.alpha)       // H-4 専用ゾーン
+  // ウィンドウ外へ落ちた馬の chipAnim は破棄(次回インは上記の新規イン処理で右端画面外から再フェードイン)
 ```
 
 ### 3.4 テーマの m↔s 逆写像(名物定点・L5補正・区間トーン共用)
@@ -547,7 +584,7 @@ msOfS(sStar, margin=200):
 view = {
   // 公開(既存互換)
   t: -5.4, speed: 3, raf: 0, done: false, phase: "live",   // live|replay|board
-  cancel(),                                                 // rAF停止+破棄
+  cancel(),                                // rAF停止 → world.dispose()(§1.4フラットAPI。テクスチャ/ジオメトリ一括解放)+ renderer破棄
   // 内部
   D, n, course, night,                       // 基本
   frames, dtSim, posAt(t), vAt(t),           // シム補間(既存式)
@@ -559,7 +596,7 @@ view = {
   quality,          // SH.RVQuality(.level/.q/.viewModeSingle)
   hudAlpha, hudPhase,                       // §2.0(hud が算出し view が保持)
   passTime1000m: null, passHudUntil: 0,     // H-7(leadM≥1000 到達フレームで補間確定)
-  lastOwnInView: null, ownIndex,            // AC-23(dirR と共有)
+  lastOwnInView: null, ownIndex,            // AC-23。dirL.ownInView || dirR.ownInView をview集約(raceview3d、§2.5.3)で毎フレーム統合
   storyIdx, lastStory,                      // 実況(既存踏襲)
   canvases: { bg, gl, fg }, octx,           // レイヤ(§1.1)
 }
@@ -670,6 +707,7 @@ PART_DEFS = [ {key:"torsoSph", geo:geoTorso, per:3, color:"coat"}, ... ]  // §2
 | R9 | **2560×720 キャンバスのモバイル負荷**(fill rate/メモリ) | 初期 q=min(DPR,1.0)・モバイルは stage1 開始(§1.4)。fgCanvas は等倍固定で再割当なし |
 | R10 | **sRGB 出力と instanceColor の色ずれ**(AC-6 の一貫性) | HUD/凡例/掲示板の枠色は 2D 側(正確)。3D 側の帽色等は `THREE.Color(hex).convertSRGBToLinear()` で近似を統一。照明下の色変化は「一貫」の判定対象がHUD群であるため許容 |
 | R11 | **タイトル/掲示板の再実装ずれ**(P-1/P-5 無退行) | 既存関数の座標値を転記し `translate(640,0)` のみ(§2.9)。ロジック変更禁止をコードコメントで明示 |
+| R12 | **WebGLコンテキストリーク**(週次連続観戦でレース遷移を繰り返すとブラウザのコンテキスト上限に達し以後のレースが真っ黒/クラッシュになる) | `create()` 失敗時(§1.2)・`view.cancel()` 時(§4.1)のいずれも `renderer.dispose()`+`renderer.forceContextLoss()`+生成済みcanvas除去+テクスチャ/ジオメトリdispose を徹底。`world.dispose()`(§1.4フラットAPI)がテーマ/馬/HUD由来のテクスチャ・ジオメトリを一括解放する単一窓口を持つ |
 
 ---
 
@@ -709,6 +747,7 @@ PART_DEFS = [ {key:"torsoSph", geo:geoTorso, per:3, color:"coat"}, ... ]  // §2
 | `SH._rvDebug`(任意・開発補助) | `{drawCalls, triangles, emaMs, emptySince, cutLog[]}` を毎フレーム更新。`_rvState` の仕様固定フィールドとは分離 | 性能予算の実測(§7.1) |
 
 - AC のログ判定はすべて `SH._rvState` のポーリング(テストハーネス側)で行える: 例 AC-4 = `remainM` と `distShown` の一致±100m、AC-5 = `rankOrder` とチップ順(hud 内部順は rankOrder 起点のため恒等)、AC-10 = `passTime1000m` 確定から `passHudVisible` が false になるまでの `elapsedSec` 差が 8〜12、AC-2 = `camR.camIndex` の変化回数と `camR.empty` の遷移、AC-23 = `ownInViewSince` の更新間隔 ≤30。
+- **AC-10 判定範囲の共有(A-MINOR6・確定)**: AC-10(H-7 通過タイム表示)は 02-spec H-7 の確定事項により **`D≥1600`(`PASS_MIN_D`、§4.2)のレースのみが判定対象**。`D<1600` では `passTime1000m`/`passHudVisible` は終始 `null`/`false` のままであり(§2.6 表7行目「D≥1600のみ」)、これはテストハーネス側と共有すべき既知仕様である — `D<1600` のレースで AC-10 を判定しようとしないこと、をテスト設計時の前提として明記する。
 
 ---
 
