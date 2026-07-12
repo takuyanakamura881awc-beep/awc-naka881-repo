@@ -38,24 +38,52 @@
     return "#" + c.getHexString();
   }
 
-  // 青地・白数字ゼッケン(§6.3): 128×128、地#1c4f9e、白縁、白数字、下部に様式的飾り
-  function zekkenTexture(gate) {
-    const cv = document.createElement("canvas"); cv.width = 128; cv.height = 128;
+  // ---- 青地・白数字ゼッケン番号アトラス(§2.3.4(ii)採用・WS2-A MAJOR解消)----
+  //  ・512×512 に 6列×3行=18タイル(馬番 1〜18)を1枚生成しモジュールキャッシュ。
+  //    馬番は全レース共通(1〜18)なので週次連続再生成は起きない(WS2-B 解消)。
+  //  ・ゼッケンは頭数ぶんの個別 Mesh(2n DC)を廃し、共有アトラス+焼込UVの
+  //    単一動的マージメッシュ(1 DC)へ。draw call を頭数非依存化(発走ピーク解消)。
+  //  ・onBeforeCompile(R4リスク)に依存せず UV を頂点へ焼き込む方式=シェーダ非依存で堅牢。
+  const ATLAS_COLS = 6, ATLAS_ROWS = 3, ATLAS_PX = 512;
+  let _zekAtlas = null;
+  function zekkenAtlas() {
+    if (_zekAtlas) return _zekAtlas;
+    const cv = document.createElement("canvas"); cv.width = ATLAS_PX; cv.height = ATLAS_PX;
     const c = cv.getContext("2d");
-    c.fillStyle = "#1c4f9e"; c.fillRect(0, 0, 128, 128);
-    c.strokeStyle = "#ffffff"; c.lineWidth = 7; c.strokeRect(5, 5, 118, 118);
-    c.fillStyle = "#ffffff"; c.font = "bold 74px sans-serif";
-    c.textAlign = "center"; c.textBaseline = "middle";
-    c.fillText(String(gate), 64, 56);
-    // 下部の判読不能な飾り文字列(実在表記の複製をしない・様式のみ)
-    c.font = "9px sans-serif"; c.globalAlpha = 0.7;
-    c.fillText("■ — □ — ■", 64, 110);
-    c.globalAlpha = 1;
-    const t = new THREE.CanvasTexture(cv);
-    return t;
+    const tw = ATLAS_PX / ATLAS_COLS, th = ATLAS_PX / ATLAS_ROWS;
+    for (let g = 1; g <= ATLAS_COLS * ATLAS_ROWS; g++) {
+      const ti = g - 1, col = ti % ATLAS_COLS, row = Math.floor(ti / ATLAS_COLS);
+      const x = col * tw, y = row * th;
+      c.fillStyle = "#1c4f9e"; c.fillRect(x, y, tw, th);
+      c.strokeStyle = "#ffffff"; c.lineWidth = 5; c.strokeRect(x + 4, y + 4, tw - 8, th - 8);
+      c.fillStyle = "#ffffff"; c.font = "bold 92px sans-serif";
+      c.textAlign = "center"; c.textBaseline = "middle";
+      c.fillText(String(g), x + tw / 2, y + th * 0.42);
+      // 下部の判読不能な飾り(実在表記の複製をしない・様式のみ)
+      c.font = "12px sans-serif"; c.globalAlpha = 0.7;
+      c.fillText("■ — □ — ■", x + tw / 2, y + th * 0.82); c.globalAlpha = 1;
+    }
+    _zekAtlas = new THREE.CanvasTexture(cv);
+    return _zekAtlas;
   }
-  // H-9 マーカー(§2.3.5): 96×112、発光黄・下向き五角形ピン・馬番
+  // gate → タイルUV矩形(周囲を微小 inset してタイル間ブリードを回避)
+  function zekkenUV(gate) {
+    const ti = ((gate - 1) % (ATLAS_COLS * ATLAS_ROWS)), col = ti % ATLAS_COLS, row = Math.floor(ti / ATLAS_COLS);
+    const e = 0.003;
+    return {
+      uMin: col / ATLAS_COLS + e, uMax: (col + 1) / ATLAS_COLS - e,
+      vTop: 1 - row / ATLAS_ROWS - e, vBot: 1 - (row + 1) / ATLAS_ROWS + e,
+    };
+  }
+
+  // H-9 マーカー(§2.3.5): 96×112、発光黄・下向き五角形ピン・馬番。gate毎にモジュールキャッシュ(WS2-B解消・最大18枚)
+  const _markerCache = {};
   function markerTexture(gate) {
+    if (_markerCache[gate]) return _markerCache[gate];
+    _markerCache[gate] = _buildMarker(gate);
+    return _markerCache[gate];
+  }
+  function _buildMarker(gate) {
     const cv = document.createElement("canvas"); cv.width = 96; cv.height = 112;
     const c = cv.getContext("2d");
     c.clearRect(0, 0, 96, 112);
@@ -155,23 +183,42 @@
     shadowMesh.renderOrder = -1;
     parent.add(shadowMesh);
 
-    // ---- ゼッケン(個別 Mesh 2枚/頭・matrixAutoUpdate=false)----
-    const zek = []; // [hi*2 + side]
+    // ---- ゼッケン = 共有アトラス+焼込UVの単一動的マージメッシュ(1 DC・頭数非依存)----
+    //  2n枚の四辺形(各馬2枚=左右)を1本の BufferGeometry に統合。UVは gate タイルへ焼込、
+    //  頂点座標は毎フレーム cloth ノードのワールド行列で更新(§2.3.4(ii)採用)。
+    const QUADS = n * 2;
+    const zekPos = new Float32Array(QUADS * 4 * 3);
+    const zekUV = new Float32Array(QUADS * 4 * 2);
+    const zekIdx = new Uint16Array(QUADS * 6);
+    // 四辺形ローカル4隅(cloth = PlaneGeometry(0.42,0.40) と同寸)
+    const ZC = [[-0.21, 0.20], [0.21, 0.20], [0.21, -0.20], [-0.21, -0.20]];
     for (let hi = 0; hi < n; hi++) {
-      const tex = zekkenTexture(indiv[hi].gate); texList.push(tex);
-      const zmat = new THREE.MeshLambertMaterial({ map: tex, side: THREE.DoubleSide }); matList.push(zmat);
+      const uv = zekkenUV(indiv[hi].gate);
+      const uvC = [[uv.uMin, uv.vTop], [uv.uMax, uv.vTop], [uv.uMax, uv.vBot], [uv.uMin, uv.vBot]];
       for (let side = 0; side < 2; side++) {
-        const zm = new THREE.Mesh(geos.cloth, zmat);
-        zm.matrixAutoUpdate = false; zm.frustumCulled = false;
-        parent.add(zm);
-        zek.push(zm);
+        const q = hi * 2 + side;
+        for (let cc = 0; cc < 4; cc++) { zekUV[(q * 4 + cc) * 2] = uvC[cc][0]; zekUV[(q * 4 + cc) * 2 + 1] = uvC[cc][1]; }
+        const b = q * 4;
+        zekIdx[q * 6] = b; zekIdx[q * 6 + 1] = b + 1; zekIdx[q * 6 + 2] = b + 2;
+        zekIdx[q * 6 + 3] = b; zekIdx[q * 6 + 4] = b + 2; zekIdx[q * 6 + 5] = b + 3;
       }
     }
+    const zekGeo = new THREE.BufferGeometry();
+    const zekPosAttr = new THREE.BufferAttribute(zekPos, 3); zekPosAttr.setUsage(THREE.DynamicDrawUsage);
+    zekGeo.setAttribute("position", zekPosAttr);
+    zekGeo.setAttribute("uv", new THREE.BufferAttribute(zekUV, 2));
+    zekGeo.setIndex(new THREE.BufferAttribute(zekIdx, 1));
+    // 番号は常時判読を優先し unlit(MeshBasic)+両面。アトラスは共有=disposeしない(texListに入れない)
+    const zekMat = new THREE.MeshBasicMaterial({ map: zekkenAtlas(), side: THREE.DoubleSide }); matList.push(zekMat);
+    const zekMesh = new THREE.Mesh(zekGeo, zekMat);
+    zekMesh.frustumCulled = false; ownGeoList.push(zekGeo);
+    parent.add(zekMesh);
+    const _zv = new THREE.Vector3();
 
-    // ---- H-9 自馬マーカー(自馬出走時のみ)----
+    // ---- H-9 自馬マーカー(自馬出走時のみ)。テクスチャは gate 毎キャッシュ(disposeしない)----
     let markerSprite = null;
     if (ownIndex >= 0) {
-      const mtex = markerTexture(runners[ownIndex].gate); texList.push(mtex);
+      const mtex = markerTexture(runners[ownIndex].gate);
       const smat = new THREE.SpriteMaterial({ map: mtex, transparent: true, depthTest: false, depthWrite: false, fog: false });
       matList.push(smat);
       markerSprite = new THREE.Sprite(smat);
@@ -194,6 +241,7 @@
     const _pos = new THREE.Vector3();
     const ownWorld = new THREE.Vector3();
     let hasOwnWorld = false;
+    let blazeHidden = false;   // stage3 で白斑を落とす(§2.7・WS2-A MAJOR: per-pass 恒常≤140)
 
     function update(t, dt, pos, vArr, camL, camR) {
       // 順位(降順)
@@ -234,18 +282,24 @@
 
         rig.root.position.set(wp.x, 0, wp.z);
         rig.root.rotation.y = Math.atan2(-hd.z, hd.x);
-        rig.pose(phase, running, { v: vArr ? vArr[hi] : 0, drive: drive, easeUp: easeUp });
+        // opt.v は死パラメータのため渡さない(位相は m 連動 phase で完結・§3.5 の dphase/dt=v/3.4 と等価)
+        rig.pose(phase, running, { drive: drive, easeUp: easeUp });
         rig.root.updateWorldMatrix(false, true);
 
         // 全ノード → setMatrixAt(index = 馬index)
         for (let mi = 0; mi < meshes.length; mi++) {
           const e = meshes[mi];
-          if (e.blaze) e.mesh.setMatrixAt(hi, indiv[hi].blaze === e.blaze ? e.node.matrixWorld : _zero);
+          if (e.blaze) e.mesh.setMatrixAt(hi, (indiv[hi].blaze === e.blaze && !blazeHidden) ? e.node.matrixWorld : _zero);
           else e.mesh.setMatrixAt(hi, e.node.matrixWorld);
         }
-        // ゼッケン(cloth ノード世界行列を matrix へ・parent=identity 前提)
-        zek[hi * 2].matrix.copy(nodes.cloth[0].matrixWorld);
-        zek[hi * 2 + 1].matrix.copy(nodes.cloth[1].matrixWorld);
+        // ゼッケン(cloth ノード世界行列で4隅を変換しマージ頂点へ焼込・parent=identity前提)
+        for (let side = 0; side < 2; side++) {
+          const mw = nodes.cloth[side].matrixWorld, q = hi * 2 + side;
+          for (let cc = 0; cc < 4; cc++) {
+            _zv.set(ZC[cc][0], ZC[cc][1], 0).applyMatrix4(mw);
+            const bi = (q * 4 + cc) * 3; zekPos[bi] = _zv.x; zekPos[bi + 1] = _zv.y; zekPos[bi + 2] = _zv.z;
+          }
+        }
 
         // ブロブ影(上下動非追従・heading 沿いに長軸)
         _qHead.setFromAxisAngle(_yAxis, rig.root.rotation.y);
@@ -260,8 +314,12 @@
       // 更新フラグ(フレーム1回・2パス共有)
       for (let mi = 0; mi < meshes.length; mi++) meshes[mi].mesh.instanceMatrix.needsUpdate = true;
       shadowMesh.instanceMatrix.needsUpdate = true;
+      zekPosAttr.needsUpdate = true;
 
-      // マーカー追従(自馬 root + y2.5 + 浮遊。スケールは左カメラ距離基準)
+      // マーカー追従(自馬 root + y2.5 + 浮遊)
+      // H-9スケール実式(WS2-A MINOR 整合): Sprite は距離で画面上縮む→画面px一定化には距離zに
+      //  比例させる。よって sc=clamp(z*K, minWorld0.9, maxWorld3.4)(仕様の "k/z" は反比例だが
+      //  Sprite投影特性では画面一定=z比例が正。基準は左カメラ距離=シーン共有のため)。右ビュー最小は minWorld0.9 で担保。
       if (markerSprite) {
         if (hasOwnWorld) {
           markerSprite.visible = true;
@@ -290,6 +348,7 @@
     }
     function setLowDetail(b) {
       if (b) ensureLow();
+      blazeHidden = !!b;   // stage3: 白斑を落とす(次フレームの setMatrixAt で _zero 化・§2.7)
       for (let mi = 0; mi < meshes.length; mi++) {
         const e = meshes[mi];
         e.mesh.material = b ? (e.blaze ? lambBlazeMat : lambMat) : (e.blaze ? blazeMat : bodyMat);

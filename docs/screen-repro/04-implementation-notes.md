@@ -101,3 +101,50 @@
 - **勝負服の柄(縦縞/一本襷/星散)**: 現状は地色/袖色/帽色の instanceColor 差のみ(AC-12「馬ごとに異なる」は色差で成立)。柄アトラス(§2.3.4・makeAtlasInstanced)は未実装=P2余地。`indiv[].pattern` は算出済み(袖違いのみ袖色分岐に使用)。
 - **ブラー近似**: (b)走路UV流しは WS1 の `world.scrollFx` とは別で未実装(P2)。(a)は R-front 構造が満たす。
 - **H-9 マーカースケール**: 左カメラ距離基準(シーン共有のため)。右ビュー最小サイズは min スケール(0.9)で担保。
+
+---
+
+## WS3 — HUD一式 + E-15品質制御 + 全体統合
+
+### 実装ファイル
+| 区分 | ファイル | 概要 |
+|---|---|---|
+| 新規 | `game/js/rv-hud.js` | `SH.RVHud.create(fgCanvas,race,field,sim)` → `hud`。2560×720 前面レイヤに H-1〜H-8/H-10 + セパレータ + ビネット + 雨 + 実況テロップを§2.6の順で全再描画。放送HUDフェード(p基準)、残距離スライド(§3.2)、隊列チップ盾形・順位スライド(§3.3)、自馬タグ、凡例6列グリッド行高自動縮小、経過タイム、1000m通過タイム(D≥1600)、レース名(serif)。番組フェーズ drawTitle/drawReplay/drawBoard(§2.9 translate中央配置)。`fmtElapsed`/`fmtPass`/`phaseOf`/`layout` を内包。 |
+| 新規 | `game/js/rv-quality.js` | `SH.RVQuality.create(renderer,world,herd,opts)` → `quality`。E-15 状態機械(rAF EMA計測・30フレームごと評価・ヒステリシス降格2/昇格4)。setLevel が全段を宣言的に適用: stage1 影off→stage2 グロー/DPR0.75/フォグ簡略→stage3 密度0.5/低セグ/Lambert/白斑off→stage4 単一ビュー化。`viewModeSingle`/`q`/`level`/`emaMs` を公開。モバイル検出で初期stage1。 |
+| 変更 | `game/js/raceview3d.js` | インラインHUD(banner/drawLiveHUD/drawTitleCard/drawReplayMark/drawBoard/vig)を全撤去→`SH.RVHud` へ委譲。`SH.RVQuality` を毎フレーム `sample(frameMs)` で駆動、`quality.q`/`quality.viewModeSingle` を描画に反映(stage4=camL全幅単一)。`publishState` の qualityLevel/viewMode/hudPhase/hudAlpha を quality/hud から取得。URL `?rvq=N` 解析 + `SH._rvForceQuality`。 |
+| 変更 | `game/js/rv-horses.js` | (WS2-A MAJOR)ゼッケンを個別2Mesh/頭→**共有アトラス+焼込UVの単一動的マージメッシュ**(1 DC・頭数非依存)。(WS2-B)ゼッケンアトラス・H-9マーカーをモジュールキャッシュ化(週次再生成回避)。(WS2-A MINOR)pose の死パラメータ `opt.v` 送出を削除、H-9スケール実式をコメント明示。setLowDetail に白斑off(blazeHidden)を追加。 |
+| 変更 | `game/index.html` | `rv-hud.js`/`rv-quality.js` を rv-cams→raceview3d の間へ追加(§1.3 読込順)。 |
+
+### 積み残し(前WS)の解消
+- **[WS2-A MAJOR] 発走per-passピーク147 → 解消**: 設計§2.3.4(ii) のゼッケンアトラスを採用(採用条件 DC>240 成立済み)。ただし onBeforeCompile(R4リスク)には依存せず、**512×512・18タイル(馬番1〜18)の共有CanvasTextureへUVを頂点に焼き込んだ単一マージメッシュ(2n四辺形を1本のBufferGeometryに統合、頂点座標のみ毎フレーム cloth ノード世界行列で更新)** = シェーダ非依存で堅牢な方式で頭数非依存化した(設計逸脱ではなく §2.3.4(ii) の意図「頭数非依存 1〜2 DC」を満たす代替実装)。番号は常時判読優先で unlit(MeshBasic)+両面。加えて E-15 stage3 が白斑off/密度0.5/低セグを発火。実測: 18頭・全距離・良/不良・発走密集フレーム含め **per-pass ≤123(≤140)/総frame ≤229(≤280)** を恒常達成。
+- **[WS2-B MINOR] textureキャッシュ欠落 → 解消**: 馬番は全レース共通(1〜18)のため、ゼッケンアトラス(`_zekAtlas`)と H-9マーカー(`_markerCache` gate毎・最大18枚)をモジュールレベルでキャッシュ。週次連続再生成は起きない。共有テクスチャは per-race dispose(texList)に入れない。
+- **[WS2-A MINOR] pose opt.v / H-9式 → 解消**: `opt.v` は phase が m 連動(dphase/dt=v/3.4 と等価)で完結し未使用のため rv-horses からの送出を削除(pose 側は `opt.drive/opt.easeUp` のみ使用、後方互換のため opt は残置)。H-9スケールは Sprite 投影特性上「画面px一定化=距離zに比例」が正で、実式 `clamp(z*0.02, 0.9, 3.4)`(仕様の k/z 反比例表記との差)をコメントで明示。
+
+### 完了条件(設計§5 WS3)の充足
+1. **達成**: HUD全要素が仕様§2どおり表示(残距離カウントダウン/隊列チップ順位入替/自馬タグ/凡例左右分担・行高縮小/経過タイム/1000m通過D≥1600/レース名/自馬頭上マーカー/実況テロップ)、放送HUDが p≥0.085 でフェードイン(gate=pre → michi=on を全14マトリクスで確認)。
+2. **達成**: E-15 が計測に基づき縮退/復帰(swiftshader低速環境で HERO 実行中に ql 1→3 へ自動降格を観測)。URL `?rvq=0..4`/`SH._rvForceQuality(n)` で段階強制(q1/q3/q4 で ql一致・q4で viewMode=single・右パス drawCallsR=0・`[E-15] quality→` ログ)。per-pass draw call 常時≤140(発走ピーク解消)、総frame≤280。
+3. **達成**: G1(14〜18頭)/WBC5頭 × 1200/2400/3600 × 良/不良 の全14組で JSエラー0・デュアルビュー完走(replay→board→onDone)。
+4. **達成**: `?rvnogl=1` フォールバック維持(viewMode=single/qualityLevel=null/JSエラー0)。`SH._rvState` 全13フィールド公開(qualityLevel は quality.level 実値)。
+5. **達成**: engine-test.js(data/horse/race/state ロジック)ALL OK = 既存ゲームフロー無退行(該当4ファイルは無変更)。
+
+### 設計判断・逸脱
+- **ゼッケンのアトラス実装方式**: 設計§2.3.4(ii) は「InstancedBufferAttribute + onBeforeCompile UVオフセット」を例示するが、R4(minified r147 でのシェーダ改変不安定)を避けるため**シェーダ非依存の動的マージメッシュ**へ変更。契約(頭数非依存 1〜2 DC・番号判読)は同一。マージメッシュは per-race(頂点数=2n依存)のため dispose 対象、アトラステクスチャは共有のため非dispose。
+- **ゼッケンのマテリアル**: 元 MeshLambert → **MeshBasic(unlit)**。近接ショットでの番号判読(AC-12・P0)を照明に依存させず常時確実化するため。
+- **番組フェーズの HUD 移設**: タイトル/リプレイ/掲示板の座標転記ロジックは raceview3d のインライン実装を rv-hud へそのまま移設(様式・数値不変、translate中央配置維持)。
+- **E-15 初期stage の環境依存**: headless Chromium はポインタ粗検出で「モバイル級」と判定され初期 stage1 から開始する(仕様§1.4どおり)。デスクトップ実機は stage0。テストは qualityLevel が実値(number)であることと強制動作で判定。
+- **rv-cams.js は WS1/WS2 で完成済み**(L0〜L8 状態機械・DirectorR 優先度チェーン e>d>c>a>b・名物経由・自馬保証・両ビュー制約)のため WS3 では無変更。
+
+### 検証(scratchpad/ws3-test.js)
+- Playwright + swiftshader、ローカルHTTP(:8934)。全14マトリクス組 + E-15強制3段 + 実行時フック + フォールバックを一括判定 → **RESULT: PASS**(全組 JSエラー0・per-pass≤123・総frame≤229・onDone到達)。
+- スクリーンショット(絶対パス, 局面):
+  - タイトル: `.../ws3-hero-0-title.png` / ゲート: `.../ws3-hero-1-gate.png` / 道中: `.../ws3-hero-2-michi.png` / コーナー: `.../ws3-hero-3-corner.png` / 直線: `.../ws3-hero-4-chokusen.png` / ゴール: `.../ws3-hero-5-goal.png` / リプレイ: `.../ws3-hero-6-replay.png` / 掲示板: `.../ws3-hero-7-board.png`
+  - WBCナイター一式: `.../ws3-wbc-0-title.png` … `.../ws3-wbc-7-board.png`
+  - E-15強制: `.../ws3-e15-q1.png` / `.../ws3-e15-q3.png` / `.../ws3-e15-q4.png`(単一ビュー)
+  - フォールバック2D: `.../ws3-fallback2d.png`
+- engine-test.js: ALL OK(ゲームロジック無退行)。
+
+### 工程5テストへの申し送り
+- **H-7(1000m通過)判定は D≥1600 のみ**(§7.2 A-MINOR6)。D<1600 では passTime1000m/passHudVisible は終始 null/false。
+- **E-15 初期stage は環境依存**(モバイル検出=stage1)。段階検証は `?rvq=N` 強制で行うこと。auto降格の観測には低速GPU(swiftshader)が有効。
+- **勝負服の柄(縦縞/一本襷/星散)は未実装(P2)**: 現状は地色/袖色/帽色の instanceColor 差のみ(AC-12 は色差で成立)。`indiv[].pattern` は算出済み。
+- **モーションブラー(b)走路UV流し**は未接続(P2)。(a)は R-front 構造が充足。
