@@ -79,7 +79,11 @@
     try {
       const r = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, powerPreference: "high-performance" });
       const gl = r.getContext();
-      if (!gl || (gl.isContextLost && gl.isContextLost())) { r.dispose(); return null; }
+      if (!gl || (gl.isContextLost && gl.isContextLost())) {
+        try { r.forceContextLoss(); } catch (e) {} // 設計§1.2/R12: dispose と併せコンテキスト明示解放
+        r.dispose();
+        return null;
+      }
       r.outputEncoding = THREE.sRGBEncoding;
       r.autoClear = true; // シザー有効時は領域限定クリア(§2.2)
       return r;
@@ -784,43 +788,67 @@
     const portable = new THREE.Group();
     scene.add(portable);
     const n = field.runners.length;
-    const gatePanels = [];
+    // 発走ゲートは InstancedMesh 化(支柱2n/横桟n/前面パネルn を 3 InstancedMesh へ)。
+    // 発走時に全馬がゲート前へ密集する瞬間の draw call ピークを抑える(WS2 予算 ≤140/pass 達成)。
+    const gatePanelBase = [];                 // パネル各房の基準行列(開扉オフセット除く)
+    let gatePanelMesh = null;
+    const _gq = new THREE.Quaternion();
+    const _gidq = new THREE.Quaternion();     // 単位クォータニオン(パネル開扉の compose 用)
+    const _gloc = new THREE.Matrix4();
+    const _gout = new THREE.Matrix4();
+    const _gpv = new THREE.Vector3();
+    const _gscl = new THREE.Vector3(1, 1, 1);
     (function buildGate() {
       const frameMat = lamb(0x8d949e);
       const panelMat = lamb(0xc4cad2);
       const postGeo = trackGeo(new THREE.BoxGeometry(0.12, 2.1, 0.12));
       const beamGeo = trackGeo(new THREE.BoxGeometry(0.14, 0.35, 1.7));
       const panelGeo = trackGeo(new THREE.BoxGeometry(0.06, 1.7, 1.5));
+      const postIM = new THREE.InstancedMesh(postGeo, frameMat, n * 2);
+      const beamIM = new THREE.InstancedMesh(beamGeo, frameMat, n);
+      const panelIM = new THREE.InstancedMesh(panelGeo, panelMat, n);
+      postIM.frustumCulled = beamIM.frustumCulled = panelIM.frustumCulled = false;
+      panelIM.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      const hd = course.heading(-1.2);
+      _gq.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.atan2(-hd.z, hd.x));
+      const _stall = new THREE.Matrix4();
       for (let i = 0; i < n; i++) {
         const gl = -8 + 16 * (i / Math.max(1, n - 1));
-        const stall = new THREE.Group();
-        [-0.8, 0.8].forEach(function (off) {
-          const post = new THREE.Mesh(postGeo, frameMat);
-          post.position.set(0, 1.05, off);
-          stall.add(post);
-        });
-        const beam = new THREE.Mesh(beamGeo, frameMat);
-        beam.position.set(0, 2.2, 0);
-        stall.add(beam);
-        const panel = new THREE.Mesh(panelGeo, panelMat);
-        panel.position.set(0.55, 1.0, 0);
-        stall.add(panel);
-        gatePanels.push(panel);
         const wp = course.pos(-1.2, gl, 0);
-        stall.position.set(wp.x, 0, wp.z);
-        const hd = course.heading(-1.2);
-        stall.rotation.y = Math.atan2(-hd.z, hd.x);
-        portable.add(stall);
+        _stall.compose(_gpv.set(wp.x, 0, wp.z), _gq, _gscl);
+        [-0.8, 0.8].forEach(function (off, j) {
+          _gloc.makeTranslation(0, 1.05, off);
+          _gout.multiplyMatrices(_stall, _gloc);
+          postIM.setMatrixAt(i * 2 + j, _gout);
+        });
+        _gloc.makeTranslation(0, 2.2, 0);
+        _gout.multiplyMatrices(_stall, _gloc);
+        beamIM.setMatrixAt(i, _gout);
+        gatePanelBase.push(_stall.clone());
+        _gloc.makeTranslation(0.55, 1.0, 0);
+        _gout.multiplyMatrices(_stall, _gloc);
+        panelIM.setMatrixAt(i, _gout);
       }
+      postIM.instanceMatrix.needsUpdate = true;
+      beamIM.instanceMatrix.needsUpdate = true;
+      panelIM.instanceMatrix.needsUpdate = true;
+      portable.add(postIM); portable.add(beamIM); portable.add(panelIM);
+      gatePanelMesh = panelIM;
       const gp = course.pos(-1.2, 0, 0);
       addVis(portable, gp.x, gp.z, 30);
     })();
     function setGateOpen(o) {
+      if (!gatePanelMesh) return;
       const v = SH.clamp(o, 0, 1);
-      for (let i = 0; i < gatePanels.length; i++) {
-        gatePanels[i].position.z = v * 1.45;
-        gatePanels[i].visible = v < 0.98;
+      const sc = v < 0.98 ? 1 : 0;            // 全開後はスケール0で退避(旧 visible=false 相当)
+      _gscl.set(sc, sc, sc);
+      for (let i = 0; i < gatePanelBase.length; i++) {
+        _gloc.compose(_gpv.set(0.55, 1.0, v * 1.45), _gidq, _gscl);
+        _gout.multiplyMatrices(gatePanelBase[i], _gloc);
+        gatePanelMesh.setMatrixAt(i, _gout);
       }
+      _gscl.set(1, 1, 1);
+      gatePanelMesh.instanceMatrix.needsUpdate = true;
     }
 
     // 紅白距離ポール(D-200k、lat=+12.6、高3.5 — §4.4)

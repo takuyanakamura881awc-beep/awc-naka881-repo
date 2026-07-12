@@ -20,9 +20,11 @@
   function makeP(course) { return function (m, lat, y) { return course.pos(m, lat, y); }; }
 
   // 簡易フラスタム判定(NDC)。camera は updateMatrixWorld / projection 済み前提
-  const _pv = new THREE.Vector3();
+  // three.min.js 読込失敗時に ReferenceError を投げないよう遅延初期化(WS1 MAJOR修正)
+  let _pv = null;
   function inView(camera, p) {
-    if (!p) return false;
+    if (!p || typeof THREE === "undefined") return false;
+    if (!_pv) _pv = new THREE.Vector3();
     _pv.set(p.x, p.y, p.z).project(camera);
     return _pv.z < 1 && _pv.z > -1 && Math.abs(_pv.x) <= 1.05;
   }
@@ -144,12 +146,14 @@
 
     let k = 0, type = R_FRONT, rrCursor = 0, emptySince = 0, ownHold = 0, lastCutT = -99, curFL = 1100;
     let forceNextFlag = false;
+    const curTgt = { x: 0, y: 1.6, z: 0 }; // 現在の注視点(publishState で camR.tgt として公開・WS1 MINOR修正)
 
     function setCam(pos, tgt, fl) {
       camera.position.set(pos.x, pos.y, pos.z);
       camera.up.set(0, 1, 0);
       camera.lookAt(tgt.x, tgt.y, tgt.z);
       camera.fov = fovFromFL(fl); curFL = fl;
+      curTgt.x = tgt.x; curTgt.y = tgt.y; curTgt.z = tgt.z;
       camera.updateProjectionMatrix();
     }
     function tableCam(tp, ctx) {
@@ -211,6 +215,7 @@
         if (type === R_SIDE || type === R_OWNPAN || type === R_NAME) {
           const c = tableCam(type, ctx);
           camera.lookAt(c.tgt.x, c.tgt.y, c.tgt.z);
+          curTgt.x = c.tgt.x; curTgt.y = c.tgt.y; curTgt.z = c.tgt.z;
         }
         camera.updateProjectionMatrix();
         camera.updateMatrixWorld(true);
@@ -219,7 +224,8 @@
         const own = ctx.ownM != null ? P(ctx.ownM, 0, 1.6) : null;
         const ownInView = (type === R_OWNPAN) ? true : inView(camera, own);
         return { camera: camera, type: type, camIndex: k, empty: empty, fl: curFL, ownInView: ownInView,
-          pos: { x: camera.position.x, y: camera.position.y, z: camera.position.z } };
+          pos: { x: camera.position.x, y: camera.position.y, z: camera.position.z },
+          tgt: { x: curTgt.x, y: curTgt.y, z: curTgt.z } };
       },
     };
   };

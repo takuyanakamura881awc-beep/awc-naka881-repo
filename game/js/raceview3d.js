@@ -32,7 +32,7 @@
   }
 
   RV3.create = function (root, race, field, sim, onDone) {
-    if (typeof THREE === "undefined" || !SH.RVWorld || !SH.RV2D || !SH.RVCams) return null;
+    if (typeof THREE === "undefined" || !SH.RVWorld || !SH.RV2D || !SH.RVCams || !SH.RVHorses) return null;
 
     const D = race.dist;
     const n = field.runners.length;
@@ -62,43 +62,37 @@
     const q = Math.min(window.devicePixelRatio || 1, 1.0);
     renderer.setSize(DW * q, DH * q, false);
 
-    let world;
+    // ---- ワールド / 馬 / カメラ(例外時は§1.2の後始末をして null=2Dフォールバック退避)----
+    let world = null, herd = null, scene, night, coatOf, dirL, dirR;
+    let ownIndex = -1;
     try {
       world = SH.RVWorld.build(renderer, race, field, { forceNight: FORCE_NIGHT });
+      scene = world.scene;
+      night = world.night;
+
+      // 毛色(2D/3D 経路で同一・SH.RV2D.COAT 使用)
+      const COAT_POOL = ["鹿毛", "鹿毛", "鹿毛", "黒鹿毛", "黒鹿毛", "栗毛", "栗毛", "栃栗毛", "芦毛", "青毛"];
+      coatOf = field.runners.map(function (r, i) {
+        if (r.kind === "owned") return COAT[r.ref.coat] || COAT["鹿毛"];
+        return COAT[COAT_POOL[(i * 7 + r.name.length) % COAT_POOL.length]];
+      });
+      for (let i = 0; i < n; i++) { if (field.runners[i].kind === "owned") { ownIndex = i; break; } }
+
+      // 馬 InstancedMesh システム(WS2。world.horsesRoot へ装着)
+      herd = SH.RVHorses.create(world.horsesRoot, field, sim, course, coatOf, D);
+      if (!herd) throw new Error("RVHorses.create returned null");
+
+      // カメラ(左右で PerspectiveCamera を別個所有)
+      dirL = SH.RVCams.createL(course, D, world);
+      dirR = SH.RVCams.createR(course, D, world, ownIndex);
     } catch (e) {
+      try { if (herd && herd.dispose) herd.dispose(); } catch (e2) {}
+      try { if (world && world.dispose) world.dispose(); } catch (e2) {}
       try { renderer.dispose(); renderer.forceContextLoss(); } catch (e2) {}
       cleanup();
-      if (window.console) console.warn("[RaceView3D] build failed → fallback:", e && e.message);
+      if (window.console) console.warn("[RaceView3D] setup failed → fallback:", e && e.message);
       return null;
     }
-    const scene = world.scene;
-    const night = world.night;
-
-    // ---- 暫定馬(WS1: 既存 createHorse を n 体。WS2 で InstancedMesh へ置換) ----
-    const COAT_POOL = ["鹿毛", "鹿毛", "鹿毛", "黒鹿毛", "黒鹿毛", "栗毛", "栗毛", "栃栗毛", "芦毛", "青毛"];
-    const coatOf = field.runners.map(function (r, i) {
-      if (r.kind === "owned") return COAT[r.ref.coat] || COAT["鹿毛"];
-      return COAT[COAT_POOL[(i * 7 + r.name.length) % COAT_POOL.length]];
-    });
-    const horses3 = [];
-    let ownIndex = -1;
-    if (SH.Horse3D && SH.Horse3D.available()) {
-      field.runners.forEach(function (r, i) {
-        if (r.kind === "owned" && ownIndex < 0) ownIndex = i;
-        const coatHex = parseInt(coatOf[i].slice(1), 16);
-        const silksHex = parseInt(SH.WAKU_COLORS[r.waku - 1].slice(1), 16);
-        const h3 = SH.Horse3D.createHorse(coatHex, silksHex, r.gate);
-        h3.group.scale.setScalar(1.45);
-        (world.horsesRoot || scene).add(h3.group);
-        horses3.push(h3);
-      });
-    }
-    const lat = [];
-    for (let i = 0; i < n; i++) lat.push(-8 + 16 * (i / Math.max(1, n - 1)));
-
-    // ---- カメラ ----
-    const dirL = SH.RVCams.createL(course, D, world);
-    const dirR = SH.RVCams.createR(course, D, world, ownIndex);
 
     // ---- シム補間 ----
     function posAt(t) {
@@ -133,6 +127,7 @@
       lastOwnInView: null, passTime1000m: null, passHudUntil: 0,
       cancel: function () {
         view.done = true; cancelAnimationFrame(view.raf);
+        try { if (herd && herd.dispose) herd.dispose(); } catch (e) {}
         try { if (world && world.dispose) world.dispose(); } catch (e) {}
         try { renderer.dispose(); renderer.forceContextLoss(); } catch (e) {}
       },
@@ -168,7 +163,7 @@
       st.remainM = info.R; st.distShown = Math.max(0, Math.ceil(info.R / 100) * 100);
       st.rankOrder = info.rankIdx.slice();
       st.camL = { mode: info.resL.mode, pos: info.resL.pos, tgt: info.resL.tgt, fl: info.resL.fl };
-      st.camR = { type: info.resR.type, camIndex: info.resR.camIndex, pos: info.resR.pos, tgt: null, fl: info.resR.fl, empty: info.resR.empty };
+      st.camR = { type: info.resR.type, camIndex: info.resR.camIndex, pos: info.resR.pos, tgt: info.resR.tgt || null, fl: info.resR.fl, empty: info.resR.empty };
       st.shotL = info.resL.mode;
       st.passTime1000m = view.passTime1000m;
       st.passHudVisible = (view.passTime1000m != null) && (view.t < view.passHudUntil) && (D >= 1600);
@@ -199,22 +194,8 @@
       resL.camera.getWorldDirection(_wd1); resR.camera.getWorldDirection(_wd2);
       if (dpx < 12 && _wd1.dot(_wd2) > 0.98) dirR.forceNext();
 
-      // 馬(暫定)
-      const targetLat = new Array(n);
-      rankIdx.forEach(function (hi, rank) { targetLat[hi] = 7.5 - 15 * (rank / Math.max(1, n - 1)) * (t < 0 ? 1 : 0.85); });
-      for (let i = 0; i < n; i++) lat[i] += (targetLat[i] - lat[i]) * 0.02;
-      for (let i = 0; i < n; i++) {
-        const h3 = horses3[i]; if (!h3) continue;
-        const m = Math.min(pos[i], D + 40);
-        const wp = course.pos(m, lat[i], 0);
-        const running = t >= 0 && sim.times[i] > t;
-        const phase = (m / 3.4) + i * 1.7;
-        const h = course.heading(m);
-        h3.group.visible = true;
-        h3.pose(phase, running);
-        h3.group.position.x = wp.x; h3.group.position.z = wp.z;
-        h3.group.rotation.y = Math.atan2(-h.z, h.x);
-      }
+      // 馬(InstancedMesh・行列書込はフレーム1回で全馬・2パスで共有)
+      herd.update(t, dtWorld, pos, null, resL.camera, resR.camera);
 
       world.updateVisibility(resL.camera.position, resR.camera.position);
       if (world.sOfM) world.applyTone(world.sOfM(leadM));
@@ -222,17 +203,23 @@
 
       const dual = (t >= 0 && !replayFlag);
       renderer.setScissorTest(true);
+      let dcL = 0, dcR = 0, tri = 0;
       if (dual) {
         resL.camera.aspect = VW / VH; resL.camera.updateProjectionMatrix();
         renderer.setViewport(0, 0, VW * q, DH * q); renderer.setScissor(0, 0, VW * q, DH * q);
         renderer.render(scene, resL.camera);
+        dcL = renderer.info.render.calls; tri = renderer.info.render.triangles;
         renderer.setViewport(VW * q, 0, VW * q, DH * q); renderer.setScissor(VW * q, 0, VW * q, DH * q);
         renderer.render(scene, resR.camera);
+        dcR = renderer.info.render.calls; tri += renderer.info.render.triangles;
       } else {
         resL.camera.aspect = DW / DH; resL.camera.updateProjectionMatrix();
         renderer.setViewport(0, 0, DW * q, DH * q); renderer.setScissor(0, 0, DW * q, DH * q);
         renderer.render(scene, resL.camera);
+        dcL = renderer.info.render.calls; tri = renderer.info.render.triangles;
       }
+      // 開発補助(§7.2): draw call 実測。_rvState の仕様固定フィールドとは分離
+      SH._rvDebug = { drawCallsL: dcL, drawCallsR: dcR, drawCalls: dcL + dcR, triangles: tri };
       return { pos: pos, leadM: leadM, R: R, p: p, rankIdx: rankIdx, resL: resL, resR: resR, dual: dual };
     }
 

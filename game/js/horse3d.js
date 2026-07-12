@@ -259,4 +259,172 @@
 
     return { group: root, pose: pose };
   };
+
+  // ============================================================
+  // H3.createRig() — ポーズリグ(設計§2.3.0/§2.3.2)
+  //  ・Mesh を持たず Object3D ノードのみ(マテリアル/テクスチャ非生成)。
+  //  ・InstancedMesh(rv-horses.js)へワールド行列を供給するための階層。
+  //  ・寸法は createHorse から初期転記(以後は独立進化可)。geo()/G キャッシュを
+  //    同一 IIFE 内で共有するため horse3d.js に実装(§2.3.0 クロージャ境界)。
+  //  ・pose(phase, running, opt) は第3引数 opt={v, drive, easeUp} を受ける(§3.5)。
+  // ============================================================
+  H3.createRig = function () {
+    // 変換だけを持つ空ノード
+    function node(px, py, pz, rx, ry, rz, sx, sy, sz) {
+      const o = new THREE.Object3D();
+      o.position.set(px || 0, py || 0, pz || 0);
+      o.rotation.set(rx || 0, ry || 0, rz || 0);
+      if (sx != null) o.scale.set(sx, sy != null ? sy : sx, sz != null ? sz : sx);
+      return o;
+    }
+
+    const root = new THREE.Group();
+    const body = new THREE.Group(); body.position.y = 1.08; root.add(body);
+
+    // 胴/胸/臀(torsoSph)
+    const torso = node(0, 0, 0, 0, 0, 0, 1.14, 0.45, 0.37); body.add(torso);
+    const chest = node(0.72, -0.05, 0, 0, 0, 0, 0.42, 0.42, 0.34); body.add(chest);
+    const rump = node(-0.68, 0.02, 0, 0, 0, 0, 0.46, 0.46, 0.36); body.add(rump);
+
+    // 首・たてがみ・頭
+    const neckPivot = new THREE.Group(); neckPivot.position.set(0.85, 0.22, 0); body.add(neckPivot);
+    const neck = node(0.30, 0.28, 0, 0, 0, -0.85); neckPivot.add(neck);
+    const mane = node(0.22, 0.42, 0, 0, 0, -0.85); neckPivot.add(mane);
+    const head = new THREE.Group(); head.position.set(0.62, 0.60, 0); neckPivot.add(head);
+    const skull = node(0, 0, 0, 0, 0, 0, 0.25, 0.165, 0.14); head.add(skull);
+    const muzzle = node(0.27, -0.12, 0, 0, 0, 0, 0.19, 0.105, 0.10); head.add(muzzle);
+    const earL = node(-0.10, 0.16, 0.06, 0.15, 0, 0); head.add(earL);
+    const earR = node(-0.10, 0.16, -0.06, -0.15, 0, 0); head.add(earR);
+    const eyeL = node(0.06, 0.02, 0.115); head.add(eyeL);
+    const eyeR = node(0.06, 0.02, -0.115); head.add(eyeR);
+    // 白斑ノード(面法線を +X へ: Circle/Plane は既定 +Z 法線 → roty=π/2)
+    const blazeStar = node(0.19, 0.05, 0, 0, Math.PI / 2, 0); head.add(blazeStar);
+    const blazeStripe = node(0.26, -0.04, 0, 0, Math.PI / 2, 0); head.add(blazeStripe);
+    const blazeSnip = node(0.40, -0.12, 0, 0, Math.PI / 2, 0); head.add(blazeSnip);
+
+    // 尾
+    const tailPivot = new THREE.Group(); tailPivot.position.set(-1.02, 0.18, 0); body.add(tailPivot);
+    const tail = node(-0.22, -0.26, 0, 0, 0, 2.45); tailPivot.add(tail);
+
+    // 鞍・ゼッケン(cloth)
+    const saddle = node(0.12, 0.32, 0); body.add(saddle);
+    const clothL = node(0.10, 0.02, 0.40, 0.12, Math.PI / 2, 0); body.add(clothL);
+    const clothR = node(0.10, 0.02, -0.40, -0.12, -Math.PI / 2, 0); body.add(clothR);
+
+    // 騎手
+    const jockey = new THREE.Group(); jockey.position.set(0.10, 0.36, 0); body.add(jockey);
+    const jt = node(0.02, 0.22, 0, 0, 0, 1.05); jockey.add(jt);
+    const jh = node(0.26, 0.30, 0); jockey.add(jh);
+    const cap = node(0.26, 0.315, 0, 0, 0, 0.35); jockey.add(cap);
+    const armL = node(0.34, 0.12, 0.09, 0, 0, 1.25); jockey.add(armL);
+    const armR = node(0.34, 0.12, -0.09, 0, 0, 1.25); jockey.add(armR);
+    const jlegL = node(0.02, 0.02, 0.20, 0.5, 0, 0.5); jockey.add(jlegL);
+    const jlegR = node(0.02, 0.02, -0.20, -0.5, 0, 0.5); jockey.add(jlegR);
+    const bootL = node(-0.04, -0.14, 0.26); jockey.add(bootL);
+    const bootR = node(-0.04, -0.14, -0.26); jockey.add(bootR);
+
+    // 脚×4(腿pivot→膝knee→管/蹄)
+    function makeLegRig(hind) {
+      const pivot = new THREE.Group();
+      const upper = node(0, -0.26, 0); pivot.add(upper);
+      const knee = new THREE.Group(); knee.position.y = -0.5; pivot.add(knee);
+      const lower = node(0, -0.22, 0); knee.add(lower);
+      const hoof = node(0, -0.47, 0); knee.add(hoof);
+      return { pivot: pivot, knee: knee, upper: upper, lower: lower, hoof: hoof, hind: hind };
+    }
+    const legs = { FL: makeLegRig(false), FR: makeLegRig(false), HL: makeLegRig(true), HR: makeLegRig(true) };
+    legs.FL.pivot.position.set(0.62, 1.02, 0.16);
+    legs.FR.pivot.position.set(0.62, 1.02, -0.16);
+    legs.HL.pivot.position.set(-0.62, 1.02, 0.17);
+    legs.HR.pivot.position.set(-0.62, 1.02, -0.17);
+    ["FL", "FR", "HL", "HR"].forEach(function (kk) { root.add(legs[kk].pivot); });
+
+    // 共有ジオメトリ(geo キャッシュを createHorse と共有 — §2.3.0)
+    const geos = {
+      torsoSph: geo("torso", function () { return new THREE.SphereGeometry(1, 14, 10); }),
+      neck: geo("neck", function () { return new THREE.CylinderGeometry(0.13, 0.24, 0.92, 8); }),
+      mane: geo("mane", function () { return new THREE.BoxGeometry(0.62, 0.16, 0.045); }),
+      skull: geo("skull", function () { return new THREE.SphereGeometry(1, 10, 8); }),
+      ear: geo("ear", function () { return new THREE.ConeGeometry(0.045, 0.16, 5); }),
+      eye: geo("eye", function () { return new THREE.SphereGeometry(0.022, 6, 5); }),
+      tail: geo("tail", function () { return new THREE.ConeGeometry(0.085, 0.78, 7); }),
+      upperF: geo("upperF", function () { return new THREE.CylinderGeometry(0.075, 0.058, 0.52, 7); }),
+      upperH: geo("upperH", function () { return new THREE.CylinderGeometry(0.085, 0.058, 0.52, 7); }),
+      lower: geo("lower", function () { return new THREE.CylinderGeometry(0.05, 0.038, 0.46, 7); }),
+      hoof: geo("hoof", function () { return new THREE.CylinderGeometry(0.052, 0.058, 0.09, 7); }),
+      saddle: geo("saddle", function () { return new THREE.BoxGeometry(0.46, 0.05, 0.48); }),
+      jtorso: geo("jtorso", function () { return THREE.CapsuleGeometry ? new THREE.CapsuleGeometry(0.11, 0.26, 3, 8) : new THREE.CylinderGeometry(0.11, 0.12, 0.36, 8); }),
+      jhead: geo("jhead", function () { return new THREE.SphereGeometry(0.085, 8, 7); }),
+      jcap: geo("jcap", function () { return new THREE.SphereGeometry(0.095, 8, 6, 0, Math.PI * 2, 0, Math.PI * 0.55); }),
+      jarm: geo("jarm", function () { return new THREE.CylinderGeometry(0.032, 0.028, 0.34, 6); }),
+      jleg: geo("jleg", function () { return new THREE.CylinderGeometry(0.04, 0.035, 0.26, 6); }),
+      jboot: geo("jboot", function () { return new THREE.CylinderGeometry(0.036, 0.04, 0.17, 6); }),
+      cloth: geo("clothRig", function () { return new THREE.PlaneGeometry(0.42, 0.40); }),
+      blazeStar: geo("blazeStar", function () { return new THREE.CircleGeometry(0.045, 12); }),
+      blazeStripe: geo("blazeStripe", function () { return new THREE.PlaneGeometry(0.05, 0.28); }),
+      blazeSnip: geo("blazeSnip", function () { return new THREE.SphereGeometry(0.05, 8, 6, 0, Math.PI * 2, 0, Math.PI * 0.5); }),
+      blobShadow: geo("blobShadow", function () { return new THREE.CircleGeometry(1, 20); }),
+    };
+
+    // ノード表(PART_DEFS と 1:1・生成順固定)
+    const nodes = {
+      torsoSph: [torso, chest, rump],
+      neck: [neck], mane: [mane],
+      skull: [skull, muzzle],
+      ear: [earL, earR], eye: [eyeL, eyeR], tail: [tail],
+      upperF: [legs.FL.upper, legs.FR.upper],
+      upperH: [legs.HL.upper, legs.HR.upper],
+      lower: [legs.FL.lower, legs.FR.lower, legs.HL.lower, legs.HR.lower],
+      hoof: [legs.FL.hoof, legs.FR.hoof, legs.HL.hoof, legs.HR.hoof],
+      saddle: [saddle],
+      jtorso: [jt], jhead: [jh], jcap: [cap], jarm: [armL, armR], jleg: [jlegL, jlegR], jboot: [bootL, bootR],
+      cloth: [clothL, clothR],
+      blazeStar: [blazeStar], blazeStripe: [blazeStripe], blazeSnip: [blazeSnip],
+    };
+
+    // ---- ポーズ(襲歩+懸垂期+騎手drive/easeUp、§3.5)----
+    function pose(phase, running, opt) {
+      opt = opt || {};
+      const sw = running ? 1 : 0.12;
+      function setLeg(leg, ph) {
+        const hind = leg.hind;
+        const swing = (hind ? 0.75 : 0.85) * sw;
+        leg.pivot.rotation.z = Math.sin(ph) * swing + (hind ? 0.28 : -0.18);
+        const bend = Math.max(0, Math.sin(ph + 1.15)) * (hind ? 0.95 : 1.25) * sw + 0.08;
+        leg.knee.rotation.z = hind ? -bend : bend;
+      }
+      setLeg(legs.HL, phase);
+      setLeg(legs.HR, phase + 0.45);
+      setLeg(legs.FL, phase + Math.PI + 0.35);
+      setLeg(legs.FR, phase + Math.PI + 0.8);
+      // 懸垂期(A-6): ピーク窓のみ全肢を引き上げ
+      let bob = running ? Math.abs(Math.sin(phase * 0.5 + 0.4)) * 0.10 - 0.02 : 0;
+      if (running) {
+        const lift = Math.max(0, Math.sin(phase * 0.5 + 0.4) - 0.72) / 0.28;
+        if (lift > 0) {
+          ["FL", "FR", "HL", "HR"].forEach(function (kk) { const lg = legs[kk]; lg.knee.rotation.z += (lg.hind ? -1 : 1) * 0.55 * lift; });
+          bob += lift * 0.06;
+        }
+      }
+      root.position.y = bob;
+      body.rotation.z = running ? Math.sin(phase) * 0.055 : 0;
+      neckPivot.rotation.z = (running ? -0.38 : 0) + (running ? Math.sin(phase + 1.1) * 0.10 : 0);
+      tailPivot.rotation.x = Math.sin(phase * 0.8) * 0.25 * sw;
+      tailPivot.rotation.z = running ? -0.18 : 0;
+      // 騎手: 終盤の「追う」(A-7)
+      const drive = opt.drive || 0;
+      if (drive > 0) {
+        jockey.rotation.z = Math.sin(phase) * 0.18 * drive;
+        jockey.position.x = 0.10 + Math.sin(phase) * 0.02 * drive;
+      } else {
+        jockey.rotation.z = 0; jockey.position.x = 0.10;
+      }
+      // ゴール後は立ち上がって流す(絶対代入=共有リグの馬間汚染を防ぐ)
+      jt.rotation.z = opt.easeUp ? 0.55 : 1.05;
+      const armZ = opt.easeUp ? 0.9 : 1.25;
+      armL.rotation.z = armZ; armR.rotation.z = armZ;
+    }
+
+    return { root: root, pose: pose, nodes: nodes, geos: geos };
+  };
 })(window.SH);
