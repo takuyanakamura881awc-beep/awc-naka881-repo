@@ -342,7 +342,17 @@
   }
 
   // ---------- ビュー本体 ----------
+  // [変更1・設計§1.2] WebGLデュアルビュー経路を優先し、不可時は既存2D本体へフォールバック
   SH.createRaceView = function (root, race, field, sim, onDone) {
+    if (!SH._forceNoWebGL && SH.RaceView3D) {
+      const v = SH.RaceView3D.create(root, race, field, sim, onDone); // 失敗時 null
+      if (v) return v;
+    }
+    SH._rvState = { viewMode: "single", qualityLevel: null };
+    return createRaceView2D(root, race, field, sim, onDone);
+  };
+
+  function createRaceView2D(root, race, field, sim, onDone) {
     // 3層キャンバス: 背景(2D) → 馬(WebGL) → オーバーレイ(2D)
     const canvas = SH.el("canvas", { width: String(W), height: String(H) });
     const glCanvas = SH.el("canvas", { class: "layer", width: String(W), height: String(H) });
@@ -1175,5 +1185,8 @@
     }
     view.raf = requestAnimationFrame(loop);
     return view;
-  };
+  }
+
+  // [変更2・設計§1.2] 共有ヘルパー公開(単一情報源。raceview3d が呼び出し時に参照)
+  SH.RV2D = { makeCourse: makeCourse, fmtTime: fmtTime, marginLabel: marginLabel, COAT: COAT, COAT_KEYS: COAT_KEYS, skyColors: skyColors, turfColors: turfColors };
 })(window.SH);

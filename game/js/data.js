@@ -26,6 +26,11 @@ window.SH = window.SH || {};
   SH.WAKU_COLORS = ["#ffffff", "#222222", "#e03131", "#1c7ed6", "#f5c518", "#2f9e44", "#f76707", "#f783ac"];
   SH.WAKU_TEXT = ["#222", "#fff", "#fff", "#fff", "#222", "#fff", "#fff", "#222"];
 
+  // ナイター開催判定(E-12/設計§5): WBC は常にナイター、季節終盤(week>=48)のG1もナイター
+  SH.isNightRace = function (race) {
+    return !!race && (race.grade === "WBC" || ((race.week >= 48) && race.grade === "G1"));
+  };
+
   // 脚質（通常4＋特殊3）
   SH.LEGS = ["逃げ", "先行", "差し", "追込", "大逃げ", "まくり", "自在"];
   // 成長タイプ
