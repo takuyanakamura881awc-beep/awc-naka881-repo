@@ -229,40 +229,40 @@ add_text(s, Inches(0.55), Inches(1.58), Inches(12.3), Inches(0.5),
          "Lv3：1案確定・スコープ/機能理解は途上／ Lv4：To-Be・使用アプリ/アーキが具体化／ Lv5：定量効果まで概ね完成",
          size=9, color=RGBColor(0x55, 0x5D, 0x68), line_spacing=1.12)
 
-# チーム番号, 進捗レベル(1-5), 質問, 回答
+# チーム番号, 進捗レベル(1-5), 案概要(エージェント名/30字以内・2案は両案), 質問, 回答
 # Lv1=未絞込, Lv2=2案まで絞込, Lv3-5=1案絞込済（深度別）
 teams = [
-    ("1", 2,
+    ("1", 2, "（2案：内容を要確認）",
      "Copilot Studio（エージェント）を使うメリットは何か。",
      "回答範囲やフォーマットを制御でき、会話の記憶維持も可能。チャット単体より挙動を制御しやすい。"),
-    ("2", 3,
+    ("2", 3, "加盟店問い合わせ対応支援エージェント",
      "読込はExcelよりPDFの方が精度が高いか（Excel業務が多い）。",
      "肌感ではPDFが有利だがExcelでも読める可能性あり。まず試して判断する方針。"),
-    ("3", 3,
+    ("3", 3, "（内容を要確認）",
      "アーキテクチャ／As-Is・To-Beの描き方を知りたい。",
      "既存フローに引きずられず、やりたいことからTo-Beを新規設計。作図もCopilot活用可。"),
-    ("4", 3,
+    ("4", 3, "（Salesforce活用案：要確認）",
      "Salesforceを読めるか。読めないと取組の意味が薄れる懸念。",
      "可否は事務局が早急に方針提示。機密情報の扱いを含め要協議として課題化。"),
-    ("5", 3,
+    ("5", 3, "依頼メール処理・ファイル読込エージェント",
      "共有フォルダのパスからCopilotは情報取得できるか。",
      "M365内（SharePoint）が前提。共有フォルダは不可で、SharePoint格納の運用整備が必要。"),
-    ("6", 3,
+    ("6", 3, "（内容を要確認）",
      "案内メールとツール表記（Automate／Copilot Studio）が異なる。",
      "新しい情報が正。Automateは自動化ツールで別途研修。困り事は随時相談を推奨。"),
-    ("7", 5,
+    ("7", 5, "入力ファイル自動チェック・修正エージェント",
      "判断基準（ナレッジ）を毎月更新する認識で問題ないか。",
      "判断基準は固定。入力3ファイルを都度読込→基準照合→修正出力の構成で実現可能。"),
-    ("8", 2,
+    ("8", 2, "（2案：内容を要確認）",
      "提出する1案以外に、作りたい案も別途作ってよいか。",
      "発表は1案に限るが、2案目を裏で並行して進めるのは全く問題なし。"),
-    ("9", 1,
+    ("9", 1, "",
      "レビュー対象物が社外秘／Salesforceから情報取得は可能か。",
      "社外秘の扱いとSalesforce連携可否は事務局判断次第。管理系はCopilot Studioで作りやすい。"),
-    ("10", 4,
+    ("10", 4, "対面クライテリア議事録ドラフト生成エージェント",
      "削減時間は7/17提出時点で「できる範囲」で良いか。",
      "提出時は可の範囲でOK。ただし10月の役職者報告に向け具体的な削減数字を提示したい。"),
-    ("11", 2,
+    ("11", 2, "稟議書チェックエージェント／社内LAN問い合わせチャットボット",
      "稟議書チェックでM365外／SharePoint外は自動チェック不可では。",
      "人／Automate／AIを行ごとに振り分け、フェーズ分けする設計が必要。適否はCopilotで確認可。"),
 ]
@@ -272,15 +272,16 @@ tbl_x = Inches(0.55)
 tbl_y = Inches(2.14)
 row_h = Inches(0.40)
 hdr_h = Inches(0.38)
-gtbl = s.shapes.add_table(rows, 5, tbl_x, tbl_y, Inches(12.25), Inches(5.0)).table
-col_w = [Inches(0.72), Inches(1.02), Inches(2.35), Inches(4.05), Inches(4.11)]
+gtbl = s.shapes.add_table(rows, 6, tbl_x, tbl_y, Inches(12.25), Inches(5.0)).table
+col_w = [Inches(0.6), Inches(0.8), Inches(2.1), Inches(2.85), Inches(2.7), Inches(3.2)]
 for c, w in enumerate(col_w):
     gtbl.columns[c].width = w
 
 # ヘッダー行
-headers = ["チーム", "絞り込み", "進捗レベル", "主な質問（要約）", "回答・助言（要約）"]
+headers = ["チーム", "絞り込み", "進捗レベル", "案概要（エージェント名）",
+           "主な質問（要約）", "回答・助言（要約）"]
 for c, htext in enumerate(headers):
-    style_cell(gtbl.cell(0, c), htext, size=10.5, color=WHITE, bold=True,
+    style_cell(gtbl.cell(0, c), htext, size=9.5, color=WHITE, bold=True,
                fill=NAVY, align=PP_ALIGN.CENTER)
 set_row_height(gtbl, 0, hdr_h)
 
@@ -304,27 +305,32 @@ def narrow_badge(level):
 
 
 CHEV_OFF = RGBColor(0xDD, 0xE1, 0xE7)  # 未点灯の矢印
+AGENT_TBD = RGBColor(0x9A, 0x77, 0x2E)  # 「要確認」表示色
 
-for i, (no, level, q, a) in enumerate(teams, start=1):
+for i, (no, level, agent, q, a) in enumerate(teams, start=1):
     rfill = WHITE if i % 2 == 1 else LIGHT_GRAY
-    style_cell(gtbl.cell(i, 0), f"チーム{no}", size=10.5, color=NAVY,
+    style_cell(gtbl.cell(i, 0), f"チーム{no}", size=10, color=NAVY,
                bold=True, fill=rfill, align=PP_ALIGN.CENTER)
     # 絞り込みバッジ（未／2案／1案）
     btxt, bcol, bfill = narrow_badge(level)
-    style_cell(gtbl.cell(i, 1), btxt, size=10.5, color=bcol, bold=True,
+    style_cell(gtbl.cell(i, 1), btxt, size=10, color=bcol, bold=True,
                fill=bfill, align=PP_ALIGN.CENTER)
     # 進捗レベル列は空セル（矢印を上に重ねる）
     style_cell(gtbl.cell(i, 2), "", size=9, fill=rfill)
-    style_cell(gtbl.cell(i, 3), q, size=9.2, color=DARK_TEXT, fill=rfill)
-    style_cell(gtbl.cell(i, 4), a, size=9.2, color=DARK_TEXT, fill=rfill)
+    # 案概要（エージェント名）／未特定は薄色で「要確認」表示
+    acol = AGENT_TBD if agent.startswith("（") else DARK_TEXT
+    style_cell(gtbl.cell(i, 3), agent, size=8.6, color=acol,
+               bold=not agent.startswith("（"), fill=rfill)
+    style_cell(gtbl.cell(i, 4), q, size=8.6, color=DARK_TEXT, fill=rfill)
+    style_cell(gtbl.cell(i, 5), a, size=8.6, color=DARK_TEXT, fill=rfill)
     set_row_height(gtbl, i, row_h)
 
 # 進捗レベルの矢印（chevron 5連）を進捗レベル列に重ねて描画
-chev_w = Inches(0.28)
-chev_h = Inches(0.17)
-chev_step = Inches(0.245)
-chev_x0 = tbl_x + col_w[0] + col_w[1] + Inches(0.12)   # 進捗レベル列の左端＋余白
-for i, (no, level, q, a) in enumerate(teams, start=1):
+chev_w = Inches(0.24)
+chev_h = Inches(0.16)
+chev_step = Inches(0.21)
+chev_x0 = tbl_x + col_w[0] + col_w[1] + Inches(0.10)   # 進捗レベル列の左端＋余白
+for i, (no, level, agent, q, a) in enumerate(teams, start=1):
     y_center = tbl_y + hdr_h + row_h * (i - 1) + row_h / 2
     on_col = level_tier(level)
     for k in range(5):
@@ -336,8 +342,8 @@ for i, (no, level, q, a) in enumerate(teams, start=1):
         sp.shadow.inherit = False
     # レベル表記
     add_text(s, chev_x0 + chev_step * 5 + Inches(0.03),
-             y_center - Inches(0.11), Inches(0.55), Inches(0.24),
-             f"Lv{level}", size=9, color=on_col, bold=True,
+             y_center - Inches(0.11), Inches(0.5), Inches(0.24),
+             f"Lv{level}", size=8.5, color=on_col, bold=True,
              anchor=MSO_ANCHOR.MIDDLE)
 
 # 「2案」チームの進め方に関する注記
