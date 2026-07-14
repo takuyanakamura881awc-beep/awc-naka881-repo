@@ -270,8 +270,8 @@ teams = [
 rows = len(teams) + 1
 tbl_x = Inches(0.55)
 tbl_y = Inches(2.14)
-row_h = Inches(0.42)
-hdr_h = Inches(0.40)
+row_h = Inches(0.40)
+hdr_h = Inches(0.38)
 gtbl = s.shapes.add_table(rows, 5, tbl_x, tbl_y, Inches(12.25), Inches(5.0)).table
 col_w = [Inches(0.72), Inches(1.02), Inches(2.35), Inches(4.05), Inches(4.11)]
 for c, w in enumerate(col_w):
@@ -339,6 +339,16 @@ for i, (no, level, q, a) in enumerate(teams, start=1):
              y_center - Inches(0.11), Inches(0.55), Inches(0.24),
              f"Lv{level}", size=9, color=on_col, bold=True,
              anchor=MSO_ANCHOR.MIDDLE)
+
+# 「2案」チームの進め方に関する注記
+note_y = tbl_y + hdr_h + row_h * len(teams) + Inches(0.04)
+add_rect(s, tbl_x, note_y, Inches(12.25), Inches(0.21), RGBColor(0xE1, 0xF0, 0xF2))
+add_rect(s, tbl_x, note_y, Inches(0.12), Inches(0.21), TEAL)
+add_text(s, tbl_x + Inches(0.26), note_y - Inches(0.02), Inches(11.9), Inches(0.25),
+         "「2案」のチームは、1案に絞り込んだ上で7/17に事務局へ提出し、最終発表も1案とする。"
+         "他案は発表対象外だが、並行して進めることは可。",
+         size=9.5, color=RGBColor(0x1D, 0x5A, 0x66), bold=True,
+         anchor=MSO_ANCHOR.MIDDLE)
 
 
 # ==================================================================
