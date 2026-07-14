@@ -42,27 +42,29 @@
     let shotTimer = 0, l2Timer = 0, l2Near = false;
     let l4Time = 0, l4Done = false;
 
+    // Fable5総見直し: 実機映像は馬群が画面高の3〜5割を占める(側面=望遠パン)。
+    // 各ショットを「ラチ際・低アングル・長焦点」へ寄せ、馬群の画面占有率を実機比に近づけた。
     function LT(id, ctx) {
       const packC = ctx.packC, leadM = ctx.leadM;
       switch (id) {
-        case "L0": return { pos: P(16, 2, 2.4), tgt: P(0, 0, 1.4), fl: 1100, sway: 0 };
-        case "L1": return { pos: P(packC + 6, 14, 1.9), tgt: P(packC, 0, 1.5), fl: 830, sway: 0.22 };
+        case "L0": return { pos: P(14, -12.8, 2.2), tgt: P(0, 0, 1.5), fl: 1000, sway: 0 };
+        case "L1": return { pos: P(packC + 6, 13.4, 1.7), tgt: P(packC, 0, 1.5), fl: 1500, sway: 0.12 };
         case "L2": return l2Near
-          ? { pos: P(packC + 5, 12, 1.8), tgt: P(packC, 0, 1.6), fl: 830, sway: 0.18 }
-          : { pos: P(packC + 2, 26, 4.0), tgt: P(packC, 0, 1.6), fl: 830, sway: 0.18 };
-        case "L3": return { pos: P(packC - 30, 34, 22), tgt: P(packC + 10, 0, 0.6), fl: 760, sway: 0.06 };
+          ? { pos: P(packC + 5, 13.0, 1.6), tgt: P(packC, 0, 1.6), fl: 1450, sway: 0.12 }
+          : { pos: P(packC + 2, 19, 3.0), tgt: P(packC, 0, 1.6), fl: 1150, sway: 0.14 };
+        case "L3": return { pos: P(packC - 20, 24, 12), tgt: P(packC + 8, 0, 0.8), fl: 950, sway: 0.06 };
         case "L4": return { pos: P(leadM + 70, 3, 3.0), tgt: P(leadM + 120, 0, 2.0), fl: 900, sway: 0 };
         case "L5": return { pos: P(packC - 34, 58, 40), tgt: P(packC + 12, 0, 0), fl: 700, sway: 0.05 };
-        case "L6": return { pos: P(packC + 4, 11, 1.6), tgt: P(packC, 0, 1.6), fl: 950, sway: 0.24 };
-        case "L7": return { pos: P(packC + 4, 22, 5.0), tgt: P(packC, 0, 1.6), fl: 830, sway: 0.16 };
+        case "L6": return { pos: P(packC + 4, 13.2, 1.5), tgt: P(packC, 0, 1.5), fl: 1600, sway: 0.16 };
+        case "L7": return { pos: P(packC + 3, 15, 3.2), tgt: P(packC, 0, 1.6), fl: 1250, sway: 0.12 };
         case "L8": {
-          if (ctx.R <= 130) return { pos: P(D - 34, 38, 9), tgt: P(Math.min(leadM + 15, D + 20), 0, 1.8), fl: 830, sway: 0.12 };
+          if (ctx.R <= 130) return { pos: P(D - 30, 30, 7), tgt: P(Math.min(leadM + 15, D + 20), 0, 1.8), fl: 1000, sway: 0.12 };
           const pos = P(D + 60, 7, 3.2), tp = P(leadM, 0, 1.6);
           const dx = tp.x - pos.x, dz = tp.z - pos.z, dist = Math.sqrt(dx * dx + dz * dz);
-          return { pos: pos, tgt: P(Math.min(leadM + 15, D + 20), 0, 1.8), fl: SH.clamp(dist * 42, 950, 15000), sway: 0.12 };
+          return { pos: pos, tgt: P(Math.min(leadM + 15, D + 20), 0, 1.8), fl: SH.clamp(dist * 60, 1100, 15000), sway: 0.12 };
         }
-        case "replay": return { pos: P(Math.min(leadM + 24, D + 26), -16, 1.9), tgt: P(Math.min(leadM + 2, D + 6), 2, 1.6), fl: 830, sway: 0.16 };
-        default: return { pos: P(packC, 14, 2), tgt: P(packC, 0, 1.6), fl: 830, sway: 0.1 };
+        case "replay": return { pos: P(Math.min(leadM + 16, D + 18), -14.5, 1.8), tgt: P(Math.min(leadM + 2, D + 6), 2, 1.6), fl: 1700, sway: 0.12 };
+        default: return { pos: P(packC, 14, 2), tgt: P(packC, 0, 1.6), fl: 1100, sway: 0.1 };
       }
     }
 
@@ -156,19 +158,20 @@
       curTgt.x = tgt.x; curTgt.y = tgt.y; curTgt.z = tgt.z;
       camera.updateProjectionMatrix();
     }
+    // Fable5総見直し: 定点も望遠寄り(正面=長玉で馬群が迫る/側面=ラチ際パン)
     function tableCam(tp, ctx) {
       const m = Mcam(k), packC = ctx.packC, leadM = ctx.leadM;
-      if (tp === R_FRONT) return { pos: P(m + 40, 0, 2.4), tgt: P(leadM, 0, 1.6), fl: 1100 };
-      if (tp === R_SIDE) return { pos: P(m, 22, 3.2), tgt: P(packC, 0, 1.6), fl: 1400 };
-      if (tp === R_DIAG) return { pos: P(m + 25, 16, 5.5), tgt: P(packC, 0, 1.6), fl: 950 };
-      if (tp === R_GOAL) return { pos: P(D - 6, 14, 3.0), tgt: P(D, 0, 1.6), fl: 1000 };
-      if (tp === R_OWNPAN) return { pos: P(m, 22, 3.2), tgt: P(ctx.ownM != null ? ctx.ownM : packC, 0, 1.6), fl: 1400 };
+      if (tp === R_FRONT) return { pos: P(m + 42, 1.2, 2.1), tgt: P(leadM, 0, 1.6), fl: 2300 };
+      if (tp === R_SIDE) return { pos: P(m, 17.5, 2.6), tgt: P(packC, 0, 1.6), fl: 2000 };
+      if (tp === R_DIAG) return { pos: P(m + 20, 14, 4.5), tgt: P(packC, 0, 1.6), fl: 1400 };
+      if (tp === R_GOAL) return { pos: P(D - 6, 14, 3.0), tgt: P(D, 0, 1.6), fl: 1250 };
+      if (tp === R_OWNPAN) return { pos: P(m, 17.5, 2.6), tgt: P(ctx.ownM != null ? ctx.ownM : packC, 0, 1.6), fl: 2000 };
       if (tp === R_NAME) {
         const info = nameKs[k] || {};
         const foc = info.focus ? info.focus : P(leadM, 0, 1.6);
         return { pos: P(m + 10, 20, 6), tgt: { x: foc.x, y: foc.y, z: foc.z }, fl: 1000 };
       }
-      return { pos: P(m + 40, 0, 2.4), tgt: P(leadM, 0, 1.6), fl: 1100 };
+      return { pos: P(m + 42, 1.2, 2.1), tgt: P(leadM, 0, 1.6), fl: 2300 };
     }
     function applyCam(tp, ctx) { const c = tableCam(tp, ctx); setCam(c.pos, c.tgt, c.fl); }
     function cutTo(k2, ctx) {

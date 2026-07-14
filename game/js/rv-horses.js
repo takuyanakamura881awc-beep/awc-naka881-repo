@@ -13,7 +13,7 @@
   const RH = {};
   SH.RVHorses = RH;
 
-  const RIG_SCALE = 1.15;          // §6.1 実寸化スケール(createRig root のみ)
+  const RIG_SCALE = 1.2;           // §6.1 実寸化スケール(createRig root のみ)。Fable5: 実機比の存在感へ微増
   const BLAZE_KEYS = { blazeStar: "star", blazeStripe: "stripe", blazeSnip: "snip" };
   // 部位固定色(instanceColor)
   const FIXED = {
@@ -237,7 +237,7 @@
     const _qFlat = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0));
     const _qHead = new THREE.Quaternion();
     const _yAxis = new THREE.Vector3(0, 1, 0);
-    const _scl = new THREE.Vector3(2.6, 0.9, 1);
+    const _scl = new THREE.Vector3(2.9, 1.0, 1);
     const _pos = new THREE.Vector3();
     const ownWorld = new THREE.Vector3();
     let hasOwnWorld = false;

@@ -164,7 +164,8 @@
       const R = Math.max(0, D - leadM), p = D > 0 ? leadM / D : 0, packC = leadM - 8;
       const ownM = ownIndex >= 0 ? Math.min(pos[ownIndex], D + 40) : null;
       const rankIdx = pos.map(function (v, i) { return i; }).sort(function (a, b) { return pos[b] - pos[a]; });
-      if (view.passTime1000m == null && leadM >= 1000) { view.passTime1000m = t; view.passHudUntil = t + 10.0; }
+      // 設計§7.2/A-MINOR6: D≥1600 のレースのみ確定(D<1600 は終始 null)
+      if (view.passTime1000m == null && D >= 1600 && leadM >= 1000) { view.passTime1000m = t; view.passHudUntil = t + 10.0; }
 
       if (world.setGateOpen) world.setGateOpen(t >= 0 ? Math.min(1, t * 3) : 0);
 

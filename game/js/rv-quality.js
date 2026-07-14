@@ -81,7 +81,8 @@
         } else { downStreak = upStreak = 0; }
       },
       force: function (v) { forced = true; setLevel(v | 0); },
-      auto: function () { forced = false; },
+      // auto()(強制解除)は全経路未使用のデッドコードだったため削除(Fable5総見直し)。
+      // 強制解除が必要になった場合は force 側に null 引数対応を足すこと。
     };
     return api;
   };

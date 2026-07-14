@@ -100,6 +100,14 @@
     const course = SH.RV2D.makeCourse(D);
     const sky = SH.RV2D.skyColors(cond);
     const turf = SH.RV2D.turfColors(race.surface, cond);
+    // Fable5総見直し: 実機の芝は黄緑寄りで明るい(刈り目の明暗差も強い)。
+    // 2Dフォールバック(raceview.js)の配色は変えず、3D走路のみ明色LUTへ差し替える。
+    const wet3 = cond === "重" || cond === "不良";
+    const turf3 = (race.surface === "ダート")
+      ? { a: turf.a, b: turf.b }
+      : wet3 ? { a: "#4d7f3a", b: "#446f33" }
+        : (cond === "稍重") ? { a: "#5d9a44", b: "#4f883b" }
+          : { a: "#6cae4d", b: "#5a9a40" };
 
     // 破棄対象の一括管理(§6-R12: dispose の単一窓口)
     const texList = [], geoList = [], matList = [];
@@ -126,7 +134,7 @@
       return ctex("turf", 512, 512, function (c, w, h) {
         const rng = mulberry32(7);
         for (let b = 0; b < 4; b++) {
-          c.fillStyle = (b % 2 === 0) ? turf.a : turf.b;
+          c.fillStyle = (b % 2 === 0) ? turf3.a : turf3.b;
           c.fillRect(b * 128, 0, 128, h);
         }
         c.fillStyle = "rgba(0,0,0,.10)";
@@ -227,10 +235,10 @@
         c.strokeStyle = "rgba(255,255,255,.12)"; c.lineWidth = 2;
         for (let r = 1; r < 4; r++) { c.beginPath(); c.moveTo(0, r * h / 4); c.lineTo(w, r * h / 4); c.stroke(); }
         const cols = ["#e5c07b", "#bf616a", "#88c0d0", "#a3be8c", "#d8dee9", "#b48ead"];
-        for (let i = 0; i < 1200; i++) {
-          if (night && rng() < 0.55) c.fillStyle = "rgba(255,226,170," + (0.35 + rng() * 0.6) + ")";
+        for (let i = 0; i < 1500; i++) {
+          if (night && rng() < 0.55) c.fillStyle = "rgba(255,226,170," + (0.3 + rng() * 0.5) + ")";
           else c.fillStyle = cols[(i * 7) % 6];
-          c.fillRect(rng() * w, rng() * h, 3, 4);
+          c.fillRect(rng() * w, rng() * h, 2, 3);
         }
       });
     }
@@ -271,8 +279,9 @@
     let fogFull, fogSimple;
     if (night) {
       scene.background = new THREE.Color(0x0d1424); // 濃紺(上#0a0e1e〜地平#1a2436の中間)
-      fogFull = new THREE.FogExp2(0x121a2a, 0.0016);
-      fogSimple = new THREE.Fog(0x121a2a, 130, 640);
+      // Fable5総見直し: 実機ナイターは「空は暗いが走路は照明で明るい」。フォグを薄めて視程を確保
+      fogFull = new THREE.FogExp2(0x121a2a, 0.0011);
+      fogSimple = new THREE.Fog(0x121a2a, 150, 700);
     } else {
       const bgc = new THREE.Color(sky.top).lerp(new THREE.Color(sky.bot), 0.55);
       scene.background = bgc;
@@ -284,12 +293,13 @@
     const gloomy = cond === "重" || cond === "不良";
     const dim = cond === "稍重";
     let hemi, sun = null, moonDir = null;
-    const HEMI_BASE = night ? 0.35 : (gloomy ? 0.95 : 0.8);
+    // Fable5総見直し: ナイター露出を実機(照明下で芝が明るく見える)へ引き上げ
+    const HEMI_BASE = night ? 0.5 : (gloomy ? 0.95 : 0.8);
     if (night) {
-      hemi = new THREE.HemisphereLight(0x2a3550, 0x0e1a12, HEMI_BASE);
-      // 月明かり(造形の可読性確保のための弱い指向光 — 実装判断・notes参照)
-      moonDir = new THREE.DirectionalLight(0x8899bb, 0.18);
-      moonDir.position.set(-180, 260, -140);
+      hemi = new THREE.HemisphereLight(0x3d4d70, 0x16281c, HEMI_BASE);
+      // 照明フラッド近似(全周をほぼ真上からの暖色指向光で均一に照らす — 実装判断・notes参照)
+      moonDir = new THREE.DirectionalLight(0xffeecf, 0.55);
+      moonDir.position.set(40, 300, 160);
       scene.add(moonDir);
     } else {
       hemi = new THREE.HemisphereLight(
@@ -378,13 +388,13 @@
     trackGroup.add(trackMesh);
 
     // 走路外地面(大円盤)+インフィールド
-    const groundMat = lamb(night ? 0x14231a : (gloomy ? 0x24512a : 0x2c6a33));
+    const groundMat = lamb(night ? 0x1a2f20 : (gloomy ? 0x24512a : 0x2c6a33));
     const ground = new THREE.Mesh(trackGeo(new THREE.CircleGeometry(1500, 48)), groundMat);
     ground.rotation.x = -Math.PI / 2;
     ground.position.set(0, -0.08, R_ARC);
     ground.frustumCulled = false;
     trackGroup.add(ground);
-    const infield = new THREE.Mesh(trackGeo(new THREE.CircleGeometry(100, 32)), lamb(night ? 0x17281d : 0x35753a));
+    const infield = new THREE.Mesh(trackGeo(new THREE.CircleGeometry(100, 32)), lamb(night ? 0x203a29 : 0x35753a));
     infield.rotation.x = -Math.PI / 2;
     infield.scale.set(2.6, 1, 1);
     infield.position.set(0, -0.03, R_ARC);
@@ -518,7 +528,7 @@
     (function buildTowers() {
       const towerGeo = trackGeo(new THREE.CylinderGeometry(0.22, 0.4, 15, 6));
       const headGeo = trackGeo(new THREE.BoxGeometry(2.6, 0.9, 0.7));
-      const towerMat = lamb(0x596069);
+      const towerMat = lamb(night ? 0x3a4048 : 0x596069);
       const headMat = lamb({ color: 0xd8dce4, emissive: night ? 0xfff4e0 : 0x000000, emissiveIntensity: night ? 0.9 : 0 });
       const lit = [255, 320, 385, 450, 1000, 1350]; // T0周辺4基+向正面/丘陵(§5.1 4〜6灯)
       const unlit = [980, 1180, 1520, 1620];        // E-9: T3〜T6の小物(非点灯)
@@ -532,20 +542,21 @@
         scene.add(g);
         addVis(g, base.x, base.z, 20);
         if (isLit && night) {
-          const pl = new THREE.PointLight(0xfff4e0, 1.05, 300, 1.6);
+          const pl = new THREE.PointLight(0xfff4e0, 1.5, 360, 1.6);
           pl.position.set(base.x, 14.5, base.z);
           scene.add(pl);
           nightLights.push(pl);
+          // Fable5総見直し: 実機の照明グレアは大きく滲む(ハロ/光条を拡大・増光)
           const hm = trackMat(new THREE.SpriteMaterial({
             map: haloTexture(), color: 0xfff4e0, fog: false, depthWrite: false,
-            blending: THREE.AdditiveBlending, opacity: 0.85,
+            blending: THREE.AdditiveBlending, opacity: 0.95,
           }));
           const sm = trackMat(new THREE.SpriteMaterial({
             map: streakTexture(), color: 0xfff4e0, fog: false, depthWrite: false,
-            blending: THREE.AdditiveBlending, opacity: 0.6,
+            blending: THREE.AdditiveBlending, opacity: 0.7,
           }));
-          const halo = new THREE.Sprite(hm); halo.position.set(base.x, 15.3, base.z); halo.scale.set(9, 9, 1);
-          const stk = new THREE.Sprite(sm); stk.position.set(base.x, 15.3, base.z); stk.scale.set(16, 16, 1);
+          const halo = new THREE.Sprite(hm); halo.position.set(base.x, 15.3, base.z); halo.scale.set(13, 13, 1);
+          const stk = new THREE.Sprite(sm); stk.position.set(base.x, 15.3, base.z); stk.scale.set(24, 24, 1);
           glareFx.add(halo); glareFx.add(stk);
           addVis(halo, base.x, base.z, 20); addVis(stk, base.x, base.z, 20);
         }
@@ -561,7 +572,7 @@
       const sMid = (260 + 450) / 2;                    // 直線上(z=0)
       const x0 = posS(270, 0, 0).x, x1 = posS(445, 0, 0).x;
       const len = x1 - x0, cx = (x0 + x1) / 2;
-      const bodyMat = lamb(night ? 0x3a3f4e : 0x6b6b7a);
+      const bodyMat = lamb(night ? 0x272c3a : 0x6b6b7a);
       for (let t = 0; t < 4; t++) {
         const tier = new THREE.Mesh(trackGeo(new THREE.BoxGeometry(len, 2.0, 3.4)), bodyMat);
         tier.position.set(cx, 1.0 + t * 1.85, -(17.5 + t * 3.1));
@@ -575,7 +586,7 @@
       crowd.rotation.y = Math.PI; // コース側を向く
       g.add(crowd);
       // 屋根
-      const roof = new THREE.Mesh(trackGeo(new THREE.BoxGeometry(len + 4, 0.5, 6.5)), lamb(night ? 0x2c3038 : 0xd9dade));
+      const roof = new THREE.Mesh(trackGeo(new THREE.BoxGeometry(len + 4, 0.5, 6.5)), lamb(night ? 0x22262e : 0xd9dade));
       roof.position.set(cx, 9.4, -24.5);
       g.add(roof);
       // ゴール塔(s=372脇)+頂部発光
@@ -606,7 +617,7 @@
     (function buildBamboo() {
       const rng = mulberry32(1 * 7919);
       const trunks = [], leaves = [];
-      for (let s = 452; s < 700; s += 2.2) {
+      for (let s = 452; s < 700; s += 1.7) {
         const side = rng() < 0.62 ? -1 : 1;
         const lat = side * (13 + rng() * (side < 0 ? 25 : 18));
         const sj = s + (rng() - 0.5) * 1.4;
@@ -629,7 +640,7 @@
     function buildForest(id, s0, s1, dark) {
       const rng = mulberry32(id * 7919);
       const trunks = [], fols = [], bbs = [];
-      for (let s = s0 + 3; s < s1; s += 6.2) {
+      for (let s = s0 + 3; s < s1; s += 4.8) {
         const side = rng() < 0.6 ? -1 : 1;
         const lat = side * (13.5 + rng() * (side < 0 ? 24 : 16));
         const sj = s + (rng() - 0.5) * 3.6;
@@ -741,7 +752,7 @@
     // T5 丘陵(草丘)
     (function buildHills() {
       const rng = mulberry32(5 * 7919);
-      const hillMat = lamb(night ? 0x27492b : 0x4f9a48);
+      const hillMat = lamb(night ? 0x2e5633 : 0x4f9a48);
       for (let i = 0; i < 6; i++) {
         const s = 1290 + i * 32;
         const side = i % 2 === 0 ? -1 : 1;

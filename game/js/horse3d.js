@@ -281,10 +281,10 @@
     const root = new THREE.Group();
     const body = new THREE.Group(); body.position.y = 1.08; root.add(body);
 
-    // 胴/胸/臀(torsoSph)
-    const torso = node(0, 0, 0, 0, 0, 0, 1.14, 0.45, 0.37); body.add(torso);
-    const chest = node(0.72, -0.05, 0, 0, 0, 0, 0.42, 0.42, 0.34); body.add(chest);
-    const rump = node(-0.68, 0.02, 0, 0, 0, 0, 0.46, 0.46, 0.36); body.add(rump);
+    // 胴/胸/臀(torsoSph)— Fable5総見直し: 実機のサラブレッド体型に寄せ胴を細身化(リグ側のみ)
+    const torso = node(0, 0, 0, 0, 0, 0, 1.15, 0.42, 0.31); body.add(torso);
+    const chest = node(0.72, -0.05, 0, 0, 0, 0, 0.40, 0.40, 0.30); body.add(chest);
+    const rump = node(-0.68, 0.02, 0, 0, 0, 0, 0.45, 0.44, 0.32); body.add(rump);
 
     // 首・たてがみ・頭
     const neckPivot = new THREE.Group(); neckPivot.position.set(0.85, 0.22, 0); body.add(neckPivot);

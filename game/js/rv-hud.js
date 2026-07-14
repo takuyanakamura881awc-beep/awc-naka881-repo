@@ -62,7 +62,8 @@
     (function () {
       const c = vig.getContext("2d");
       const g = c.createRadialGradient(DW / 2, DH / 2, DH * 0.5, DW / 2, DH / 2, DH * 1.05);
-      g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(1, "rgba(8,10,16,.5)");
+      g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(1, "rgba(8,10,16,.3)"); // Fable5: 実機は周辺減光が弱い
+
       c.fillStyle = g; c.fillRect(0, 0, DW, DH);
     })();
 
@@ -82,10 +83,11 @@
 
     // (2) H-1 上部帯
     function drawTopBand(a) {
+      // Fable5総見直し: 実機の上部帯は彩度の高い草緑(夜でも明るい)
       const g = octx.createLinearGradient(0, 0, 0, BAND_H);
-      g.addColorStop(0, "#2f8f3a"); g.addColorStop(1, "#256f2c");
-      octx.globalAlpha = 0.82 * a; octx.fillStyle = g; octx.fillRect(0, 0, DW, BAND_H);
-      octx.globalAlpha = 0.5 * a; octx.fillStyle = "rgb(180,230,170)"; octx.fillRect(0, BAND_H - 3, DW, 3);
+      g.addColorStop(0, "#35b345"); g.addColorStop(1, "#1e7d2a");
+      octx.globalAlpha = 0.9 * a; octx.fillStyle = g; octx.fillRect(0, 0, DW, BAND_H);
+      octx.globalAlpha = 0.5 * a; octx.fillStyle = "rgb(190,236,178)"; octx.fillRect(0, BAND_H - 3, DW, 3);
       octx.globalAlpha = 1;
     }
 
@@ -101,13 +103,14 @@
       const Vshow = Math.ceil(R / 100) * 100;
       const f = (R % 100) / 100;                       // 1→0 で次の100m標識へ到達
       const xNum = X_R - (1 - f) * (X_R - X_L);          // f減少で右→左スライド(境界横断)
-      const yNum = 7;
-      octx.font = "bold 46px sans-serif"; octx.textAlign = "left"; octx.textBaseline = "top";
+      const yNum = 4;
+      // Fable5総見直し: 実機の残距離数字は太イタリック大サイズ+濃緑縁取り
+      octx.font = "italic bold 52px sans-serif"; octx.textAlign = "left"; octx.textBaseline = "top";
       const numW = octx.measureText(String(Vshow)).width;
       drawPoleIcon(xNum - 17, 8);
       octx.globalAlpha = a;
-      octx.shadowColor = "rgba(0,0,0,.4)"; octx.shadowOffsetX = 2; octx.shadowOffsetY = 2;
-      octx.lineWidth = 5; octx.strokeStyle = "#0c2a12"; octx.strokeText(String(Vshow), xNum, yNum);
+      octx.shadowColor = "rgba(0,0,0,.45)"; octx.shadowOffsetX = 3; octx.shadowOffsetY = 3;
+      octx.lineWidth = 7; octx.strokeStyle = "#0c3d14"; octx.strokeText(String(Vshow), xNum, yNum);
       octx.fillStyle = "#ffffff"; octx.fillText(String(Vshow), xNum, yNum);
       octx.shadowColor = "transparent"; octx.shadowOffsetX = 0; octx.shadowOffsetY = 0;
       octx.globalAlpha = 1; octx.textBaseline = "alphabetic";
@@ -128,16 +131,17 @@
     }
 
     // (4) H-3 隊列チップ(盾形・順位スライド)+ H-4 自馬タグ
-    function drawFormation(a, rankIdx, t, xNum, numW) {
+    // Fable5総見直し: 実機はチップ列が画面継ぎ目を中心に並び、先頭(1位)が左端。
+    // 残距離数字とは重なり得るがチップを後描き(上)にして実機の重なり方に合わせる。
+    function drawFormation(a, rankIdx, t) {
       if (a <= 0) return;
-      const Nchip = Math.min(n, CHIP_MAX), gap = 6;
-      const base = (xNum == null) ? (X_R + 70) : (xNum + numW + 40);
-      const cw = clamp(Math.floor((2540 - base) / Nchip) - gap, 30, 46);
+      const Nchip = Math.min(n, CHIP_MAX), gap = 6, cw = 44;
+      const x0 = DW / 2 - (Nchip * (cw + gap) - gap) / 2;
       const shown = {};
       for (let slot = 0; slot < Nchip; slot++) {
         const i = rankIdx[slot]; if (i == null) continue; shown[i] = 1;
         const r = runners[i];
-        const targetX = 2540 - (slot + 1) * (cw + gap) + gap;   // 右端=1位、左へ
+        const targetX = x0 + slot * (cw + gap);                 // 左端=1位、右へ
         let anm = chipAnim[i];
         if (anm == null) anm = chipAnim[i] = { x: 2540 + cw, alpha: 0, from: 2540 + cw, to: targetX, t0: t };
         else if (anm.to !== targetX) { anm.from = anm.x; anm.to = targetX; anm.t0 = t; }
@@ -177,7 +181,8 @@
       let sx = 1;
       if (w > maxW) { sx = Math.max(0.8, maxW / w); if (w * sx > maxW) { while (str.length > 1 && octx.measureText(str + "…").width * sx > maxW) str = str.slice(0, -1); str += "…"; } }
       octx.save(); octx.translate(x, y); octx.scale(sx, 1);
-      octx.lineWidth = 1.5; octx.strokeStyle = "rgba(0,0,0,.85)"; octx.strokeText(str, 0, 0);
+      // Fable5総見直し: 実機の馬名は太い白文字+強い黒縁(夜景でも判読可)
+      octx.lineWidth = 4.5; octx.lineJoin = "round"; octx.strokeStyle = "rgba(0,0,0,.9)"; octx.strokeText(str, 0, 0);
       octx.fillStyle = "#fff"; octx.fillText(str, 0, 0);
       octx.restore();
     }
@@ -196,6 +201,7 @@
       octx.arcTo(x, cy, x + chipW, cy, rr); octx.closePath();
       octx.fillStyle = WAKU[r.waku - 1]; octx.fill();
       if (own) { octx.lineWidth = 2.5; octx.strokeStyle = "#f76707"; octx.stroke(); }
+      else { octx.lineWidth = 1.5; octx.strokeStyle = "rgba(255,255,255,.7)"; octx.stroke(); }
       octx.fillStyle = WTXT[r.waku - 1]; octx.font = "bold 28px sans-serif";
       octx.textAlign = "center"; octx.textBaseline = "middle";
       octx.fillText(String(gate), x + chipW / 2, cy + chipH / 2);
@@ -220,7 +226,7 @@
 
     // (6) H-6 経過タイム
     function drawElapsed(t) {
-      octx.font = "bold 40px sans-serif"; octx.fillStyle = "#fff"; octx.textAlign = "left"; octx.textBaseline = "top";
+      octx.font = "italic bold 40px sans-serif"; octx.fillStyle = "#fff"; octx.textAlign = "left"; octx.textBaseline = "top";
       octx.shadowColor = "rgba(0,0,0,.55)"; octx.shadowBlur = 4;
       octx.fillText(fmtElapsed(Math.min(t, winTime)), 40, yLegTop - 52);
       octx.shadowBlur = 0; octx.shadowColor = "transparent"; octx.textBaseline = "alphabetic";
@@ -284,7 +290,8 @@
     function drawStoryTicker(lastStory, t) {
       if (!lastStory || t <= 0.4 || t - lastStory.at >= 4.5) return;
       octx.font = "bold 28px sans-serif"; octx.textAlign = "left"; octx.textBaseline = "alphabetic";
-      const tw = octx.measureText(lastStory.text).width, bx = DW / 2 - tw / 2 - 18, by = DH - 120;
+      // H-5凡例・経過タイム行との一時重なりを回避(凡例上端から更に上へ)
+      const tw = octx.measureText(lastStory.text).width, bx = DW / 2 - tw / 2 - 18, by = yLegTop - 110;
       octx.fillStyle = "rgba(6,10,18,.78)"; octx.fillRect(bx, by, tw + 36, 44);
       octx.fillStyle = "#ffd43b"; octx.fillRect(bx, by, 6, 44);
       octx.fillStyle = "#fff"; octx.fillText(lastStory.text, DW / 2 - tw / 2, by + 32);
@@ -301,8 +308,8 @@
       if (ctx.dual) drawSeparator();                         // (1)
       if (a > 0) {                                            // (2)(3)(4)(8)
         drawTopBand(a);
-        const d = drawDistSlide(a, ctx.R);
-        drawFormation(a, ctx.rankIdx, ctx.t, d.xNum, d.numW);
+        drawDistSlide(a, ctx.R);
+        drawFormation(a, ctx.rankIdx, ctx.t);   // 数字より後描き=実機同様チップが上
         drawRaceName(a);
       }
       drawLegend();                                          // (5) 常時
