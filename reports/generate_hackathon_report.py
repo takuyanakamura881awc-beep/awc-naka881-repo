@@ -219,83 +219,119 @@ slide_header(s, 2, 4, "各チームの進捗状況",
              "PROGRESS SUMMARY ｜ 全11チーム")
 slide_footer(s)
 
-add_text(s, Inches(0.55), Inches(1.28), Inches(12.3), Inches(0.35),
-         "1案への絞り込み状況と、相談会で挙がった主要な質疑応答（各チーム1〜2件を要約）を整理。",
-         size=11.5, color=DARK_TEXT)
+add_text(s, Inches(0.55), Inches(1.26), Inches(12.3), Inches(0.32),
+         "「絞り込み」は1案への確定状況（済／未）、「進捗レベル」は下記4段階の到達点を4つの矢印で表示。質疑は各チーム1〜2件を要約。",
+         size=11, color=DARK_TEXT)
 
-# 絞り込み状況の凡例
-legend = [("◎ 完了", GREEN), ("○ 概ね完了", TEAL), ("△ 検討中", AMBER), ("× 未着手", RED)]
-lx = Inches(0.55)
-for lab, col in legend:
-    add_rect(s, lx, Inches(1.60), Inches(0.16), Inches(0.16), col)
-    add_text(s, lx + Inches(0.2), Inches(1.52), Inches(1.5), Inches(0.3),
-             lab, size=9.5, color=DARK_TEXT, bold=True)
-    lx += Inches(1.65)
+# 進捗レベルの凡例
+add_text(s, Inches(0.55), Inches(1.60), Inches(12.3), Inches(0.5),
+         "進捗レベルの目安 ▶ Lv1：案の絞り込み（複数案・検討中）／ Lv2：1案確定・スコープ/機能理解は途上／ "
+         "Lv3：To-Be・使用アプリ/アーキが具体化／ Lv4：定量効果まで概ね完成",
+         size=9.5, color=RGBColor(0x55, 0x5D, 0x68), line_spacing=1.1)
 
+# チーム番号, 絞り込み(True=済), 進捗レベル(1-4), 質問, 回答
 teams = [
-    ("1", "△", AMBER, "2案（未確定）",
+    ("1", False, 1,
      "Copilot Studio（エージェント）を使うメリットは何か。",
      "回答範囲やフォーマットを制御でき、会話の記憶維持も可能。チャット単体より挙動を制御しやすい。"),
-    ("2", "△", AMBER, "有力案あり",
+    ("2", False, 1,
      "読込はExcelよりPDFの方が精度が高いか（Excel業務が多い）。",
      "肌感ではPDFが有利だがExcelでも読める可能性あり。まず試して判断する方針。"),
-    ("3", "○", TEAL, "1案（仮案）",
+    ("3", True, 2,
      "アーキテクチャ／As-Is・To-Beの描き方を知りたい。",
      "既存フローに引きずられず、やりたいことからTo-Beを新規設計。作図もCopilot活用可。"),
-    ("4", "○", TEAL, "1案（仮案）",
+    ("4", True, 2,
      "Salesforceを読めるか。読めないと取組の意味が薄れる懸念。",
      "可否は事務局が早急に方針提示。機密情報の扱いを含め要協議として課題化。"),
-    ("5", "△", AMBER, "検討中",
+    ("5", False, 1,
      "共有フォルダのパスからCopilotは情報取得できるか。",
      "M365内（SharePoint）が前提。共有フォルダは不可で、SharePoint格納の運用整備が必要。"),
-    ("6", "△", AMBER, "内容未固化",
+    ("6", False, 1,
      "案内メールとツール表記（Automate／Copilot Studio）が異なる。",
      "新しい情報が正。Automateは自動化ツールで別途研修。困り事は随時相談を推奨。"),
-    ("7", "◎", GREEN, "ほぼ完成",
+    ("7", True, 4,
      "判断基準（ナレッジ）を毎月更新する認識で問題ないか。",
      "判断基準は固定。入力3ファイルを都度読込→基準照合→修正出力の構成で実現可能。"),
-    ("8", "△", AMBER, "絞込み相談中",
+    ("8", False, 1,
      "提出する1案以外に、作りたい案も別途作ってよいか。",
      "発表は1案に限るが、2案目を裏で並行して進めるのは全く問題なし。"),
-    ("9", "×", RED, "未集約",
+    ("9", False, 1,
      "レビュー対象物が社外秘／Salesforceから情報取得は可能か。",
      "社外秘の扱いとSalesforce連携可否は事務局判断次第。管理系はCopilot Studioで作りやすい。"),
-    ("10", "◎", GREEN, "叩き台完成",
+    ("10", True, 3,
      "削減時間は7/17提出時点で「できる範囲」で良いか。",
      "提出時は可の範囲でOK。ただし10月の役職者報告に向け具体的な削減数字を提示したい。"),
-    ("11", "△", AMBER, "2案（絞込中）",
+    ("11", False, 1,
      "稟議書チェックでM365外／SharePoint外は自動チェック不可では。",
      "人／Automate／AIを行ごとに振り分け、フェーズ分けする設計が必要。適否はCopilotで確認可。"),
 ]
 
 rows = len(teams) + 1
-cols = 4
 tbl_x = Inches(0.55)
-tbl_y = Inches(1.95)
-tbl_w = Inches(12.25)
-tbl_h = Inches(5.15)
-gtbl = s.shapes.add_table(rows, cols, tbl_x, tbl_y, tbl_w, tbl_h).table
-gtbl.columns[0].width = Inches(1.75)
-gtbl.columns[1].width = Inches(3.25)
-gtbl.columns[2].width = Inches(3.6)
-gtbl.columns[3].width = Inches(3.65)
+tbl_y = Inches(2.12)
+row_h = Inches(0.42)
+hdr_h = Inches(0.40)
+gtbl = s.shapes.add_table(rows, 5, tbl_x, tbl_y, Inches(12.25), Inches(5.0)).table
+col_w = [Inches(0.75), Inches(1.05), Inches(2.0), Inches(4.2), Inches(4.25)]
+for c, w in enumerate(col_w):
+    gtbl.columns[c].width = w
 
 # ヘッダー行
-headers = ["チーム / 絞り込み", "1案への絞り込み状況", "主な質問（要約）", "回答・助言（要約）"]
+headers = ["チーム", "絞り込み", "進捗レベル", "主な質問（要約）", "回答・助言（要約）"]
 for c, htext in enumerate(headers):
     style_cell(gtbl.cell(0, c), htext, size=10.5, color=WHITE, bold=True,
                fill=NAVY, align=PP_ALIGN.CENTER)
-set_row_height(gtbl, 0, Inches(0.42))
+set_row_height(gtbl, 0, hdr_h)
 
-for i, (no, mark, mcol, status, q, a) in enumerate(teams, start=1):
+
+def level_tier(level):
+    """進捗レベルに応じた点灯色（早期=琥珀 → 具体化=ティール → 完成=緑）"""
+    if level >= 4:
+        return GREEN
+    if level == 3:
+        return TEAL
+    return AMBER
+
+
+CHEV_OFF = RGBColor(0xDD, 0xE1, 0xE7)  # 未点灯の矢印
+
+for i, (no, narrowed, level, q, a) in enumerate(teams, start=1):
     rfill = WHITE if i % 2 == 1 else LIGHT_GRAY
-    style_cell(gtbl.cell(i, 0), f"チーム {no}   {mark}", size=11, color=mcol,
+    style_cell(gtbl.cell(i, 0), f"チーム{no}", size=10.5, color=NAVY,
                bold=True, fill=rfill, align=PP_ALIGN.CENTER)
-    style_cell(gtbl.cell(i, 1), status, size=10, color=DARK_TEXT, bold=True, fill=rfill,
-               align=PP_ALIGN.CENTER)
-    style_cell(gtbl.cell(i, 2), q, size=9.3, color=DARK_TEXT, fill=rfill)
-    style_cell(gtbl.cell(i, 3), a, size=9.3, color=DARK_TEXT, fill=rfill)
-    set_row_height(gtbl, i, Inches(0.43))
+    # 絞り込みバッジ（済＝緑／未＝琥珀）
+    if narrowed:
+        style_cell(gtbl.cell(i, 1), "済", size=11, color=GREEN, bold=True,
+                   fill=RGBColor(0xE4, 0xF1, 0xE9), align=PP_ALIGN.CENTER)
+    else:
+        style_cell(gtbl.cell(i, 1), "未", size=11, color=AMBER, bold=True,
+                   fill=RGBColor(0xFB, 0xF0, 0xDA), align=PP_ALIGN.CENTER)
+    # 進捗レベル列は空セル（矢印を上に重ねる）
+    style_cell(gtbl.cell(i, 2), "", size=9, fill=rfill)
+    style_cell(gtbl.cell(i, 3), q, size=9.2, color=DARK_TEXT, fill=rfill)
+    style_cell(gtbl.cell(i, 4), a, size=9.2, color=DARK_TEXT, fill=rfill)
+    set_row_height(gtbl, i, row_h)
+
+# 進捗レベルの矢印（chevron）を進捗レベル列に重ねて描画
+chev_w = Inches(0.30)
+chev_h = Inches(0.17)
+chev_step = Inches(0.275)
+chev_x0 = tbl_x + col_w[0] + col_w[1] + Inches(0.14)   # 進捗レベル列の左端＋余白
+for i, (no, narrowed, level, q, a) in enumerate(teams, start=1):
+    y_center = tbl_y + hdr_h + row_h * (i - 1) + row_h / 2
+    on_col = level_tier(level)
+    for k in range(4):
+        col = on_col if k < level else CHEV_OFF
+        sp = s.shapes.add_shape(MSO_SHAPE.CHEVRON,
+                                chev_x0 + chev_step * k, y_center - chev_h / 2,
+                                chev_w, chev_h)
+        set_fill(sp, col)
+        sp.shadow.inherit = False
+    # レベル表記
+    add_text(s, chev_x0 + chev_step * 4 + Inches(0.02),
+             y_center - Inches(0.11), Inches(0.62), Inches(0.24),
+             f"Lv{level}", size=9, color=on_col, bold=True,
+             anchor=MSO_ANCHOR.MIDDLE)
 
 
 # ==================================================================
