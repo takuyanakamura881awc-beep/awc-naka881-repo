@@ -232,37 +232,37 @@ add_text(s, Inches(0.55), Inches(1.58), Inches(12.3), Inches(0.5),
 # チーム番号, 進捗レベル(1-5), 案概要(エージェント名/30字以内・2案は両案), 質問, 回答
 # Lv1=未絞込, Lv2=2案まで絞込, Lv3-5=1案絞込済（深度別）
 teams = [
-    ("1", 2, "（2案：内容を要確認）",
+    ("1", 2, "加盟店提出様式自動チェック／課題対応の仕様検討・タスク出し支援",
      "Copilot Studio（エージェント）を使うメリットは何か。",
      "回答範囲やフォーマットを制御でき、会話の記憶維持も可能。チャット単体より挙動を制御しやすい。"),
-    ("2", 3, "加盟店問い合わせ対応支援エージェント",
+    ("2", 3, "加盟店問い合わせ対応支援",
      "読込はExcelよりPDFの方が精度が高いか（Excel業務が多い）。",
      "肌感ではPDFが有利だがExcelでも読める可能性あり。まず試して判断する方針。"),
-    ("3", 3, "（内容を要確認）",
+    ("3", 3, "加盟店防衛マネジメント支援",
      "アーキテクチャ／As-Is・To-Beの描き方を知りたい。",
      "既存フローに引きずられず、やりたいことからTo-Beを新規設計。作図もCopilot活用可。"),
-    ("4", 3, "（Salesforce活用案：要確認）",
+    ("4", 3, "市場・企業分析エージェント",
      "Salesforceを読めるか。読めないと取組の意味が薄れる懸念。",
      "可否は事務局が早急に方針提示。機密情報の扱いを含め要協議として課題化。"),
-    ("5", 3, "依頼メール処理・ファイル読込エージェント",
+    ("5", 3, "依頼メール処理・ファイル読込",
      "共有フォルダのパスからCopilotは情報取得できるか。",
      "M365内（SharePoint）が前提。共有フォルダは不可で、SharePoint格納の運用整備が必要。"),
-    ("6", 3, "（内容を要確認）",
+    ("6", 3, "PowerPoint資料作成と会議招集自動化",
      "案内メールとツール表記（Automate／Copilot Studio）が異なる。",
      "新しい情報が正。Automateは自動化ツールで別途研修。困り事は随時相談を推奨。"),
-    ("7", 5, "入力ファイル自動チェック・修正エージェント",
+    ("7", 5, "入力ファイル自動チェック・修正",
      "判断基準（ナレッジ）を毎月更新する認識で問題ないか。",
      "判断基準は固定。入力3ファイルを都度読込→基準照合→修正出力の構成で実現可能。"),
-    ("8", 2, "（2案：内容を要確認）",
+    ("8", 1, "ー",
      "提出する1案以外に、作りたい案も別途作ってよいか。",
      "発表は1案に限るが、2案目を裏で並行して進めるのは全く問題なし。"),
-    ("9", 1, "",
+    ("9", 1, "ー",
      "レビュー対象物が社外秘／Salesforceから情報取得は可能か。",
      "社外秘の扱いとSalesforce連携可否は事務局判断次第。管理系はCopilot Studioで作りやすい。"),
-    ("10", 4, "対面クライテリア議事録ドラフト生成エージェント",
+    ("10", 4, "対面クライテリア議事録ドラフト生成",
      "削減時間は7/17提出時点で「できる範囲」で良いか。",
      "提出時は可の範囲でOK。ただし10月の役職者報告に向け具体的な削減数字を提示したい。"),
-    ("11", 2, "稟議書チェックエージェント／社内LAN問い合わせチャットボット",
+    ("11", 2, "稟議書チェック／社内LAN問い合わせチャットボット",
      "稟議書チェックでM365外／SharePoint外は自動チェック不可では。",
      "人／Automate／AIを行ごとに振り分け、フェーズ分けする設計が必要。適否はCopilotで確認可。"),
 ]
@@ -305,7 +305,6 @@ def narrow_badge(level):
 
 
 CHEV_OFF = RGBColor(0xDD, 0xE1, 0xE7)  # 未点灯の矢印
-AGENT_TBD = RGBColor(0x9A, 0x77, 0x2E)  # 「要確認」表示色
 
 for i, (no, level, agent, q, a) in enumerate(teams, start=1):
     rfill = WHITE if i % 2 == 1 else LIGHT_GRAY
@@ -317,10 +316,13 @@ for i, (no, level, agent, q, a) in enumerate(teams, start=1):
                fill=bfill, align=PP_ALIGN.CENTER)
     # 進捗レベル列は空セル（矢印を上に重ねる）
     style_cell(gtbl.cell(i, 2), "", size=9, fill=rfill)
-    # 案概要（エージェント名）／未特定は薄色で「要確認」表示
-    acol = AGENT_TBD if agent.startswith("（") else DARK_TEXT
-    style_cell(gtbl.cell(i, 3), agent, size=8.6, color=acol,
-               bold=not agent.startswith("（"), fill=rfill)
+    # 案概要（エージェント名）／未記載は「ー」を中央・薄色で表示
+    if agent == "ー":
+        style_cell(gtbl.cell(i, 3), "ー", size=9, color=RGBColor(0xA6, 0xAD, 0xB5),
+                   fill=rfill, align=PP_ALIGN.CENTER)
+    else:
+        style_cell(gtbl.cell(i, 3), agent, size=8.6, color=DARK_TEXT,
+                   bold=True, fill=rfill)
     style_cell(gtbl.cell(i, 4), q, size=8.6, color=DARK_TEXT, fill=rfill)
     style_cell(gtbl.cell(i, 5), a, size=8.6, color=DARK_TEXT, fill=rfill)
     set_row_height(gtbl, i, row_h)
@@ -389,8 +391,8 @@ cats = [
      "Copilot StudioはE3等とは別に個別ライセンスの付与が必要。",
      "3"),
     ("案の絞り込み・スコープ／効果試算",
-     "1案が未確定、業務への落とし込みや削減効果の定量化が未着手のチームが存在。",
-     "9, 6, 1, 11, 8"),
+     "1案が未確定（8・9＝未集約、1・11＝2案）。業務への落とし込みや削減効果の定量化も要着手。",
+     "8, 9, 1, 11"),
 ]
 
 rows = len(cats) + 1
@@ -467,14 +469,50 @@ summary_col(xs[0], GREEN, "先行・順調なチーム",
              "10月の役職者報告に向け、削減効果の定量化が次の焦点。"])
 
 summary_col(xs[1], AMBER, "フォローが必要なチーム",
-            ["チーム9は各自の案を持ち寄った段階で、1案への集約が未了（Lv1）。",
-             "チーム1・8・11は2案から1案への選定が必要な段階（Lv2）。",
+            ["チーム8・9は1案への集約が未了（Lv1）。特に9は各自案の持ち寄り段階。",
+             "チーム1・11は2案から1案への選定が必要な段階（Lv2）。",
              "外部連携・機密判断が案の前提となるチームは早期の方針確定が必須。"])
 
 summary_col(xs[2], TEAL, "事務局からの提言",
             ["読込ファイルのOK/NG判断は、怪しい場合ほど早めに事務局へ相談を。",
              "Salesforce等の外部連携可否は、案の成否に直結するため優先確定。",
              "7/17提出→8〜9月構築→10月発表に向け、差の縮小を伴走支援する。"])
+
+# 下部：全体スケジュール（本相談会の位置づけと今後の流れ）
+add_text(s, Inches(0.55), Inches(6.18), Inches(6.0), Inches(0.3),
+         "全体スケジュール", size=12, color=NAVY, bold=True)
+steps = [
+    ("7/9〜13", "事前相談会（今回）", TEAL),
+    ("〜7/17", "企画書を事務局へ提出", NAVY),
+    ("8〜9月", "構築フェーズ（適宜相談可）", NAVY),
+    ("10月", "最終発表（役職者向け）", NAVY_DARK),
+]
+tl_y = Inches(6.55)
+tl_h = Inches(0.6)
+step_w = Inches(3.18)
+step_dx = Inches(3.0)
+tl_x0 = Inches(0.55)
+for idx, (date, label, col) in enumerate(steps):
+    x = tl_x0 + step_dx * idx
+    shp = s.shapes.add_shape(MSO_SHAPE.CHEVRON, x, tl_y, step_w, tl_h)
+    set_fill(shp, col)
+    shp.shadow.inherit = False
+    tf = shp.text_frame
+    tf.word_wrap = True
+    tf.margin_left = Pt(14)
+    tf.margin_right = Pt(10)
+    tf.margin_top = Pt(2)
+    tf.margin_bottom = Pt(2)
+    p1 = tf.paragraphs[0]
+    p1.alignment = PP_ALIGN.CENTER
+    r1 = p1.add_run(); r1.text = date
+    r1.font.size = Pt(11); r1.font.bold = True; r1.font.name = FONT
+    r1.font.color.rgb = WHITE
+    p2 = tf.add_paragraph()
+    p2.alignment = PP_ALIGN.CENTER
+    r2 = p2.add_run(); r2.text = label
+    r2.font.size = Pt(8.5); r2.font.name = FONT
+    r2.font.color.rgb = WHITE
 
 prs.save("/home/user/awc-naka881-repo/reports/CopilotStudio_ハッカソン_事前相談会報告.pptx")
 print("saved OK")
