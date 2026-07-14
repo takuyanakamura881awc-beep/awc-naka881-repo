@@ -1,0 +1,9 @@
+{
+  "name": "game-test",
+  "private": true,
+  "type": "commonjs",
+  "description": "工程5(テスト)ハーネス: engine-test.js(Node) / browser-test.js(Playwright-core, ローカル用のみ)",
+  "dependencies": {
+    "playwright-core": "^1.61.1"
+  }
+}
