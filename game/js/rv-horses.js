@@ -18,7 +18,8 @@
   // 部位固定色(instanceColor)
   const FIXED = {
     eye: 0x14100c, hoof: 0x2b2119, saddle: 0xf4f2ea, jhead: 0xe8c39e,
-    jleg: 0xf2f2f2, jboot: 0x25201c, blazeStar: 0xffffff, blazeStripe: 0xffffff, blazeSnip: 0xffffff,
+    jleg: 0xf2f2f2, jboot: 0x25201c, rein: 0x352a20,
+    blazeStar: 0xffffff, blazeStripe: 0xffffff, blazeSnip: 0xffffff,
   };
   // 勝負服パレット(12色・オリジナル配色)
   const SILKS_PALETTE = [
@@ -134,9 +135,11 @@
 
     // ---- 共有マテリアル(パーツ共用・instanceColor が乗る白基調)----
     const matList = [], texList = [], ownGeoList = [];
-    const bodyMat = new THREE.MeshPhongMaterial({ color: 0xffffff, shininess: 18, specular: 0x2a2a2a });
+    // vertexColors: リグ幾何に焼き込んだ頂点色AO(H3.shadeGeo)と instanceColor の乗算で
+    // 夜間照明下でも馬体に緩い陰影を確保(A-5)
+    const bodyMat = new THREE.MeshPhongMaterial({ color: 0xffffff, shininess: 18, specular: 0x2a2a2a, vertexColors: true });
     // 白斑は polygonOffset で顔面との Z-fight を回避
-    const blazeMat = new THREE.MeshPhongMaterial({ color: 0xffffff, shininess: 10, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 });
+    const blazeMat = new THREE.MeshPhongMaterial({ color: 0xffffff, shininess: 10, vertexColors: true, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 });
     matList.push(bodyMat, blazeMat);
     let lambMat = null, lambBlazeMat = null; // stage3 用(遅延生成)
     const lowGeos = {};                       // stage3 低セグ版(遅延生成)
@@ -278,7 +281,7 @@
         const easeUp = (t >= 0) && (sim.times[hi] < t);
         const running = (t >= 0) && !easeUp;
         const drive = running ? SH.clamp((400 - R) / 400, 0, 1) : 0;
-        const phase = (m / 3.4) + hi * 1.7;                 // 距離連動(dphase/dt = v/3.4 と等価・ジャンプ無)
+        const phase = (m / 1.15) + hi * 1.7;                // 距離連動(2π=1完歩≈7.2m・実馬のストライド相当。dphase/dt = v/1.15 と等価・ジャンプ無)
 
         rig.root.position.set(wp.x, 0, wp.z);
         rig.root.rotation.y = Math.atan2(-hd.z, hd.x);
@@ -334,15 +337,17 @@
     // ---- E-15 stage3: 低セグ差替 + Phong→Lambert(§2.7)----
     function ensureLow() {
       if (lambMat) return;
-      lambMat = new THREE.MeshLambertMaterial({ color: 0xffffff }); matList.push(lambMat);
-      lambBlazeMat = new THREE.MeshLambertMaterial({ color: 0xffffff, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }); matList.push(lambBlazeMat);
+      lambMat = new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true }); matList.push(lambMat);
+      lambBlazeMat = new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }); matList.push(lambBlazeMat);
+      // 寸法は createRig の "rig*" 幾何(horse3d.js)と一致させた低セグ版。shadeGeo で頂点色を付与
+      const SG = SH.Horse3D.shadeGeo;
       const L = {
-        torsoSph: new THREE.SphereGeometry(1, 8, 6), skull: new THREE.SphereGeometry(1, 7, 5),
-        neck: new THREE.CylinderGeometry(0.13, 0.24, 0.92, 5), tail: new THREE.ConeGeometry(0.085, 0.78, 5),
-        upperF: new THREE.CylinderGeometry(0.075, 0.058, 0.52, 5), upperH: new THREE.CylinderGeometry(0.085, 0.058, 0.52, 5),
-        lower: new THREE.CylinderGeometry(0.05, 0.038, 0.46, 5), jhead: new THREE.SphereGeometry(0.085, 6, 5),
-        jtorso: new THREE.CylinderGeometry(0.11, 0.12, 0.36, 6), jarm: new THREE.CylinderGeometry(0.032, 0.028, 0.34, 4),
-        jleg: new THREE.CylinderGeometry(0.04, 0.035, 0.26, 4),
+        torsoSph: SG(new THREE.SphereGeometry(1, 9, 7), 0.76, 1.03), skull: SG(new THREE.SphereGeometry(1, 8, 6), 0.84, 1.02),
+        neck: SG(new THREE.CylinderGeometry(0.075, 0.14, 0.95, 6), 0.9, 1.0), tail: SG(new THREE.ConeGeometry(0.085, 0.55, 5), 0.85, 1.0),
+        upperF: SG(new THREE.CylinderGeometry(0.065, 0.042, 0.54, 5), 0.82, 1.0), upperH: SG(new THREE.CylinderGeometry(0.090, 0.046, 0.58, 5), 0.82, 1.0),
+        lower: SG(new THREE.CylinderGeometry(0.037, 0.031, 0.46, 4), 0.88, 1.0), jhead: SG(new THREE.SphereGeometry(0.082, 6, 5), 0.9, 1.0),
+        jtorso: SG(new THREE.CylinderGeometry(0.10, 0.11, 0.36, 6), 0.85, 1.0), jarm: SG(new THREE.CylinderGeometry(0.028, 0.024, 0.30, 4), 0.9, 1.0),
+        jleg: SG(new THREE.CylinderGeometry(0.038, 0.032, 0.24, 4), 0.9, 1.0),
       };
       for (const key in L) { lowGeos[key] = L[key]; ownGeoList.push(L[key]); }
     }
