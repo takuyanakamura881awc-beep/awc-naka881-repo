@@ -4,24 +4,46 @@
 
 ---
 
-**任意フェーズ**です。フェーズ1〜3で「安全で整然とした基盤」ができたら、その上で **Microsoft 365 Copilot（AI 活用）** と **Power Platform（業務自動化）** により生産性を高めます。ここは各社の戦略・投資判断によるため、必須ではありません。
+**任意フェーズ**です。フェーズ1〜3で「安全で整然とした基盤」ができたら、その上で **Microsoft 365 Copilot（AI 活用）** と **Power Platform（業務自動化）** で生産性を高めます。各社の戦略・投資判断によるため必須ではありません。
 
-> ⚠️ **【ライセンス前提】この章の主役はほぼ「追加課金」**
-> Copilot、Power Automate/Power Apps の Premium、Power BI Pro などは **E3 に含まれない追加ライセンス**です。「無償で使える」と誤解しないよう、各項目に必要ライセンスを明記します。一方、Lists／Forms／Loop や標準コネクタの Power Automate など **M365 に付属**して今すぐ使えるものもあります。
+> 📌 **本章のマークの意味（費用の目印）**
+> - **✅ … いまの E3 契約のまま・追加費用なしでできる**
+> - **💰 … 追加の課金・契約が必要**（カッコ内が必要なもの）
+>
+> ⚠️ **この章の“主役”はほぼ 💰（追加課金）です。**Copilot、Power Automate/Apps の Premium、Power BI Pro は E3 に含まれません。ただし **Lists／Forms／Loop・標準コネクタの Power Automate は ✅ 付属**で、追加費用ゼロで今すぐ使えます。
 
-## 0. ライセンス早見表（フェーズ4）
+## この章でできるようになること（まずはざっくり）
 
-| 機能 | M365（E3）に付属 | 追加ライセンスが必要 |
+- 🔎 **社内の知識を AI に探させる・要約させる**：自分の権限で見られる資料を横断して回答（＝Copilot）… **💰 追加（Copilot サブスク）**
+- ✍️ **申請・承認を自動化する**：フォーム入力 → 自動で上長へ承認依頼 → 台帳へ転記（＝Power Automate）… **✅ E3のまま**（標準コネクタ）／基幹システム連携は **💰 Premium**
+- 📱 **かんたんな業務アプリ・入力画面を作る**：SharePoint リストからノーコードで（＝Power Apps、InfoPath の後継）… **✅ 一部 E3付属**／フル機能は **💰 Premium**
+- 📊 **ダッシュボードで見える化する**：SharePoint のデータをグラフ化してページに埋め込み（＝Power BI）… **💰 追加（Power BI Pro 以上）**
+- 🧩 **今すぐ使える道具で紙・Excel を置き換える**：Lists（簡易DB）・Forms（アンケート/申請）・Loop（共同編集）… **✅ E3のまま**
+
+👉 **まず ✅ の付属機能（Lists／Forms／標準 Power Automate）で「紙・Excel 台帳・メール申請」を置き換えて成功体験を作り**、Copilot や Premium などの 💰 は費用対効果を見て段階導入する――これがフェーズ4の進め方です。
+
+## 追加費用の要否ひとめ表
+
+| やりたいこと（機能） | ざっくり何ができる | 追加費用は？ |
 | --- | --- | --- |
-| Microsoft Lists / Forms / Loop コンポーネント | ○ 〔S52〕 | — |
-| Viva Connections ダッシュボード（基本） | ○（要確認）〔S52〕 | 一部 Viva 拡張は別ライセンスの可能性 |
-| Power Automate（**標準コネクタ**のクラウドフロー） | ○ 〔S48〕 | — |
-| Power Automate（**プレミアムコネクタ**・大規模） | ✕ | **Power Automate Premium** 〔S48〕 |
-| Power Apps（Basic：SharePoint リスト連携アプリ） | ○（限定）〔S49〕 | — |
-| Power Apps（フル機能・無制限展開） | ✕ | **Power Apps Premium** 〔S49〕 |
-| Power BI（レポート作成・公開） | 原則 ✕ | **Power BI Pro 以上**（構成依存）〔S50〕 |
-| **Microsoft 365 Copilot** | ✕ | **Copilot 追加サブスクリプション**（E3 等の基本ライセンス保有が前提）〔S44〕 |
-| Power Platform ガバナンス（環境・DLP・管理センター） | ○（管理者権限で利用）〔S51〕 | 一部監査は E5／Purview |
+| Lists / Forms / Loop | 簡易DB・アンケート・共同編集 | **✅ E3のまま** 〔S52〕 |
+| Viva Connections（基本） | ポータルを従業員ダッシュボード化 | **✅ E3のまま**（一部拡張は要確認）〔S52〕 |
+| Power Automate（標準コネクタ） | 承認・通知・転記の自動化 | **✅ E3のまま** 〔S48〕 |
+| Power Apps（Basic） | SharePoint リスト連携アプリ | **✅ 一部 E3付属**（限定）〔S49〕 |
+| Restricted SharePoint Search（RSS） | Copilot の参照範囲を一時的に限定 | **✅ E3のまま（無償・全テナント）** 〔S46〕 |
+| **Microsoft 365 Copilot** | 社内知識を AI で検索・要約・生成 | **💰 追加（Copilot サブスク）** 〔S44〕 |
+| Power Automate（プレミアムコネクタ・大規模） | 基幹系・外部SaaS連携、大量実行 | **💰 追加（Power Automate Premium）** 〔S48〕 |
+| Power Apps（フル機能・無制限展開） | 本格的な業務アプリ展開 | **💰 追加（Power Apps Premium）** 〔S49〕 |
+| Power BI（レポート作成・公開） | データをグラフ化・共有 | **💰 追加（Power BI Pro 以上）** 〔S50〕 |
+| 過剰共有の恒久是正（RCD 等） | Copilot 前の是正を自動化 | **💰 追加（SAM）** 〔S46〕 |
+
+> 💰 **【要注意】E3 だけでは“できない”＝追加の契約・課金が必要なもの（フェーズ4）**
+> - **Microsoft 365 Copilot**（AI 活用の本体）… **Copilot 追加サブスクリプション**（E3 等の保有が前提）〔S44〕
+> - **Power Automate / Power Apps の Premium**（基幹系連携・本格アプリ展開）… **各 Premium ライセンス**〔S48〕〔S49〕
+> - **Power BI のレポート作成・公開**… **Power BI Pro 以上**（構成依存）〔S50〕
+> - **Copilot 前の恒久的な過剰共有是正**… **SharePoint Advanced Management（SAM・有償）**〔S46〕
+>
+> 💡 逆に、**Lists／Forms／Loop・標準コネクタの Power Automate・Restricted SharePoint Search（RSS）は ✅ 追加費用ゼロ**。まずここから始めれば、コストをかけずに効果を出せます。
 
 ## 1. Microsoft 365 Copilot ―「導入前の地ならし」が9割
 
