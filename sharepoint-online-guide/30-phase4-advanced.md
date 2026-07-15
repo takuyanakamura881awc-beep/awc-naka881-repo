@@ -25,7 +25,7 @@
 
 ## 1. Microsoft 365 Copilot ―「導入前の地ならし」が9割
 
-Copilot は、ユーザーが**自分の権限で見られる** SharePoint／OneDrive／Teams／Outlook のコンテンツを、Microsoft Graph 経由で参照して回答・要約・生成する AI アシスタントです 〔S44〕〔S47〕。
+Copilot は、ユーザーが**自分の権限で見られる** SharePoint／OneDrive／Teams／Outlook のコンテンツを、Microsoft Graph 経由で参照して回答・要約・生成する AI アシスタントです 〔S44〕〔S45〕。
 
 ```mermaid
 %%{init:{'theme':'neutral'}}%%
@@ -42,13 +42,16 @@ flowchart TB
 ### Copilot 導入前のチェック（フェーズ1〜3の総仕上げ）
 
 - 権限が**サイト単位で整理**され、個人直付け・過剰共有が是正されているか（フェーズ1・3）〔S45〕。
-- 機密情報に**秘密度ラベル**が付き、暗号化文書は権限がないと参照されない状態か（フェーズ2）〔S47〕。
+- 機密情報に**秘密度ラベル**が付き、暗号化文書は権限がないと参照されない状態か（フェーズ2）〔S45〕〔S47〕。
 - 過渡期には **Restricted SharePoint Search**（許可リストで検索・Copilot 参照範囲を一時的に限定、最大100サイト）や、**SharePoint Advanced Management** のデータアクセスガバナンスで是正を進める 〔S46〕。
 
 | 機能 | 役割 | ライセンス |
 | --- | --- | --- |
-| Restricted SharePoint Search | 是正が済むまで Copilot の参照範囲を許可リストに限定（短期措置）| Copilot 関連／SAM 〔S46〕 |
-| SharePoint Advanced Management | 過剰共有の恒久的是正・データアクセスガバナンス | SAM（一部は Copilot ライセンスに付帯）〔S46〕 |
+| **Restricted SharePoint Search（RSS）** | 是正が済むまで Copilot・検索の参照範囲を許可リスト（最大100サイト）に限定する短期措置 | **M365 標準（無償・全テナント／SAM 不要）** 〔S46〕 |
+| **SharePoint Advanced Management（SAM）** | 過剰共有の恒久的是正・データアクセスガバナンス（RCD 等） | **SAM（有償。一部は Copilot ライセンスに付帯）** 〔S46〕 |
+
+> ⚠️ **【注意】RSS（無償）と RCD／SAM（有償）は別物**
+> **Restricted SharePoint Search（RSS）は無償・全テナントで使える短期の“つなぎ”**、恒久的な過剰共有是正は **SharePoint Advanced Management（SAM・有償）** です。フェーズ3の RCD（Restricted Content Discovery）は SAM 側の機能です。名前が似ていますがライセンス帰属が異なります。
 
 ## 2. Power Automate（承認・通知の自動化）
 
