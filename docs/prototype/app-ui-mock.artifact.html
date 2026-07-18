@@ -10,21 +10,23 @@
 
   /* ============ Tokens ============ */
   :root {
-    --bg: #FBF7F4;
-    --backdrop: #EDE5DD;
-    --ink: #2A2230;
-    --muted: #8A7E8F;
-    --accent: #FF3D6E;
+    --bg: #FFF9F8;
+    --backdrop: #FBEDEC;
+    --ink: #3A2E3D;
+    --muted: #9B8FA0;
+    --accent: #FF5C8D;
     --accent-ink: #ffffff;
-    --gold: #FFB020;
+    --accent-soft: color-mix(in srgb, var(--accent) 15%, var(--surface));
+    --accent-2: #7FC7FF;
+    --gold: #FFB43C;
     --surface: #FFFFFF;
-    --surface-2: #F3EEE9;
-    --border: rgba(42, 34, 48, 0.12);
-    --border-strong: rgba(42, 34, 48, 0.22);
-    --shadow: 0 10px 28px rgba(42, 34, 48, 0.16);
-    --shadow-sm: 0 3px 10px rgba(42, 34, 48, 0.08);
+    --surface-2: #FDF0F3;
+    --border: rgba(120, 70, 90, 0.12);
+    --border-strong: rgba(120, 70, 90, 0.20);
+    --shadow: 0 14px 32px rgba(220, 110, 150, 0.22);
+    --shadow-sm: 0 5px 14px rgba(220, 110, 150, 0.14);
 
-    --fresh-1: #1FB57A;
+    --fresh-1: #22B892;
     --fresh-2: #E0A100;
     --fresh-3: #E8722E;
     --fresh-4: #9A8FA0;
@@ -36,11 +38,11 @@
     --trust-low-bg: rgba(138, 126, 143, .16);
     --trust-low-ink: #6f6475;
 
-    --font-display: "Hiragino Kaku Gothic ProN", "Yu Gothic Medium", "Yu Gothic", "Noto Sans JP", Meiryo, sans-serif;
+    --font-display: "Hiragino Maru Gothic ProN", "ヒラギノ丸ゴ ProN", "Hiragino Kaku Gothic ProN", "Yu Gothic Medium", "Yu Gothic", "M PLUS Rounded 1c", "Rounded Mplus 1c", "Noto Sans JP", Meiryo, sans-serif;
     --font-body: var(--font-display);
     --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 
-    --radius-card: 18px;
+    --radius-card: 22px;
     --radius-chip: 999px;
   }
 
@@ -81,15 +83,15 @@
     --trust-low-ink: #b6adbb;
   }
   :root[data-theme="light"] {
-    --bg: #FBF7F4;
-    --backdrop: #EDE5DD;
-    --ink: #2A2230;
+    --bg: #FFF9F8;
+    --backdrop: #FBEDEC;
+    --ink: #3A2E3D;
     --surface: #FFFFFF;
-    --surface-2: #F3EEE9;
-    --border: rgba(42, 34, 48, 0.12);
-    --border-strong: rgba(42, 34, 48, 0.22);
-    --shadow: 0 10px 28px rgba(42, 34, 48, 0.16);
-    --shadow-sm: 0 3px 10px rgba(42, 34, 48, 0.08);
+    --surface-2: #FDF0F3;
+    --border: rgba(120, 70, 90, 0.12);
+    --border-strong: rgba(120, 70, 90, 0.20);
+    --shadow: 0 14px 32px rgba(220, 110, 150, 0.22);
+    --shadow-sm: 0 5px 14px rgba(220, 110, 150, 0.14);
     --trust-high-bg: rgba(31, 158, 107, .15);
     --trust-high-ink: #1a7a53;
     --trust-mid-bg: rgba(201, 151, 28, .18);
@@ -222,7 +224,7 @@
   .loc-sub { font-size: .78rem; color: var(--muted); }
   .theme-toggle { margin-left: auto; width: 40px; height: 40px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--border); font-size: 1.1rem; display: flex; align-items: center; justify-content: center; }
 
-  .gami-band { background: linear-gradient(135deg, var(--surface), var(--surface-2)); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 14px 16px; }
+  .gami-band { background: linear-gradient(135deg, var(--accent-soft), var(--surface)); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 16px 18px; box-shadow: var(--shadow-sm); }
   .gami-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
   .gami-level { font-weight: 800; font-size: .92rem; }
   .gami-points { font-weight: 800; color: var(--gold); font-size: .95rem; }
@@ -249,27 +251,37 @@
 
   /* photo placeholder (used for card thumbnail, detail, wizard preview) */
   .photo-placeholder {
-    width: 100%; aspect-ratio: 16/10; border-radius: 14px; margin-bottom: 10px;
+    width: 100%; aspect-ratio: 16/10; border-radius: 18px; margin-bottom: 12px;
     position: relative; overflow: hidden;
-    background: linear-gradient(135deg, var(--surface-2), var(--border));
-    filter: hue-rotate(calc(var(--i, 0) * 28deg));
+    background: linear-gradient(150deg, var(--g1, #FFE0EC) 0%, var(--g2, #E6ECFF) 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.5);
   }
   .photo-placeholder::before {
     content: ""; position: absolute; inset: 0;
-    background-image: radial-gradient(circle at 28% 26%, rgba(255,255,255,.5), transparent 42%),
-      repeating-linear-gradient(135deg, rgba(255,255,255,.06) 0 10px, transparent 10px 20px);
+    background-image:
+      radial-gradient(circle at 78% 88%, rgba(255,255,255,.45), transparent 45%),
+      radial-gradient(rgba(255,255,255,.55) 2px, transparent 2.2px);
+    background-size: auto, 18px 18px;
+    background-position: 0 0, 6px 6px;
   }
   .photo-placeholder::after {
-    content: "🎁"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-    font-size: 1.6rem; opacity: .55;
+    content: var(--emoji, "🎁"); position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 3.1rem; filter: drop-shadow(0 5px 7px rgba(90,40,60,.22));
+    animation: bob 3.2s ease-in-out infinite;
   }
+  @keyframes bob { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-4px) rotate(2deg); } }
+  @media (prefers-reduced-motion: reduce) { .photo-placeholder::after { animation: none; } }
   .detail-photo { aspect-ratio: 16/11; margin-bottom: 14px; }
+  .detail-photo::after { font-size: 4rem; }
 
   /* card */
   .card {
     background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card);
-    padding: 14px; margin-bottom: 14px; box-shadow: var(--shadow-sm); text-align: left; width: 100%; display: block;
+    padding: 14px; margin-bottom: 16px; box-shadow: var(--shadow-sm); text-align: left; width: 100%; display: block;
+    transition: transform .14s ease, box-shadow .2s ease;
   }
+  .card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+  .card:active { transform: scale(.99); }
   .card.stale { opacity: .62; }
   .card-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
   .store-name { font-weight: 800; font-size: .88rem; }
@@ -422,8 +434,9 @@
 
   .wizard-footer { display: flex; gap: 10px; padding: 12px 18px; border-top: 1px solid var(--border); flex: none; }
   .wizard-footer[hidden] { display: none; }
-  .btn { padding: 13px 18px; border-radius: 14px; font-weight: 800; font-size: .92rem; border: 1px solid var(--border); background: var(--surface-2); flex: 1; text-align: center; }
-  .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+  .btn { padding: 14px 18px; border-radius: 16px; font-weight: 800; font-size: .92rem; border: 1px solid var(--border); background: var(--surface-2); flex: 1; text-align: center; transition: transform .12s ease, box-shadow .2s ease; }
+  .btn:active { transform: scale(.96); }
+  .btn.primary { background: linear-gradient(135deg, var(--accent), #FF89B0); color: var(--accent-ink); border-color: transparent; box-shadow: 0 8px 18px rgba(255,92,141,.34); }
   .btn.ghost { background: transparent; }
   .btn.sm { flex: none; padding: 8px 14px; font-size: .78rem; margin-top: 8px; }
   .btn:disabled { opacity: .45; }
@@ -532,6 +545,7 @@
   .navbtn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 2px; border-radius: 12px; color: var(--muted); font-size: .68rem; font-weight: 800; }
   .navbtn .navicon { font-size: 1.3rem; line-height: 1; }
   .navbtn.active { color: var(--accent); }
+  .navbtn.active .navicon { transform: translateY(-2px) scale(1.12); transition: transform .18s cubic-bezier(.34,1.56,.64,1); }
   .navbtn-post { flex: 1.15; }
   .navbtn-post .navicon {
     width: 46px; height: 46px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), #ff6b93);
@@ -915,6 +929,19 @@
   ];
   var HOME_ORDER = [1, 4, 2, 3];
 
+  // かわいいサムネ（パステル配色＋景品らしい大きめ絵文字）
+  var THUMB = {
+    1: { e: "🧸", g1: "#FFE9A8", g2: "#FFC7DE" },
+    2: { e: "🥷", g1: "#DDD6FF", g2: "#C6E4FF" },
+    3: { e: "🐧", g1: "#C7F0E4", g2: "#CDE7FF" },
+    4: { e: "🦸", g1: "#FFD8C2", g2: "#FFE6A0" },
+    5: { e: "🎁", g1: "#FFD4E8", g2: "#E4D8FF" }
+  };
+  function thumbStyle(id) {
+    var t = THUMB[id] || { e: "🎁", g1: "#FFE0EC", g2: "#E6ECFF" };
+    return "--emoji:'" + t.e + "';--g1:" + t.g1 + ";--g2:" + t.g2;
+  }
+
   var PINS = [
     { id: "p1", label: "秋葉原駅前エリア", stores: ["GiGO秋葉原3号館", "タイトーステーション秋葉原"] },
     { id: "p2", label: "クラブセガ秋葉原 新館", stores: ["クラブセガ秋葉原 新館"] },
@@ -998,7 +1025,7 @@
       : '<span class="tag">' + item.setting + '</span><span class="price mono">¥' + item.price + '</span>';
     return (
       '<article class="card' + stale + '" data-id="' + item.id + '" tabindex="0" role="button" aria-label="' + item.name + 'の詳細を見る">' +
-        '<div class="photo-placeholder" style="--i:' + item.id + '" aria-hidden="true"></div>' +
+        '<div class="photo-placeholder" style="' + thumbStyle(item.id) + '" aria-hidden="true"></div>' +
         '<div class="card-top"><span class="store-name">' + item.store + '</span><span class="distance mono">' + item.distance + 'm</span></div>' +
         '<h3 class="prize-name">' + item.name + '</h3>' +
         '<div class="chips-row">' + settingPrice + freshBadge(item) + '</div>' +
@@ -1136,7 +1163,7 @@
       '</div>'
     ) : "";
     $("#detailBody").innerHTML = (
-      '<div class="photo-placeholder detail-photo" style="--i:' + item.id + '" aria-hidden="true"></div>' +
+      '<div class="photo-placeholder detail-photo" style="' + thumbStyle(item.id) + '" aria-hidden="true"></div>' +
       '<div class="detail-top"><span class="distance mono">' + item.distance + 'm</span>' + freshBadge(item) + '</div>' +
       '<h2 class="detail-name">' + item.name + '</h2>' +
       posterRow(item) +
