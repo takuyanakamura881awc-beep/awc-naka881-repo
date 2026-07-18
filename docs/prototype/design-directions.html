@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>クレサーチ デザイン方向 見比べ</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  :root{
+    --page:#EEF0F3; --panel:#FFFFFF; --ink:#1C1B1F; --sub:#6A6873; --line:#E6E6EA;
+    --round:"Hiragino Maru Gothic ProN","ヒラギノ丸ゴ ProN","M PLUS Rounded 1c",system-ui,sans-serif;
+    --sans:"Hiragino Kaku Gothic ProN","Noto Sans JP",system-ui,-apple-system,sans-serif;
+    --mono:ui-monospace,"SFMono-Regular",Menlo,monospace;
+  }
+  @media (prefers-color-scheme:dark){:root{--page:#161519;--panel:#201F24;--ink:#F2F1F4;--sub:#A6A3AE;--line:#33313A}}
+  body{background:var(--page);color:var(--ink);font-family:var(--sans);line-height:1.6;-webkit-text-size-adjust:100%}
+  .wrap{max-width:1120px;margin:0 auto;padding:28px 20px 72px}
+  .lead h1{font-family:var(--round);font-size:clamp(1.4rem,1.1rem+1.4vw,2rem);font-weight:800;letter-spacing:-.01em;margin:0 0 8px}
+  .lead p{color:var(--sub);margin:0 0 6px;max-width:64ch;font-size:.95rem}
+  .principles{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 4px}
+  .principles span{font-size:.76rem;font-weight:700;color:var(--sub);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 12px}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;margin-top:24px}
+  @media (max-width:760px){.grid{grid-template-columns:1fr}}
+  .lane{background:var(--panel);border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .lane-head{display:flex;gap:12px;align-items:flex-start;padding:18px 20px 12px}
+  .lane-num{font-family:var(--mono);font-weight:700;font-size:.82rem;color:#fff;background:var(--ink);width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex:none;margin-top:2px}
+  .lane-head h2{font-family:var(--round);font-size:1.05rem;font-weight:800;margin:0 0 3px}
+  .lane-ref{font-size:.78rem;color:var(--sub);margin:0}
+  .stage{padding:22px 20px 24px;display:flex;justify-content:center}
+
+  /* ============ shared card skeleton (per-lane styles override) ============ */
+  .card{width:100%;max-width:340px;text-align:left}
+  .thumb{width:100%;aspect-ratio:16/10;border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+  .thumb svg{width:52px;height:52px}
+  .c-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+  .store{font-weight:700;font-size:.86rem}
+  .dist{font-size:.76rem;color:var(--sub);font-family:var(--mono)}
+  .pname{font-size:1.08rem;font-weight:800;margin:5px 0 10px;letter-spacing:-.01em;line-height:1.35}
+  .chips{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+  .chip{font-size:.76rem;font-weight:700;padding:4px 10px;border-radius:8px}
+  .price{font-family:var(--mono);font-weight:700;font-size:1rem}
+  .fresh{font-size:.76rem;font-weight:700;display:inline-flex;align-items:center;gap:5px}
+  .fresh::before{content:"";width:7px;height:7px;border-radius:50%;background:#22B892;display:inline-block}
+  .poster{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:.76rem;color:var(--sub);padding-top:10px;border-top:1px solid var(--line)}
+  .trust{font-weight:700;font-size:.72rem;padding:3px 9px;border-radius:999px}
+  .actions{display:flex;gap:8px;margin-top:12px}
+  .btn-main{flex:1;border:none;font-weight:800;font-size:.86rem;padding:11px;border-radius:12px;cursor:pointer;font-family:var(--round)}
+  .btn-sub{border:1px solid var(--line);background:transparent;color:inherit;font-weight:700;font-size:.86rem;padding:11px 16px;border-radius:12px;cursor:pointer}
+
+  /* ============ 01 Pop & Friendly (Duolingo/LINE) ============ */
+  .lane-pop .stage{background:#FFFFFF}
+  .lane-pop .card{color:#2B2B2B}
+  .lane-pop .thumb{background:#EAF6FF}
+  .lane-pop .thumb svg{color:#1FA2F0}
+  .lane-pop .store{color:#2B2B2B}
+  .lane-pop .pname{font-family:var(--round)}
+  .lane-pop .chip{background:#F1F3F5;color:#4A4A4A}
+  .lane-pop .price{color:#1FA2F0}
+  .lane-pop .trust{background:#E3F7EE;color:#12855C}
+  .lane-pop .poster{border-color:#EFEFF2}
+  .lane-pop .btn-main{background:#1FA2F0;color:#fff;box-shadow:0 4px 0 #1682C4}
+  .lane-pop .btn-sub{border-color:#E2E3E7;color:#5A5A5A}
+
+  /* ============ 02 Clean & Premium (Mercari/Airbnb) ============ */
+  .lane-premium .stage{background:#FFFFFF}
+  .lane-premium .card{color:#1A1A1A}
+  .lane-premium .card{font-family:var(--sans)}
+  .lane-premium .thumb{background:#F2F2F4;border-radius:12px;position:relative;align-items:flex-end;justify-content:flex-start;padding:12px}
+  .lane-premium .thumb svg{width:30px;height:30px;color:#B7B7BE;stroke-width:1.6}
+  .lane-premium .store{font-weight:600;color:#111}
+  .lane-premium .pname{font-weight:700;font-size:1.14rem;letter-spacing:-.02em}
+  .lane-premium .chip{background:transparent;border:1px solid #E2E2E6;color:#555;border-radius:6px}
+  .lane-premium .price{color:#111;font-size:1.05rem}
+  .lane-premium .fresh{color:#8A8A90;font-weight:600}
+  .lane-premium .fresh::before{background:#111;width:6px;height:6px}
+  .lane-premium .trust{background:transparent;border:1px solid #DADADE;color:#666}
+  .lane-premium .poster{border-color:#EDEDF0}
+  .lane-premium .btn-main{background:#111;color:#fff;border-radius:10px;font-family:var(--sans)}
+  .lane-premium .btn-sub{border-color:#E2E2E6;color:#333;border-radius:10px}
+
+  /* ============ 03 Yuru-kawa pastel (Sanrio) ============ */
+  .lane-kawaii .stage{background:#FFFBFA}
+  .lane-kawaii .card{color:#4A3A44}
+  .lane-kawaii .thumb{background:#FFEDF2;border-radius:18px}
+  .lane-kawaii .thumb svg{color:#F5799F;stroke-width:3}
+  .lane-kawaii .store{color:#7A6570}
+  .lane-kawaii .pname{font-family:var(--round);color:#4A3A44}
+  .lane-kawaii .chip{background:#FFF0E6;color:#B4744B;border-radius:999px}
+  .lane-kawaii .price{color:#F5799F}
+  .lane-kawaii .trust{background:#E9F6EF;color:#4E9C77}
+  .lane-kawaii .poster{border-color:#F6E7EC}
+  .lane-kawaii .btn-main{background:#FF9DB6;color:#fff;border-radius:999px;box-shadow:0 4px 10px rgba(255,157,182,.4)}
+  .lane-kawaii .btn-sub{border-color:#F3DDE4;color:#9A7B86;border-radius:999px}
+
+  /* ============ 04 Neon arcade ============ */
+  .lane-neon .stage{background:#141018}
+  .lane-neon .card{color:#F3EEF8}
+  .lane-neon .thumb{background:#1E1826;border:1px solid #33283F;border-radius:12px}
+  .lane-neon .thumb svg{color:#38E0E6;filter:drop-shadow(0 0 6px rgba(56,224,230,.7));stroke-width:2.4}
+  .lane-neon .store{color:#CDBFDA}
+  .lane-neon .dist{color:#8E7FA0}
+  .lane-neon .pname{color:#fff}
+  .lane-neon .chip{background:#231B2D;color:#C6B6D6;border:1px solid #3A2E48}
+  .lane-neon .price{color:#FF4D9D;text-shadow:0 0 8px rgba(255,77,157,.55)}
+  .lane-neon .fresh{color:#38E0E6}
+  .lane-neon .fresh::before{background:#38E0E6;box-shadow:0 0 6px #38E0E6}
+  .lane-neon .trust{background:rgba(56,224,230,.14);color:#5FE9EE}
+  .lane-neon .poster{border-color:#2C2338;color:#9A8BAC}
+  .lane-neon .btn-main{background:#FF3D8B;color:#fff;box-shadow:0 0 14px rgba(255,61,139,.5)}
+  .lane-neon .btn-sub{border-color:#3A2E48;color:#C6B6D6}
+
+  .foot{margin-top:28px;color:var(--sub);font-size:.85rem;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px}
+  .foot b{color:var(--ink)}
+</style>
+</head>
+<body>
+  <!-- reusable teddy line icon -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="teddy" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="20" cy="17" r="6.5"/>
+      <circle cx="44" cy="17" r="6.5"/>
+      <circle cx="32" cy="30" r="15"/>
+      <circle cx="26.5" cy="29" r="1.4" fill="currentColor" stroke="none"/>
+      <circle cx="37.5" cy="29" r="1.4" fill="currentColor" stroke="none"/>
+      <circle cx="32" cy="33" r="2.4"/>
+      <path d="M27.5 37.5 q4.5 3.5 9 0"/>
+    </symbol>
+  </svg>
+
+  <div class="wrap">
+    <div class="lead">
+      <h1>デザイン方向 見比べ 🔍</h1>
+      <p>同じ景品カード（GiGO秋葉原3号館／ちいかわ でかぬいぐるみ）を、4つの世界観で作り分けました。<b>気に入った番号を教えてください。</b>その方向でアプリ全体を根本から作り直します。</p>
+      <p style="font-size:.85rem">※どの案も共通の“プロの設計原則”で作成：白/オフ白の広い余白・アクセントは1色に限定・8ptの余白ルール・極薄の影＋境界線・絵文字サムネは廃止して線アイコン。差が出るのは「配色・書体・角丸・サムネの見せ方・ボタンの質感」です。</p>
+      <div class="principles">
+        <span>白地＋1色アクセント</span><span>8pt余白</span><span>影は最小限</span><span>線アイコン（絵文字廃止）</span><span>抑えたタイプスケール</span>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- 01 -->
+      <section class="lane lane-pop">
+        <div class="lane-head"><span class="lane-num">01</span><div><h2>ポップ &amp; フレンドリー</h2><p class="lane-ref">お手本：Duolingo / LINE ・ 白地＋鮮やかな1色＋丸い立体ボタン</p></div></div>
+        <div class="stage">
+          <article class="card">
+            <div class="thumb"><svg><use href="#teddy"/></svg></div>
+            <div class="c-row"><span class="store">GiGO秋葉原3号館</span><span class="dist">240m</span></div>
+            <h3 class="pname">ちいかわ でかぬいぐるみ</h3>
+            <div class="chips"><span class="chip">橋渡し</span><span class="price">¥200</span><span class="fresh">2時間前</span></div>
+            <div class="poster"><span>投稿者 Lv.5 秋葉原の主</span><span class="trust">信頼度 高</span></div>
+            <div class="actions"><button class="btn-main">まだあった 4</button><button class="btn-sub">詳細</button></div>
+          </article>
+        </div>
+      </section>
+
+      <!-- 02 -->
+      <section class="lane lane-premium">
+        <div class="lane-head"><span class="lane-num">02</span><div><h2>クリーン &amp; プレミアム</h2><p class="lane-ref">お手本：メルカリ / Airbnb ・ 余白広め・極細の罫線・落ち着いた1色</p></div></div>
+        <div class="stage">
+          <article class="card">
+            <div class="thumb"><svg><use href="#teddy"/></svg></div>
+            <div class="c-row"><span class="store">GiGO秋葉原3号館</span><span class="dist">240m</span></div>
+            <h3 class="pname">ちいかわ でかぬいぐるみ</h3>
+            <div class="chips"><span class="chip">橋渡し</span><span class="price">¥200</span><span class="fresh">2時間前</span></div>
+            <div class="poster"><span>投稿者 Lv.5 秋葉原の主</span><span class="trust">信頼度 高</span></div>
+            <div class="actions"><button class="btn-main">まだあった 4</button><button class="btn-sub">詳細</button></div>
+          </article>
+        </div>
+      </section>
+
+      <!-- 03 -->
+      <section class="lane lane-kawaii">
+        <div class="lane-head"><span class="lane-num">03</span><div><h2>ゆるかわ パステル</h2><p class="lane-ref">お手本：サンリオ / ちいかわ系 ・ 丸ゴシック＋やわらかいパステルを要所に</p></div></div>
+        <div class="stage">
+          <article class="card">
+            <div class="thumb"><svg><use href="#teddy"/></svg></div>
+            <div class="c-row"><span class="store">GiGO秋葉原3号館</span><span class="dist">240m</span></div>
+            <h3 class="pname">ちいかわ でかぬいぐるみ</h3>
+            <div class="chips"><span class="chip">橋渡し</span><span class="price">¥200</span><span class="fresh">2時間前</span></div>
+            <div class="poster"><span>投稿者 Lv.5 秋葉原の主</span><span class="trust">信頼度 高</span></div>
+            <div class="actions"><button class="btn-main">まだあった 4</button><button class="btn-sub">詳細</button></div>
+          </article>
+        </div>
+      </section>
+
+      <!-- 04 -->
+      <section class="lane lane-neon">
+        <div class="lane-head"><span class="lane-num">04</span><div><h2>ネオン・アーケード</h2><p class="lane-ref">お手本：ゲーセンの世界観 ・ 暗い地＋ネオン発光を1〜2色だけ</p></div></div>
+        <div class="stage">
+          <article class="card">
+            <div class="thumb"><svg><use href="#teddy"/></svg></div>
+            <div class="c-row"><span class="store">GiGO秋葉原3号館</span><span class="dist">240m</span></div>
+            <h3 class="pname">ちいかわ でかぬいぐるみ</h3>
+            <div class="chips"><span class="chip">橋渡し</span><span class="price">¥200</span><span class="fresh">2時間前</span></div>
+            <div class="poster"><span>投稿者 Lv.5 秋葉原の主</span><span class="trust">信頼度 高</span></div>
+            <div class="actions"><button class="btn-main">まだあった 4</button><button class="btn-sub">詳細</button></div>
+          </article>
+        </div>
+      </section>
+    </div>
+
+    <div class="foot">
+      <b>次の流れ：</b>気に入った番号（複数可・「01のサムネ＋03の色」等の組合せもOK）を教えてください。選ばれた方向で、ホーム・さがす・投稿・詳細・マイページまで<b>アプリ全体を統一デザインで作り直します</b>。サムネは線アイコンのほか、景品ジャンル別イラストやモノグラムにも展開できます。
+    </div>
+  </div>
+</body>
+</html>
