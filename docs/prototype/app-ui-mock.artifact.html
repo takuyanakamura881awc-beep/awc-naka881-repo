@@ -29,6 +29,13 @@
     --fresh-3: #E8722E;
     --fresh-4: #9A8FA0;
 
+    --trust-high-bg: rgba(31, 158, 107, .15);
+    --trust-high-ink: #1a7a53;
+    --trust-mid-bg: rgba(201, 151, 28, .18);
+    --trust-mid-ink: #8a6c14;
+    --trust-low-bg: rgba(138, 126, 143, .16);
+    --trust-low-ink: #6f6475;
+
     --font-display: "Hiragino Kaku Gothic ProN", "Yu Gothic Medium", "Yu Gothic", "Noto Sans JP", Meiryo, sans-serif;
     --font-body: var(--font-display);
     --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
@@ -48,6 +55,12 @@
       --border-strong: rgba(243, 234, 240, 0.22);
       --shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
       --shadow-sm: 0 3px 10px rgba(0, 0, 0, 0.4);
+      --trust-high-bg: rgba(56, 214, 148, .18);
+      --trust-high-ink: #4ee3a3;
+      --trust-mid-bg: rgba(255, 206, 84, .2);
+      --trust-mid-ink: #ffce54;
+      --trust-low-bg: rgba(243, 234, 240, .12);
+      --trust-low-ink: #b6adbb;
     }
   }
   :root[data-theme="dark"] {
@@ -60,6 +73,12 @@
     --border-strong: rgba(243, 234, 240, 0.22);
     --shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
     --shadow-sm: 0 3px 10px rgba(0, 0, 0, 0.4);
+    --trust-high-bg: rgba(56, 214, 148, .18);
+    --trust-high-ink: #4ee3a3;
+    --trust-mid-bg: rgba(255, 206, 84, .2);
+    --trust-mid-ink: #ffce54;
+    --trust-low-bg: rgba(243, 234, 240, .12);
+    --trust-low-ink: #b6adbb;
   }
   :root[data-theme="light"] {
     --bg: #FBF7F4;
@@ -71,6 +90,12 @@
     --border-strong: rgba(42, 34, 48, 0.22);
     --shadow: 0 10px 28px rgba(42, 34, 48, 0.16);
     --shadow-sm: 0 3px 10px rgba(42, 34, 48, 0.08);
+    --trust-high-bg: rgba(31, 158, 107, .15);
+    --trust-high-ink: #1a7a53;
+    --trust-mid-bg: rgba(201, 151, 28, .18);
+    --trust-mid-ink: #8a6c14;
+    --trust-low-bg: rgba(138, 126, 143, .16);
+    --trust-low-ink: #6f6475;
   }
 
   /* ============ Base ============ */
@@ -207,6 +232,21 @@
 
   .feed-heading { font-size: .95rem; font-weight: 800; color: var(--muted); margin: 18px 0 12px; }
 
+  /* L0 read cards */
+  .read-scroll { display: flex; gap: 12px; overflow-x: auto; padding: 4px 2px 12px; scrollbar-width: none; }
+  .read-scroll::-webkit-scrollbar { display: none; }
+  .read-card {
+    flex: none; width: 152px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 14px 12px; box-shadow: var(--shadow-sm); text-align: left; display: flex; flex-direction: column; gap: 8px;
+  }
+  .read-card .read-icon { font-size: 1.4rem; }
+  .read-card .read-title { font-weight: 800; font-size: .84rem; line-height: 1.4; flex: 1; }
+  .editor-badge { align-self: flex-start; font-size: .64rem; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--muted); border: 1px solid var(--border); }
+
+  /* user handle */
+  .user-handle { font-size: .78rem; color: var(--muted); font-weight: 700; margin: -4px 0 14px; }
+  .user-handle b { color: var(--ink); }
+
   /* photo placeholder (used for card thumbnail, detail, wizard preview) */
   .photo-placeholder {
     width: 100%; aspect-ratio: 16/10; border-radius: 14px; margin-bottom: 10px;
@@ -244,6 +284,18 @@
   .fresh-3 .dot { background: var(--fresh-3); } .fresh-4 .dot { background: var(--fresh-4); }
   .gate-blur { filter: blur(4px); user-select: none; }
   .lock-chip { font-size: .74rem; opacity: .7; }
+
+  /* poster / trust */
+  .poster-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: .76rem; color: var(--muted); margin: 0 0 12px; }
+  .poster-row .poster-name { font-weight: 800; color: var(--ink); }
+  .trust-badge { display: inline-flex; align-items: center; gap: 4px; font-size: .72rem; font-weight: 800; padding: 3px 9px; border-radius: 999px; flex: none; }
+  .trust-badge.trust-high { background: var(--trust-high-bg); color: var(--trust-high-ink); }
+  .trust-badge.trust-mid { background: var(--trust-mid-bg); color: var(--trust-mid-ink); }
+  .trust-badge.trust-low { background: var(--trust-low-bg); color: var(--trust-low-ink); }
+  .trust-detail { margin-top: 16px; padding: 12px 14px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--border); }
+  .trust-detail h4 { font-size: .8rem; font-weight: 800; margin-bottom: 6px; }
+  .trust-reasons { font-size: .74rem; color: var(--muted); line-height: 1.7; }
+  .sort-hint { font-size: .74rem; color: var(--muted); margin: -2px 0 14px; }
 
   .confirm-row { display: flex; gap: 8px; }
   .confirm-btn { flex: 1; padding: 10px 6px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-2); font-weight: 800; font-size: .78rem; text-align: center; }
@@ -322,6 +374,14 @@
   /* 詳細シートの内側から投稿ウィザードを開くケースがあるため、ウィザードは常に最前面に来るよう詳細より高いz-indexにする */
   #postWizard { z-index: 75; }
   #detailSheet { z-index: 60; }
+  /* 読みもの記事は詳細より上・ウィザードより下に配置 */
+  #articleSheet { z-index: 65; }
+
+  .article-lead { font-size: .8rem; color: var(--muted); margin-bottom: 14px; }
+  .article-body p { margin-bottom: 14px; font-size: .92rem; line-height: 1.8; }
+  .pr-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border); }
+  .pr-btn { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 13px 16px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface-2); font-weight: 800; font-size: .88rem; }
+  .pr-tag { font-size: .64rem; font-weight: 900; color: var(--accent); border: 1px solid var(--accent); border-radius: 999px; padding: 1px 7px; }
   .sheet-header { display: flex; align-items: center; gap: 12px; padding: 16px 16px 12px; border-bottom: 1px solid var(--border); flex: none; }
   .sheet-header h2, .sheet-header h1 { font-size: 1.02rem; font-weight: 900; }
   .icon-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--border); font-size: 1.1rem; display: flex; align-items: center; justify-content: center; flex: none; }
@@ -337,6 +397,13 @@
   .photo-btn .icon { font-size: 1.9rem; }
   .photo-preview[hidden] { display: none; }
   .photo-preview { animation: popIn .25s ease; }
+  .reassure { font-weight: 800; color: var(--ink); }
+
+  .wizard-intro { text-align: center; padding: 26px 4px 10px; }
+  .wizard-intro .icon { font-size: 2.2rem; margin-bottom: 14px; }
+  .wizard-intro h3 { font-size: 1.04rem; font-weight: 900; margin-bottom: 10px; }
+  .wizard-intro p { font-size: .86rem; color: var(--muted); margin-bottom: 22px; }
+  .wizard-intro-actions { display: flex; flex-direction: column; gap: 10px; }
 
   .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; position: relative; }
   .field > span:first-child { font-size: .78rem; color: var(--muted); font-weight: 800; }
@@ -439,6 +506,16 @@
   .stat-num { display: block; font-size: 1.3rem; font-weight: 900; }
   .stat-label { font-size: .74rem; color: var(--muted); font-weight: 700; }
 
+  /* ranking */
+  .rank-list { display: flex; flex-direction: column; gap: 8px; }
+  .rank-item { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 10px 14px; box-shadow: var(--shadow-sm); }
+  .rank-pos { width: 22px; flex: none; font-weight: 900; font-size: .9rem; text-align: center; color: var(--muted); }
+  .rank-item.top1 .rank-pos { color: var(--gold); font-size: 1.1rem; }
+  .rank-handle { flex: 1; font-weight: 800; font-size: .84rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rank-lv { font-size: .72rem; color: var(--muted); flex: none; }
+  .rank-pt { font-weight: 800; font-size: .84rem; flex: none; }
+  .rank-you { margin-top: 8px; font-size: .8rem; color: var(--muted); text-align: center; font-weight: 700; }
+
   /* notices */
   .notice-list { display: flex; flex-direction: column; gap: 12px; }
   .notice-item { display: flex; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 14px; box-shadow: var(--shadow-sm); }
@@ -484,6 +561,7 @@
             </div>
             <button class="theme-toggle" id="themeToggle" data-action="toggle-theme" aria-label="ライト/ダークテーマを切り替え" title="テーマ切替">🌗</button>
           </div>
+          <div class="user-handle">ログイン中: <b>アキバの探検家</b>・Lv.3</div>
           <div class="gami-band">
             <div class="gami-row">
               <span class="gami-level">Lv.3 景品ハンター</span>
@@ -497,6 +575,13 @@
           <div class="skel-card"></div><div class="skel-card"></div><div class="skel-card"></div>
         </div>
         <div class="content">
+          <h2 class="feed-heading" style="margin-top:0;">読む：コツ・景品図鑑</h2>
+          <div class="read-scroll" role="group" aria-label="コツ・景品図鑑の記事一覧">
+            <button class="read-card" data-action="open-article" data-article="bridge"><span class="read-icon" aria-hidden="true">🌉</span><span class="read-title">橋渡しの基本</span><span class="editor-badge">編集部</span></button>
+            <button class="read-card" data-action="open-article" data-article="probability"><span class="read-icon" aria-hidden="true">🎲</span><span class="read-title">確率機の仕組み</span><span class="editor-badge">編集部</span></button>
+            <button class="read-card" data-action="open-article" data-article="chiikawa"><span class="read-icon" aria-hidden="true">📖</span><span class="read-title">景品図鑑：ちいかわ</span><span class="editor-badge">編集部</span></button>
+            <button class="read-card" data-action="open-article" data-article="onlinecrane"><span class="read-icon" aria-hidden="true">🕹️</span><span class="read-title">オンクレ徹底比較</span><span class="editor-badge">編集部</span></button>
+          </div>
           <h2 class="feed-heading">近くの新着・鮮度順</h2>
           <div class="card-feed" id="homeFeed"></div>
         </div>
@@ -538,6 +623,7 @@
           <div class="skel-card"></div><div class="skel-card"></div><div class="skel-card"></div>
         </div>
         <div class="content">
+          <p class="sort-hint">新着×近い×信頼度で並べています</p>
           <div class="list-view" id="searchListView">
             <div class="card-feed" id="searchList"></div>
           </div>
@@ -569,6 +655,7 @@
         </div>
         <div class="content">
           <div class="profile-card">
+            <div class="user-handle" style="margin:0 0 10px;">ハンドル: <b>アキバの探検家</b></div>
             <div class="gami-row">
               <span class="gami-level">Lv.3 景品ハンター</span>
               <span class="gami-points mono points-value">320 pt</span>
@@ -579,12 +666,12 @@
           <div class="access-card">
             <div class="access-row">
               <span class="access-label">閲覧権</span>
-              <span class="access-value mono">残り23日</span>
+              <span class="access-value mono">解放中</span>
             </div>
-            <div class="access-sub">見放題プラン適用中（投稿すると延長されます）</div>
+            <div class="access-sub">一覧・店舗・景品・エリアは登録なしで閲覧できます。直近1件の投稿で、詳細（正確な設定・投稿者コメント・鮮度）も解放されます。</div>
             <div class="access-actions">
-              <button class="btn primary" data-action="open-post">投稿で延長</button>
-              <button class="btn ghost" data-action="open-plan">月額プランを見る</button>
+              <button class="btn primary" data-action="open-post">投稿して解放</button>
+              <button class="btn ghost" data-action="open-plan">プレミアムプランについて</button>
             </div>
           </div>
           <h2 class="section-label">バッジコレクション</h2>
@@ -602,6 +689,13 @@
             <div class="stat"><span class="stat-num mono">42</span><span class="stat-label">追認</span></div>
             <div class="stat"><span class="stat-num mono">65</span><span class="stat-label">役に立った</span></div>
           </div>
+          <h2 class="section-label">秋葉原 貢献ランキング</h2>
+          <div class="rank-list">
+            <div class="rank-item top1"><span class="rank-pos" aria-hidden="true">👑</span><span class="rank-handle mono">akiba_master</span><span class="rank-lv mono">Lv.8</span><span class="rank-pt mono">1240pt</span></div>
+            <div class="rank-item"><span class="rank-pos mono">2</span><span class="rank-handle mono">crane_yuki</span><span class="rank-lv mono">Lv.6</span><span class="rank-pt mono">980pt</span></div>
+            <div class="rank-item"><span class="rank-pos mono">3</span><span class="rank-handle mono">tori_gacha</span><span class="rank-lv mono">Lv.5</span><span class="rank-pt mono">870pt</span></div>
+          </div>
+          <p class="rank-you">あなた：12位（320pt）</p>
         </div>
       </section>
 
@@ -655,21 +749,35 @@
         <button class="icon-btn" data-action="close-post" aria-label="投稿を閉じる" id="wizardCloseBtn">×</button>
         <h2 id="wizardTitle">写真を選ぶ</h2>
       </div>
-      <div class="wizard-progress">
+      <div class="wizard-progress" id="wizardProgressWrap">
         <div class="wizard-steplabel"><span id="wizardStepLabel">Step 1/4</span><span>投稿してポイント獲得</span></div>
         <div class="progress-track"><div class="progress-fill" id="wizardProgressFill" style="width:25%"></div></div>
       </div>
       <div class="sheet-body">
+        <div class="step-panel" data-step="0" hidden>
+          <div class="wizard-intro">
+            <div class="icon" aria-hidden="true">🙋</div>
+            <h3>アカウント作成で投稿できます</h3>
+            <p>メール／SNSログインに対応しています。ハンドルは匿名でOKです。（プロトタイプのため実際の登録は行われません）</p>
+            <div class="wizard-intro-actions">
+              <button class="btn primary" data-action="wizard-start">はじめる</button>
+              <button class="btn ghost" data-action="wizard-start">スキップ</button>
+            </div>
+          </div>
+        </div>
         <div class="step-panel" data-step="1">
-          <p class="hint">写真1枚でOK。景品棚や価格表示を撮るだけで、あとはAIが自動入力します。</p>
+          <p class="hint">写真があると入力が速くなりますが、なくても投稿できます。</p>
+          <p class="hint reassure">撮影禁止のお店でもOK。写真は任意です</p>
           <div class="photo-picker">
             <button class="photo-btn primary" data-action="take-photo"><span class="icon" aria-hidden="true">📷</span>写真をとる</button>
             <button class="photo-btn ghost" data-action="take-photo"><span class="icon" aria-hidden="true">🖼️</span>ギャラリーから選ぶ</button>
+            <button class="photo-btn ghost" data-action="skip-photo"><span class="icon" aria-hidden="true">➡️</span>写真なしで進む</button>
           </div>
           <div class="photo-preview photo-placeholder" id="wizardPhoto" style="--i:2" hidden></div>
         </div>
         <div class="step-panel" data-step="2" hidden>
-          <p class="hint">AIが自動入力しました。内容を確認するだけでOKです。</p>
+          <p class="hint" id="wStep2Hint">AIが自動入力しました。内容を確認するだけでOKです。</p>
+          <p class="hint" style="margin-top:-12px;">写真があると自動入力が速くなります（任意）</p>
           <label class="field">
             <span>店舗（位置情報から自動サジェスト）</span>
             <select id="wStore">
@@ -686,14 +794,14 @@
             <span class="auto-badge">自動</span>
           </label>
           <label class="field">
-            <span>金額</span>
+            <span>金額（候補から選ぶ or 入力）</span>
             <input type="number" inputmode="numeric" id="wAmount" value="200">
-            <span class="auto-badge">OCR候補</span>
+            <span class="auto-badge" id="amountBadge">OCR候補</span>
           </label>
           <label class="field">
-            <span>景品名</span>
+            <span>景品名（候補から選ぶ or 入力）</span>
             <input type="text" id="wName" value="ちいかわ でかぬいぐるみ">
-            <span class="auto-badge">AI推定</span>
+            <span class="auto-badge" id="nameBadge">AI推定</span>
           </label>
         </div>
         <div class="step-panel" data-step="3" hidden>
@@ -757,6 +865,15 @@
       <div class="sheet-body" id="detailBody"></div>
     </div>
 
+    <!-- ============ L0 ARTICLE (full sheet) ============ -->
+    <div class="overlay-sheet" id="articleSheet" role="dialog" aria-modal="true" aria-label="読みもの記事">
+      <div class="sheet-header">
+        <button class="icon-btn" data-action="close-article" aria-label="記事を閉じる" id="articleCloseBtn">×</button>
+        <h2 id="articleTitle">記事タイトル</h2>
+      </div>
+      <div class="sheet-body" id="articleBody"></div>
+    </div>
+
     <!-- ============ MAP BOTTOM SHEET ============ -->
     <div class="sheet" id="mapSheet">
       <div class="sheet-scrim" data-action="close-map-sheet"></div>
@@ -770,8 +887,8 @@
     <div class="plan-modal" id="planModal">
       <div class="modal-scrim" data-action="close-plan"></div>
       <div class="modal-panel">
-        <h3>プレミアムプラン（モック）</h3>
-        <p>月額¥500〜で、投稿なしでも全国の店舗の金額・設定・投稿者コメントを閲覧できます。このプロトタイプでは決済は発生しません。</p>
+        <h3>プレミアムプラン（将来提供予定）</h3>
+        <p>現在、月額プランなどのサブスクリプションは提供していません。詳細情報は直近1件の投稿で解放できます。投稿なしでも閲覧できるプランは、将来的な提供を検討中です。</p>
         <button class="btn primary" data-action="close-plan">閉じる</button>
       </div>
     </div>
@@ -785,11 +902,16 @@
   var reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   var ITEMS = [
-    { id: 1, store: "GiGO秋葉原3号館", distance: 240, name: "ちいかわ でかぬいぐるみ", genre: "ぬいぐるみ", setting: "橋渡し", settingTag: "橋渡し", price: 200, fresh: { tier: 1, label: "2時間前" }, freshDays: 0, confirms: 4, comment: "橋渡しはまだ少し緩め。3投目で獲得できました。", gated: false },
-    { id: 2, store: "タイトーステーション秋葉原", distance: 180, name: "呪術廻戦 フィギュア(箱)", genre: "フィギュア", setting: "アーム・箱掛け", settingTag: "アーム", price: 100, fresh: { tier: 2, label: "8時間前" }, freshDays: 0, confirms: 2, comment: "箱の向きが変わりました。狙い目は奥の角です。", gated: false },
-    { id: 3, store: "クラブセガ秋葉原 新館", distance: 520, name: "すみっコぐらし ぬいぐるみ", genre: "ぬいぐるみ", setting: "フック", settingTag: "フック", price: 100, fresh: { tier: 3, label: "1日前" }, freshDays: 1, confirms: 1, comment: "フックが固め。粘り強くいきましょう。", gated: false },
-    { id: 4, store: "アドアーズ秋葉原", distance: 350, name: "ワンピース プライズフィギュア", genre: "フィギュア", setting: "確率機", settingTag: "確率機", price: 500, fresh: { tier: 1, label: "3時間前" }, freshDays: 0, confirms: 3, comment: "確率機、当たり枠が近い印象です。", gated: false },
-    { id: 5, store: "某店(秋葉原)", distance: 410, name: "人気フィギュア", genre: "フィギュア", setting: "確率機", settingTag: "確率機", price: 500, fresh: { tier: 1, label: "1時間前" }, freshDays: 0, confirms: 2, comment: "詳しい設定はここだけの情報。投稿して確認しよう。", gated: true }
+    { id: 1, store: "GiGO秋葉原3号館", distance: 240, name: "ちいかわ でかぬいぐるみ", genre: "ぬいぐるみ", setting: "橋渡し", settingTag: "橋渡し", price: 200, fresh: { tier: 1, label: "2時間前" }, freshDays: 0, confirms: 4, comment: "橋渡しはまだ少し緩め。3投目で獲得できました。", gated: false,
+      posterLevel: 5, posterTitle: "秋葉原の主", trust: "high", trustReasons: ["まだあった4件", "GPS整合", "投稿者の過去実績92%"] },
+    { id: 2, store: "タイトーステーション秋葉原", distance: 180, name: "呪術廻戦 フィギュア(箱)", genre: "フィギュア", setting: "アーム・箱掛け", settingTag: "アーム", price: 100, fresh: { tier: 2, label: "8時間前" }, freshDays: 0, confirms: 2, comment: "箱の向きが変わりました。狙い目は奥の角です。", gated: false,
+      posterLevel: 3, posterTitle: "景品ハンター", trust: "mid", trustReasons: ["まだあった2件", "GPS整合", "投稿者の過去実績78%"] },
+    { id: 3, store: "クラブセガ秋葉原 新館", distance: 520, name: "すみっコぐらし ぬいぐるみ", genre: "ぬいぐるみ", setting: "フック", settingTag: "フック", price: 100, fresh: { tier: 3, label: "1日前" }, freshDays: 1, confirms: 1, comment: "フックが固め。粘り強くいきましょう。", gated: false,
+      posterLevel: 2, posterTitle: "新米ハンター", trust: "mid", trustReasons: ["まだあった1件", "GPS概ね一致", "投稿者の過去実績60%"] },
+    { id: 4, store: "アドアーズ秋葉原", distance: 350, name: "ワンピース プライズフィギュア", genre: "フィギュア", setting: "確率機", settingTag: "確率機", price: 500, fresh: { tier: 1, label: "3時間前" }, freshDays: 0, confirms: 3, comment: "確率機、当たり枠が近い印象です。", gated: false,
+      posterLevel: 4, posterTitle: "確率機マイスター", trust: "high", trustReasons: ["まだあった3件", "GPS整合", "投稿者の過去実績88%"] },
+    { id: 5, store: "某店(秋葉原)", distance: 410, name: "人気フィギュア", genre: "フィギュア", setting: "確率機", settingTag: "確率機", price: 500, fresh: { tier: 1, label: "1時間前" }, freshDays: 0, confirms: 2, comment: "詳しい設定はここだけの情報。投稿して確認しよう。", gated: true,
+      posterLevel: 2, posterTitle: "匿名ハンター", trust: "low", trustReasons: ["まだあった2件", "GPS概ね一致", "投稿者の過去実績45%"] }
   ];
   var HOME_ORDER = [1, 4, 2, 3];
 
@@ -799,13 +921,53 @@
     { id: "p3", label: "アドアーズ秋葉原", stores: ["アドアーズ秋葉原"] }
   ];
 
-  var WIZARD_TITLES = ["写真を選ぶ", "内容を確認", "タグを選ぶ", "投稿完了"];
+  var WIZARD_TITLES = ["写真を追加（任意）", "内容を入力（自動入力を確認）", "タグを選ぶ", "投稿完了"];
+
+  var ARTICLES = {
+    bridge: {
+      title: "橋渡しの基本",
+      lead: "橋渡し設定のクレーンゲームで景品を落とすための基礎知識をまとめました。",
+      body: [
+        "橋渡しとは、景品の下に渡された2本のバーの上に景品を乗せて滑り落とす設定のことです。バーの間隔や角度によって難易度が大きく変わります。",
+        "一般的には、アームで景品を軽く押し出し、少しずつ橋の外側にずらしていくプレイが基本になります。1投で決めようとせず、複数回に分けて景品の位置を調整する意識を持つと成功率が上がります。",
+        "設定は店舗や台によって異なるため、この記事は特定の店舗の設定を保証するものではありません。実際のプレイ前に、最新の投稿情報もあわせて確認しましょう。"
+      ]
+    },
+    probability: {
+      title: "確率機の仕組み",
+      lead: "一定回数ごとに払い出しが行われる「確率機」の基本的な考え方を解説します。",
+      body: [
+        "確率機は、投入回数に応じて内部的に景品を取りやすくする（またはしない）抽選が行われる機種です。連続して投入している人が急に取れることがあるのはこのためです。",
+        "ただし確率機の挙動は店舗の設定や機種、営業方針によって大きく異なります。「何回目で必ず取れる」といった断定はできません。",
+        "本記事は一般的な仕組みの説明であり、特定店舗の設定や攻略法を示すものではありません。"
+      ]
+    },
+    chiikawa: {
+      title: "景品図鑑：ちいかわ",
+      lead: "人気キャラクター「ちいかわ」シリーズの景品を編集部がまとめました。",
+      body: [
+        "ぬいぐるみ、アクリルスタンド、マスコットなど、シリーズごとに様々な景品展開があります。サイズや素材によって設定される価格帯も変わる傾向があります。",
+        "新作が登場するタイミングでは入荷直後の店舗も多く、鮮度の高い投稿をチェックすると出会える確率が上がります。",
+        "気になる景品を見つけたら、さがす画面から鮮度・信頼度の高い投稿を探してみてください。"
+      ]
+    },
+    onlinecrane: {
+      title: "オンクレ徹底比較",
+      lead: "自宅から遊べるオンラインクレーンゲームの特徴を編集部が比較しました。",
+      body: [
+        "オンラインクレーンゲーム（オンクレ）は、スマホやPCから実機を遠隔操作して遊べるサービスです。移動時間がかからず、深夜でも遊べる点が特徴です。",
+        "サービスによって景品ジャンルや配送方法、キャンペーンの内容が異なります。まずは無料コインなどのお試し施策があるサービスから触ってみるのがおすすめです。",
+        "実店舗と組み合わせて楽しむユーザーも増えており、気分や時間帯に応じて使い分けるのも一つの方法です。"
+      ]
+    }
+  };
 
   var state = { points: 320, unlocked: false };
   var filters = { genre: new Set(), setting: new Set(), price: new Set(), freshcat: new Set() };
   var searchQuery = "";
   var wizardStep = 1;
   var wizardData = { photo: false };
+  var introShown = false;
   var lastFocused = null;
 
   /* ---------- helpers ---------- */
@@ -814,6 +976,18 @@
 
   function freshBadge(item) {
     return '<span class="fresh-badge fresh-' + item.fresh.tier + '"><i class="dot" aria-hidden="true"></i>' + item.fresh.label + '</span>';
+  }
+
+  var TRUST_LABEL = { high: "高", mid: "中", low: "低" };
+  function trustBadge(item) {
+    return '<span class="trust-badge trust-' + item.trust + '" aria-hidden="true">🛡 ' + TRUST_LABEL[item.trust] + '</span>';
+  }
+  function posterRow(item) {
+    return (
+      '<div class="poster-row"><span>投稿者: <span class="poster-name">Lv.' + item.posterLevel + ' ' + item.posterTitle + '</span></span>' +
+      trustBadge(item) +
+      '<span class="visually-hidden">信頼度' + TRUST_LABEL[item.trust] + '</span></div>'
+    );
   }
 
   function cardHTML(item) {
@@ -828,6 +1002,7 @@
         '<div class="card-top"><span class="store-name">' + item.store + '</span><span class="distance mono">' + item.distance + 'm</span></div>' +
         '<h3 class="prize-name">' + item.name + '</h3>' +
         '<div class="chips-row">' + settingPrice + freshBadge(item) + '</div>' +
+        posterRow(item) +
         '<div class="confirm-row">' +
           '<button class="confirm-btn still" data-action="confirm-still" data-id="' + item.id + '">まだあった👍 <span class="mono count">' + item.confirms + '</span></button>' +
           '<button class="confirm-btn gone" data-action="confirm-gone" data-id="' + item.id + '">もう無かった👋</button>' +
@@ -952,12 +1127,11 @@
     var gated = item.gated && !state.unlocked;
     var gateOverlay = gated ? (
       '<div class="gate-panel">' +
-        '<p class="gate-copy">あと1件投稿で、この店舗の全景品情報が解放されます</p>' +
+        '<p class="gate-copy">一覧・店舗・景品・エリアは登録なしで見られます。最新の詳細（正確な設定・投稿者コメント・鮮度）を見るには、直近に1件投稿を。</p>' +
         '<div class="gate-progress-label mono">0 / 1 件</div>' +
         '<div class="progress-track"><div class="progress-fill" style="width:0%"></div></div>' +
         '<div class="gate-actions">' +
-          '<button class="btn primary" data-action="open-post">投稿してすぐ解放</button>' +
-          '<button class="btn ghost" data-action="open-plan">月額¥500〜で今すぐ解放</button>' +
+          '<button class="btn primary" data-action="open-post">投稿して解放</button>' +
         '</div>' +
       '</div>'
     ) : "";
@@ -965,6 +1139,7 @@
       '<div class="photo-placeholder detail-photo" style="--i:' + item.id + '" aria-hidden="true"></div>' +
       '<div class="detail-top"><span class="distance mono">' + item.distance + 'm</span>' + freshBadge(item) + '</div>' +
       '<h2 class="detail-name">' + item.name + '</h2>' +
+      posterRow(item) +
       '<div class="gate-wrap' + (gated ? " gated" : "") + '">' +
         '<div class="gate-content">' +
           '<div class="detail-row"><span class="label">設定</span><span class="value">' + item.setting + '</span></div>' +
@@ -972,6 +1147,10 @@
           '<div class="detail-row comment"><span class="label">投稿者コメント</span><p class="value">' + item.comment + '</p></div>' +
         '</div>' +
         gateOverlay +
+      '</div>' +
+      '<div class="trust-detail">' +
+        '<h4>🛡 この情報の信頼度：' + TRUST_LABEL[item.trust] + '</h4>' +
+        '<p class="trust-reasons">' + item.trustReasons.join(" ・ ") + '</p>' +
       '</div>' +
       '<div class="confirm-row detail-confirm">' +
         '<button class="confirm-btn still" data-action="confirm-still" data-id="' + item.id + '">まだあった👍 <span class="mono count">' + item.confirms + '</span></button>' +
@@ -988,6 +1167,28 @@
   }
   function closeDetail() {
     $("#detailSheet").classList.remove("open");
+    if (lastFocused && typeof lastFocused.focus === "function") lastFocused.focus();
+  }
+
+  /* ---------- L0 article overlay ---------- */
+  function openArticle(key) {
+    var a = ARTICLES[key];
+    if (!a) return;
+    lastFocused = document.activeElement;
+    $("#articleTitle").textContent = a.title;
+    $("#articleBody").innerHTML = (
+      '<p class="article-lead">' + a.lead + '</p>' +
+      '<div class="article-body">' + a.body.map(function (p) { return '<p>' + p + '</p>'; }).join("") + '</div>' +
+      '<div class="pr-actions">' +
+        '<button class="pr-btn" data-action="pr-click"><span>オンラインでも遊べる</span><span class="pr-tag">PR</span></button>' +
+        '<button class="pr-btn" data-action="pr-click"><span>通販で探す</span><span class="pr-tag">PR</span></button>' +
+      '</div>'
+    );
+    $("#articleSheet").classList.add("open");
+    window.setTimeout(function () { $("#articleCloseBtn").focus(); }, reducedMotion ? 0 : 300);
+  }
+  function closeArticle() {
+    $("#articleSheet").classList.remove("open");
     if (lastFocused && typeof lastFocused.focus === "function") lastFocused.focus();
   }
 
@@ -1012,14 +1213,21 @@
   /* ---------- post wizard ---------- */
   function updateWizardUI() {
     $all("#postWizard .step-panel").forEach(function (p) { p.hidden = Number(p.dataset.step) !== wizardStep; });
+    var isIntro = wizardStep === 0;
+    $("#wizardProgressWrap").hidden = isIntro;
     $("#wizardProgressFill").style.width = (wizardStep / 4 * 100) + "%";
     $("#wizardStepLabel").textContent = "Step " + wizardStep + "/4";
-    $("#wizardTitle").textContent = WIZARD_TITLES[wizardStep - 1];
-    $("#wizardBack").hidden = wizardStep === 1;
-    $("#wizardFooter").hidden = wizardStep === 4;
+    $("#wizardTitle").textContent = isIntro ? "はじめに" : WIZARD_TITLES[wizardStep - 1];
+    $("#wizardBack").hidden = wizardStep <= 1;
+    $("#wizardFooter").hidden = isIntro || wizardStep === 4;
     var next = $("#wizardNext");
     next.textContent = wizardStep === 3 ? "投稿する" : "次へ";
-    next.disabled = wizardStep === 1 && !wizardData.photo;
+    var hasPhoto = !!wizardData.photo;
+    $("#amountBadge").style.display = hasPhoto ? "" : "none";
+    $("#nameBadge").style.display = hasPhoto ? "" : "none";
+    $("#wStep2Hint").textContent = hasPhoto
+      ? "写真からAIが自動入力しました。内容を確認するだけでOKです。"
+      : "店舗・時刻は自動入力されています。金額・景品名は候補から選ぶか入力してください。";
   }
 
   function nudge(el) {
@@ -1035,8 +1243,14 @@
     updateWizardUI();
   }
 
+  function skipPhoto() {
+    wizardData.photo = false;
+    $("#wizardPhoto").hidden = true;
+    wizardStep = 2;
+    updateWizardUI();
+  }
+
   function wizardNext() {
-    if (wizardStep === 1 && !wizardData.photo) { nudge($("#wizardNext")); return; }
     if (wizardStep === 3) submitPost();
     wizardStep = Math.min(4, wizardStep + 1);
     updateWizardUI();
@@ -1052,8 +1266,8 @@
     renderHomeFeed();
     renderSearchList();
   }
-  function resetWizardToStep1() {
-    wizardStep = 1;
+  function resetWizard(showIntro) {
+    wizardStep = showIntro ? 0 : 1;
     wizardData.photo = false;
     $("#wizardPhoto").hidden = true;
     updateWizardUI();
@@ -1061,7 +1275,8 @@
 
   function openPostWizard() {
     lastFocused = document.activeElement;
-    resetWizardToStep1();
+    resetWizard(!introShown);
+    introShown = true;
     $("#postWizard").classList.add("open");
     window.setTimeout(function () { $("#wizardCloseBtn").focus(); }, reducedMotion ? 0 : 300);
   }
@@ -1092,14 +1307,19 @@
         case "close-post": closePostWizard(); return;
         case "wizard-next": wizardNext(); return;
         case "wizard-back": wizardBack(); return;
+        case "wizard-start": wizardStep = 1; updateWizardUI(); return;
         case "take-photo": takePhoto(); return;
-        case "post-again": resetWizardToStep1(); return;
+        case "skip-photo": skipPhoto(); return;
+        case "post-again": resetWizard(false); return;
         case "view-unlocked": viewUnlocked(); return;
         case "close-detail": closeDetail(); return;
         case "open-plan": openPlan(); return;
         case "close-plan": closePlan(); return;
         case "close-map-sheet": closeMapSheet(); return;
         case "toggle-map-sheet": toggleMapSheet(); return;
+        case "open-article": openArticle(actionEl.dataset.article); return;
+        case "close-article": closeArticle(); return;
+        case "pr-click": toast("※プロトタイプのためリンクはありません"); return;
       }
     }
 
@@ -1141,6 +1361,7 @@
     if (e.key === "Escape") {
       if ($("#planModal").classList.contains("open")) closePlan();
       else if ($("#mapSheet").classList.contains("open")) closeMapSheet();
+      else if ($("#articleSheet").classList.contains("open")) closeArticle();
       else if ($("#detailSheet").classList.contains("open")) closeDetail();
       else if ($("#postWizard").classList.contains("open")) closePostWizard();
     }
