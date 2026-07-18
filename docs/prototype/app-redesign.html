@@ -543,6 +543,31 @@ main{flex:1;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain}
   text-align:left;
 }
 .toast.show{opacity:1;transform:translateY(0)}
+
+/* ============ center-alignment pass + card restructure + fixes ============ */
+.seg button{white-space:nowrap}
+.thumb .mono{font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN","M PLUS Rounded 1c",system-ui,sans-serif}
+.home-lede{text-align:center}
+.sort-row{justify-content:center}
+.search-head{text-align:center}
+.feed-end{text-align:center}
+/* prize card -> centered vertical tile */
+.prize-main{flex-direction:column;align-items:center;text-align:center;gap:10px}
+.prize .thumb{width:88px;height:88px}
+.prize .thumb .mono{font-size:34px}
+.prize-info{align-items:center;gap:4px}
+.store-row{justify-content:center;flex-wrap:wrap}
+.store-row .name{white-space:normal;overflow:visible;text-overflow:clip}
+.spec-row{justify-content:center;flex-wrap:wrap}
+.prize-foot{flex-direction:column;align-items:center;gap:10px;text-align:center}
+.foot-meta{align-items:center}
+.poster-line{justify-content:center;flex-wrap:wrap}
+.confirm-row{justify-content:center}
+/* detail hero + post step headings centered */
+.d-title{text-align:center}
+.d-store{justify-content:center}
+#s-post h2{text-align:center}
+#s-post .p-sub,#s-post .sub{text-align:center}
 </style>
 </head>
 <body>
@@ -867,7 +892,7 @@ main{flex:1;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain}
 
     <!-- ================= NOTIFY ================= -->
     <section class="screen" id="s-notify" aria-label="お知らせ">
-      <div class="sec-head" style="margin-top:16px"><h2>お知らせ</h2></div>
+      <div class="sec-head" style="margin-top:16px"><h2>最近の通知</h2></div>
       <div class="card ntf-group">
         <button class="ntf-item">
           <span class="ntf-ic acc"><svg class="ic"><use href="#i-pin"/></svg></span>
