@@ -167,20 +167,55 @@ overview = [
      "本番環境移行・手順書/利用ルールの完成時期", True),
 ]
 
-# メンター比較用：主要アプリ（短）, 外部連携・制約
+# メンター比較用：外部連携・制約（S3の右端に表示）
 mentor = {
-    1: ("CS・Chat・Excel・SP（4）", "M365内中心／判定基準の作り込みが肝"),
-    2: ("CS・SP・Teams・PA（4）", "FAQ・ガイド整備が成否を左右"),
-    3: ("PA・PQuery・SP・PBI・CS・SF等（6+）", "外部Web・Salesforce等の取得制約が大"),
-    4: ("CS・PA・SP・Teams・Word/PPT（5-6）", "外部Web参照禁止で案の再設計が必要"),
-    5: ("CS・Forms・PA・Teams・DB（5）", "M365標準のみ／制約は小さい"),
-    6: ("CS・PA・SP/OneDrive・Outlook・Teams・PPT（6）", "ファイルサーバ／PPT自動生成の検証"),
-    7: ("CS・SP・Excel/CSV（3-4）", "外部連携なし（人手取得データ前提）"),
-    8: ("CS・PA・Outlook・Teams・SP（5）", "予定表・会議室・メール権限の整備"),
-    9: ("CS・PA・Outlook・Excel・Teams・共有サーバ（6）", "社外秘・共有サーバ・メール送信可否"),
-    10: ("CS・Teams・SP・Word（4）", "トランスクリプト取得権限・転記精度"),
-    11: ("CS・SP・Teams・FAQ（3-4）", "本番移行・FAQ品質・運用保守"),
+    1: ("", "M365内中心／判定基準の作り込みが肝"),
+    2: ("", "FAQ・ガイド整備が成否を左右"),
+    3: ("", "外部Web・Salesforce等の取得制約が大"),
+    4: ("", "外部Web参照禁止で案の再設計が必要"),
+    5: ("", "M365標準のみ／制約は小さい"),
+    6: ("", "ファイルサーバ／PPT自動生成の検証"),
+    7: ("", "外部連携なし（人手取得データ前提）"),
+    8: ("", "予定表・会議室・メール権限の整備"),
+    9: ("", "社外秘・共有サーバ・メール送信可否"),
+    10: ("", "トランスクリプト取得権限・転記精度"),
+    11: ("", "本番移行・FAQ品質・運用保守"),
 }
+
+# アプリ列（key, 2行ラベル, 色, 文字色）— 列＝アプリ、色タイル＝使用
+APP_COLS = [
+    ("CS",  "Copilot\nStudio", RGBColor(0x74, 0x5C, 0xA6), WHITE),
+    ("PA",  "Power\nAutomate", RGBColor(0x0B, 0x72, 0xC4), WHITE),
+    ("SP",  "Share\nPoint",    RGBColor(0x03, 0x6C, 0x70), WHITE),
+    ("Tm",  "Teams",           RGBColor(0x4B, 0x53, 0xBC), WHITE),
+    ("OL",  "Outlook",         RGBColor(0x0A, 0x6F, 0xC2), WHITE),
+    ("Fm",  "Forms",           RGBColor(0x1F, 0x8A, 0x70), WHITE),
+    ("BI",  "Power\nBI",       RGBColor(0xE3, 0xB1, 0x0A), DARK),
+    ("Xl",  "Excel",           RGBColor(0x21, 0x73, 0x46), WHITE),
+    ("WP",  "Word/\nPPT",      RGBColor(0xB0, 0x47, 0x2A), WHITE),
+    ("Ext", "外部/\nその他",   RGBColor(0x6B, 0x72, 0x80), WHITE),
+]
+# 各チームが使用するアプリ（APP_COLSのkey集合）
+app_use = {
+    1: {"CS", "SP", "Xl"},
+    2: {"CS", "PA", "SP", "Tm"},
+    3: {"CS", "PA", "SP", "BI", "Ext"},
+    4: {"CS", "PA", "SP", "Tm", "WP", "Ext"},
+    5: {"CS", "PA", "Fm", "Tm"},
+    6: {"CS", "PA", "SP", "Tm", "OL", "WP"},
+    7: {"CS", "SP", "Xl", "Ext"},
+    8: {"CS", "PA", "SP", "Tm", "OL"},
+    9: {"CS", "PA", "SP", "Tm", "OL", "Xl", "Ext"},
+    10: {"CS", "SP", "Tm", "WP"},
+    11: {"CS", "SP", "Tm"},
+}
+# 10月発表の見込み（暫定）: ◎=順調 / ○=概ね順調 / △=要フォロー
+forecast = {1: "○", 2: "○", 3: "△", 4: "△", 5: "◎",
+            6: "○", 7: "◎", 8: "○", 9: "△", 10: "○", 11: "○"}
+
+
+def fc_color(m):
+    return GREEN if m == "◎" else TEAL if m == "○" else AMBER
 
 # 各チーム詳細
 detail = {
@@ -273,7 +308,7 @@ footer(s)
 add_text(s, Inches(0.55), Inches(1.4), Inches(12.2), Inches(0.9),
          "7月22日〜24日に実施した第2回 事前相談会では、第1回後に提出された各チームの企画書を前提に、"
          "構築フェーズへ進むための「進捗確認」「技術論点の整理」「ネクストアクションの明確化」を行った。"
-         "本資料では、各チームの状況を一覧・個票で整理し、あわせて難易度・使用アプリの種類を比較整理する。",
+         "本資料では、各チームの状況を一覧・個票で整理し、あわせて難易度・使用アプリの種類・10月発表の見込みを比較整理する。",
          size=13, color=DARK, ls=1.15)
 
 by = Inches(2.6); bh = Inches(2.75); bw = Inches(5.9)
@@ -320,29 +355,32 @@ s = prs.slides.add_slide(BLANK)
 header(s, 2, "各チームの状況一覧", "PROGRESS SUMMARY ｜ 全11チーム")
 footer(s)
 add_text(s, Inches(0.55), Inches(1.28), Inches(12.3), Inches(0.3),
-         "全11チームが企画書提出を経て原則1案に整理済み。進捗レベル（Lv1〜5）・難易度とあわせて一覧化。",
+         "全11チームが企画書提出を経て原則1案に整理済み。進捗レベル・難易度・10月発表の見込みとあわせて一覧化。",
          size=11, color=DARK)
 add_text(s, Inches(0.55), Inches(1.60), Inches(12.3), Inches(0.5),
          "進捗レベル ▶ Lv1:未絞込／Lv2:2案まで／Lv3:1案確定・理解途上／Lv4:To-Be・アーキ具体化／Lv5:定量効果まで概ね完成"
-         "　　第2回実施済み＝1・2・3・4・5・10・11（他は第1回＋企画書で暫定）",
+         "　／　10月見込み ◎:順調 ○:概ね ○ △:要フォロー　（第2回実施済＝1・2・3・4・5・10・11）",
          size=9, color=MUTE, ls=1.1)
 
 tx = Inches(0.55); ty0 = Inches(2.16); rowh = Inches(0.415); hh = Inches(0.36)
-t = s.shapes.add_table(12, 5, tx, ty0, Inches(12.25), Inches(5.0)).table
-cw = [Inches(0.62), Inches(2.15), Inches(3.5), Inches(4.4), Inches(1.58)]
+t = s.shapes.add_table(12, 6, tx, ty0, Inches(12.25), Inches(5.0)).table
+cw = [Inches(0.55), Inches(2.0), Inches(3.1), Inches(3.95), Inches(0.9), Inches(1.75)]
 for i, w in enumerate(cw):
     t.columns[i].width = w
 for c, htx in enumerate(["チーム", "進捗レベル", "案概要（エージェント名）",
-                         "第2回の主な論点・相談", "難易度"]):
-    cell(t.cell(0, c), htx, size=10, color=WHITE, bold=True, fill=NAVY, align=PP_ALIGN.CENTER)
+                         "第2回の主な論点・相談", "難易度", "10月発表 見込み"]):
+    cell(t.cell(0, c), htx, size=9.5, color=WHITE, bold=True, fill=NAVY, align=PP_ALIGN.CENTER)
 rh(t, 0, hh)
+fc_word = {"◎": "◎ 順調", "○": "○ 概ね順調", "△": "△ 要フォロー"}
 for i, (no, lv, name, diff, mt, topic, done) in enumerate(overview, start=1):
     rf = WHITE if i % 2 else LIGHT
     cell(t.cell(i, 0), f"T{no}", size=10.5, color=NAVY, bold=True, fill=rf, align=PP_ALIGN.CENTER)
     cell(t.cell(i, 1), "", fill=rf)
-    cell(t.cell(i, 2), name, size=9, color=DARK, bold=True, fill=rf)
+    cell(t.cell(i, 2), name, size=8.8, color=DARK, bold=True, fill=rf)
     cell(t.cell(i, 3), topic, size=8.5, color=(MUTE if not done else DARK), fill=rf)
     cell(t.cell(i, 4), diff, size=9.5, color=diff_color(diff), bold=True, fill=rf, align=PP_ALIGN.CENTER)
+    fc = forecast[no]
+    cell(t.cell(i, 5), fc_word[fc], size=9, color=fc_color(fc), bold=True, fill=rf, align=PP_ALIGN.CENTER)
     rh(t, i, rowh)
 # 進捗レベル矢印を重ねる
 cx0 = tx + cw[0] + Inches(0.12)
@@ -360,36 +398,45 @@ for i, (no, lv, *_r) in enumerate(overview, start=1):
 s = prs.slides.add_slide(BLANK)
 header(s, 3, "難易度・使用アプリの比較", "DIFFICULTY & APPS ｜ チーム別比較")
 footer(s)
-add_text(s, Inches(0.55), Inches(1.24), Inches(12.3), Inches(0.5),
-         "各チームの難易度・使用アプリの種類・外部連携/制約を比較整理（メンター担当検討の材料）。"
-         "難易度は相談会での論点量・外部連携/制約・作り込み範囲からの暫定評価。",
-         size=10.5, color=DARK, ls=1.12)
+add_text(s, Inches(0.55), Inches(1.22), Inches(12.3), Inches(0.42),
+         "各チームの使用アプリを列（アプリ別）で可視化し、難易度・アプリ数（ボリューム）とあわせて比較（メンター担当検討の材料）。"
+         "色タイル＝使用アプリ。全チームがCopilot Studioを使用。",
+         size=10, color=DARK, ls=1.1)
 
-tx = Inches(0.55); ty0 = Inches(1.86); rowh = Inches(0.38); hh = Inches(0.32)
-t = s.shapes.add_table(12, 5, tx, ty0, Inches(12.25), Inches(4.6)).table
-cw = [Inches(0.6), Inches(2.6), Inches(1.05), Inches(3.9), Inches(4.1)]
+tx = Inches(0.55); ty0 = Inches(1.76); rowh = Inches(0.37); hh = Inches(0.52)
+ncol = 4 + len(APP_COLS)   # チーム,案概要,難易度 + apps + アプリ数
+t = s.shapes.add_table(12, ncol, tx, ty0, Inches(12.25), Inches(4.6)).table
+cw = [Inches(0.5), Inches(1.95), Inches(0.7)] + [Inches(0.85)] * len(APP_COLS) + [Inches(0.6)]
 for i, w in enumerate(cw):
     t.columns[i].width = w
-for c, htx in enumerate(["チーム", "案概要", "難易度", "主要アプリ（種類数）", "外部連携・制約"]):
-    cell(t.cell(0, c), htx, size=9.5, color=WHITE, bold=True, fill=TEAL, align=PP_ALIGN.CENTER)
+# ヘッダー
+cell(t.cell(0, 0), "チーム", size=8.5, color=WHITE, bold=True, fill=NAVY, align=PP_ALIGN.CENTER)
+cell(t.cell(0, 1), "案概要", size=8.5, color=WHITE, bold=True, fill=NAVY, align=PP_ALIGN.CENTER)
+cell(t.cell(0, 2), "難易度", size=8.5, color=WHITE, bold=True, fill=NAVY, align=PP_ALIGN.CENTER)
+for j, (key, label, col, tc) in enumerate(APP_COLS):
+    cell(t.cell(0, 3 + j), label, size=7, color=tc, bold=True, fill=col, align=PP_ALIGN.CENTER)
+cell(t.cell(0, ncol - 1), "アプリ\n数", size=7.5, color=WHITE, bold=True, fill=NAVY, align=PP_ALIGN.CENTER)
 rh(t, 0, hh)
 for i, (no, lv, name, diff, mt, topic, done) in enumerate(overview, start=1):
     rf = WHITE if i % 2 else LIGHT
-    apps, cons = mentor[no]
-    cell(t.cell(i, 0), f"T{no}", size=10, color=NAVY, bold=True, fill=rf, align=PP_ALIGN.CENTER)
-    cell(t.cell(i, 1), name.split("（")[0], size=8.8, color=DARK, bold=True, fill=rf)
-    cell(t.cell(i, 2), diff, size=9.5, color=diff_color(diff), bold=True, fill=rf, align=PP_ALIGN.CENTER)
-    cell(t.cell(i, 3), apps, size=8.4, color=DARK, fill=rf)
-    cell(t.cell(i, 4), cons, size=8.5, color=DARK, fill=rf)
+    cell(t.cell(i, 0), f"T{no}", size=9.5, color=NAVY, bold=True, fill=rf, align=PP_ALIGN.CENTER)
+    cell(t.cell(i, 1), name.split("（")[0], size=8, color=DARK, bold=True, fill=rf)
+    cell(t.cell(i, 2), diff, size=9, color=diff_color(diff), bold=True, fill=rf, align=PP_ALIGN.CENTER)
+    used = app_use[no]
+    for j, (key, label, col, tc) in enumerate(APP_COLS):
+        if key in used:
+            cell(t.cell(i, 3 + j), "●", size=9, color=tc, bold=True, fill=col, align=PP_ALIGN.CENTER)
+        else:
+            cell(t.cell(i, 3 + j), "", size=8, fill=rf)
+    cell(t.cell(i, ncol - 1), str(len(used)), size=9.5, color=NAVY, bold=True, fill=rf, align=PP_ALIGN.CENTER)
     rh(t, i, rowh)
-# 下部：難易度の目安（凡例）
-sy = ty0 + hh + rowh * 11 + Inches(0.14)
-add_rect(s, tx, sy, Inches(12.25), Inches(0.56), LIGHT)
-add_text(s, tx + Inches(0.25), sy + Inches(0.02), Inches(11.8), Inches(0.52),
-         "難易度の目安 ▶ 　中：M365標準中心で実現性が高い　／　"
-         "中〜高：連携・運用の検証項目が多い　／　高：外部連携・制約が大きく再設計や事務局判断を伴う"
-         "　（※暫定評価・要調整）",
-         size=9.5, color=DARK, anchor=MSO_ANCHOR.MIDDLE)
+# 下部：凡例
+sy = ty0 + hh + rowh * 11 + Inches(0.12)
+add_rect(s, tx, sy, Inches(12.25), Inches(0.5), LIGHT)
+add_text(s, tx + Inches(0.25), sy + Inches(0.01), Inches(11.8), Inches(0.48),
+         "●＝使用アプリ（列見出しの色が各アプリ）。「アプリ数」＝使用アプリの種類数（実装ボリュームの目安）。"
+         "難易度・見込みは暫定評価・要調整。",
+         size=9, color=DARK, anchor=MSO_ANCHOR.MIDDLE)
 
 
 # ==================================================================
@@ -524,10 +571,13 @@ def detail_slide(no, idx):
     add_text(s, Inches(2.62) + Inches(0.27) * 5 + Inches(0.05), sy - Inches(0.02),
              Inches(0.7), Inches(0.45), f"Lv{lv}", size=11, color=tier(lv),
              bold=True, anchor=MSO_ANCHOR.MIDDLE)
-    pill(s, Inches(5.35), sy, Inches(2.1), Inches(0.42),
+    pill(s, Inches(4.5), sy, Inches(1.7), Inches(0.42),
          f"難易度：{d['diff']}", diff_color(d['diff']))
+    fc = forecast[no]
+    pill(s, Inches(6.35), sy, Inches(2.4), Inches(0.42),
+         f"10月見込み：{fc}", fc_color(fc))
     done = ov[6]
-    pill(s, Inches(7.7), sy, Inches(3.15), Inches(0.42),
+    pill(s, Inches(8.9), sy, Inches(3.5), Inches(0.42),
          ("第2回：実施済" if done else "第2回：未実施（第1回＋企画書）"),
          (NAVY if done else MUTE))
 
