@@ -468,49 +468,45 @@ add_text(s, tx + Inches(0.22), sy + Inches(0.03), Inches(11.85), Inches(0.62),
 # スライド4：課題カテゴライズ
 # ==================================================================
 s = prs.slides.add_slide(BLANK)
-header(s, 4, "質疑で挙がった課題の整理", "ISSUE CATEGORIZATION ｜ 横断的な論点")
+header(s, 4, "質疑で挙がった課題 ― 大きく3点", "ISSUE SUMMARY ｜ 第2回の論点")
 footer(s)
-add_text(s, Inches(0.55), Inches(1.26), Inches(12.3), Inches(0.35),
-         "第2回の相談会（チーム1・2・3・4・5・10・11）で実際に挙がった論点のみを整理。構築に向けた具体的な進め方・制約・展開に関する相談が中心。",
-         size=11, color=DARK)
-cats = [
-    ("外部サイト参照・Web検索の制約／案の再設計",
-     "外部Web・IR情報の取得は原則禁止（相手先サーバ負荷・訴訟リスク）。抵触する案は練り直しが必要。代替は事前取得してナレッジ化。", "3, 4"),
-    ("開発の進め方・基本フォーマット／スケジュール提示",
-     "何を優先しどの手順で進めるかの基本フォーマットが欲しい。8〜9月のスケジュール案内の要望。", "1, 5"),
-    ("設計相談の進め方・プロンプト見本",
-     "成果物の作り方・使うアプリ・設定をCopilotチャットで相談する型と、プロンプト見本の提供要望。", "1, 2"),
-    ("8月デモ設計・効果の見極め",
-     "タスク列を仮決め→サンプル数件→Automateで一本通すMVP。整形/ドラフトのみで効果が出るかの見極め。", "4, 5"),
-    ("Copilot回答の信頼性・検証",
-     "Copilotチャットの回答をそのまま信じてよいか。根拠提示を求め、画面操作・実検証で精度を確認。", "10"),
-    ("本番環境移行・展開時期・社内申請フロー",
-     "開発環境→本番環境移行の申請/決裁フロー、年度末（3月末）展開を見据えたスピード感・フェーズ設定。", "11"),
-    ("手順書・利用ルール／運用保守",
-     "手順書・利用ルールの整備時期（項目出し・全量把握が重要）。Copilot Studio更新に伴う運用保守の懸念。", "5, 11"),
-    ("メンター制・今後の進め方",
-     "8月以降のメンター定例（週次/隔週）の進め方を事務局から案内予定。", "2, 10"),
+add_text(s, Inches(0.55), Inches(1.28), Inches(12.3), Inches(0.35),
+         "第2回（チーム1・2・3・4・5・10・11）で挙がった論点は、大きく次の3点に整理できる。",
+         size=12, color=DARK)
+
+issues = [
+    ("1", "ガバナンス・制約", ORANGE,
+     ["外部Web参照・M365外連携・機密情報は原則NG。依存する案は再設計が必要　… T3・T4",
+      "開発環境→本番環境への移行は、社内の申請/決裁フローを要確認　… T11"],
+     "事務局：可否判断を早期に。抵触時は案が頓挫するため最優先で確認。"),
+    ("2", "構築の進め方", NAVY,
+     ["開発の基本フォーマット・手順、8〜9月スケジュールの提示　… T1・T5",
+      "設計相談の型／プロンプト見本の提供　… T1・T2",
+      "Copilotの回答は鵜呑みにせず、根拠提示・実検証で精度確認　… T10"],
+     "事務局：進め方の型・スケジュール・プロンプト見本を配布。"),
+    ("3", "展開・運用（10月以降）", TEAL,
+     ["8月デモは「一本通し」でスコープを絞る／効果の見極め　… T4・T5",
+      "手順書・利用ルールの整備（項目出し・全量把握）と更新に伴う運用保守　… T5・T11",
+      "メンター定例（週次/隔週）の進め方を案内　… T2・T10"],
+     "事務局：展開・運用の枠組みとメンター定例を案内。"),
 ]
-tx = Inches(0.55); ty0 = Inches(1.7)
-t = s.shapes.add_table(len(cats) + 1, 3, tx, ty0, Inches(12.25), Inches(3.5)).table
-for i, w in enumerate([Inches(4.1), Inches(6.45), Inches(1.7)]):
-    t.columns[i].width = w
-for c, htx in enumerate(["カテゴリ（第2回で挙がった論点）", "主な内容", "該当チーム"]):
-    cell(t.cell(0, c), htx, size=10, color=WHITE, bold=True, fill=TEAL, align=PP_ALIGN.CENTER)
-rh(t, 0, Inches(0.34))
-for i, (cat, pt, tms) in enumerate(cats, start=1):
-    rf = WHITE if i % 2 else LIGHT
-    cell(t.cell(i, 0), cat, size=9.3, color=NAVY, bold=True, fill=rf)
-    cell(t.cell(i, 1), pt, size=8.8, color=DARK, fill=rf)
-    cell(t.cell(i, 2), tms, size=9, color=DARK, bold=True, fill=rf, align=PP_ALIGN.CENTER)
-    rh(t, i, Inches(0.38))
-cy = ty0 + Inches(0.34) + Inches(0.38) * len(cats) + Inches(0.12)
-add_rect(s, tx, cy, Inches(12.25), Inches(0.62), RGBColor(0xFC, 0xF1, 0xE6))
-add_rect(s, tx, cy, Inches(0.13), Inches(0.62), ORANGE)
-add_text(s, tx + Inches(0.3), cy + Inches(0.03), Inches(11.7), Inches(0.58),
-         "▲ 重要：外部Web参照・M365外システム連携・個人情報/機密情報の取り扱いはガイドライン上の制約がある。"
-         "これらに依存する案は抵触時に再設計が必要となるため、可否は早めに事務局へ確認を（第2回ではチーム3・4が該当）。",
-         size=10.5, color=DARK, bold=True, anchor=MSO_ANCHOR.MIDDLE, ls=1.05)
+cy0 = Inches(1.8); card_h = Inches(1.63); cgap = Inches(0.17)
+for k, (num, title, col, bullets, action) in enumerate(issues):
+    y = cy0 + (card_h + cgap) * k
+    add_rect(s, Inches(0.55), y, Inches(12.25), card_h, LIGHT)
+    add_rect(s, Inches(0.55), y, Inches(3.15), card_h, col)
+    add_text(s, Inches(0.7), y, Inches(0.85), card_h, num, size=32, color=WHITE,
+             bold=True, anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.CENTER)
+    add_text(s, Inches(1.55), y, Inches(2.05), card_h, title, size=13.5, color=WHITE,
+             bold=True, anchor=MSO_ANCHOR.MIDDLE, ls=1.05)
+    bx = Inches(3.95); by = y + Inches(0.13)
+    for b in bullets:
+        add_rect(s, bx, by + Inches(0.05), Inches(0.1), Inches(0.1), col)
+        add_text(s, bx + Inches(0.2), by - Inches(0.04), Inches(8.55), Inches(0.32),
+                 b, size=9.8, color=DARK)
+        by += Inches(0.31)
+    add_text(s, bx, y + card_h - Inches(0.33), Inches(8.6), Inches(0.3),
+             "▶ " + action, size=9.5, color=col, bold=True)
 
 
 # ==================================================================
@@ -519,40 +515,36 @@ add_text(s, tx + Inches(0.3), cy + Inches(0.03), Inches(11.7), Inches(0.58),
 s = prs.slides.add_slide(BLANK)
 header(s, 5, "全体総括", "OVERALL ASSESSMENT")
 footer(s)
-add_rect(s, Inches(0.55), Inches(1.35), Inches(12.25), Inches(1.15), NAVY)
-add_text(s, Inches(0.9), Inches(1.5), Inches(11.6), Inches(0.85),
-         "第1回→第2回で「未集約」チームは解消し、各チームが構築フェーズの具体論点へ移行。"
-         "一方、外部Web参照・M365外連携・ファイル格納場所など、実装前に事務局判断が必要な論点が明確化した。",
-         size=13.5, color=WHITE, bold=True, ls=1.18, anchor=MSO_ANCHOR.MIDDLE)
-cy = Inches(2.78); ch = Inches(2.65); cwd = Inches(3.95)
-xs = [Inches(0.55), Inches(4.7), Inches(8.85)]
+add_rect(s, Inches(0.55), Inches(1.4), Inches(12.25), Inches(0.85), NAVY)
+add_text(s, Inches(0.9), Inches(1.45), Inches(11.6), Inches(0.75),
+         "全チームが企画書提出を経て構築フェーズへ移行。大半は10月発表に向け順調で、要フォローはT4のみ。",
+         size=14, color=WHITE, bold=True, anchor=MSO_ANCHOR.MIDDLE)
 
+# 見込み分布タイル（◎/○/△）
+ty = Inches(2.55); th = Inches(1.95)
+tiles = [
+    ("◎ 先行", "2チーム", "T5・T7", "構成・効果まで具体化", GREEN, Inches(0.55), Inches(3.0)),
+    ("○ 概ね順調", "8チーム", "T1・2・3・6・8・9・10・11",
+     "壁打ち・スコープ調整で\n発表に間に合う見込み", TEAL, Inches(3.7), Inches(5.35)),
+    ("△ 要フォロー", "1チーム", "T4", "外部参照禁止で再設計中。\n作るものの再定義が最優先",
+     AMBER, Inches(9.25), Inches(3.55)),
+]
+for label, cnt, teams, note, col, x, w in tiles:
+    add_rect(s, x, ty, w, th, LIGHT)
+    add_rect(s, x, ty, w, Inches(0.5), col)
+    add_text(s, x, ty + Inches(0.06), w, Inches(0.4), label, size=13, color=WHITE,
+             bold=True, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
+    add_text(s, x, ty + Inches(0.62), w, Inches(0.5), cnt, size=21, color=NAVY,
+             bold=True, align=PP_ALIGN.CENTER)
+    add_text(s, x + Inches(0.2), ty + Inches(1.14), w - Inches(0.4), Inches(0.3),
+             teams, size=10, color=DARK, bold=True, align=PP_ALIGN.CENTER)
+    add_text(s, x + Inches(0.2), ty + Inches(1.44), w - Inches(0.4), Inches(0.45),
+             note, size=9, color=MUTE, align=PP_ALIGN.CENTER, ls=1.05)
 
-def scol(x, tcol, title, bullets):
-    add_rect(s, x, cy, cwd, ch, LIGHT)
-    add_rect(s, x, cy, cwd, Inches(0.55), tcol)
-    add_text(s, x + Inches(0.22), cy + Inches(0.08), cwd - Inches(0.44), Inches(0.4),
-             title, size=13, color=WHITE, bold=True, anchor=MSO_ANCHOR.MIDDLE)
-    yy = cy + Inches(0.72)
-    for b in bullets:
-        add_rect(s, x + Inches(0.22), yy + Inches(0.06), Inches(0.1), Inches(0.1), tcol)
-        add_text(s, x + Inches(0.42), yy - Inches(0.04), cwd - Inches(0.6), Inches(0.7),
-                 b, size=10, color=DARK, ls=1.05)
-        yy += Inches(0.62)
-
-
-scol(xs[0], GREEN, "先行・順調なチーム",
-     ["T5：業務フロー・効果試算・M365標準活用が具体化。8月デモ化に着手可能。",
-      "T7：固定ナレッジ＋入力ファイル照合の構成が明確。",
-      "T10・11：構成・前提は見えており、権限・運用項目の洗い出しが次フェーズ。"])
-scol(xs[1], AMBER, "留意・支援が必要なチーム",
-     ["T4：外部Web参照禁止で企画の中核が抵触し再設計中。作るものの再定義が最優先（唯一の△）。",
-      "T3・9：難易度・ボリュームが大。データのOK/NG整理とスコープ設定が前提（道筋はあり）。",
-      "T1・2・6：開発手順の型・プロンプト見本・アプリ使い分けの提供で加速。"])
-scol(xs[2], TEAL, "事務局からの提言",
-     ["ガバナンス判断を早めに（外部Web・M365外連携・社外秘ファイル読込）。",
-      "8月は「一本通るデモ」優先。入力→処理→出力の流れを示す。",
-      "9月は発表資料・削減効果・運用項目・手順書/利用ルールの棚卸し。"])
+# 事務局の重点（1行）
+add_text(s, Inches(0.55), Inches(4.72), Inches(12.25), Inches(0.5),
+         "事務局の重点 ▶ ①ガバナンス判断の早期化　②進め方の型・スケジュール提示　③8月は「一本通し」デモに集中",
+         size=11.5, color=NAVY, bold=True, anchor=MSO_ANCHOR.MIDDLE)
 
 # 下部：スケジュール
 add_text(s, Inches(0.55), Inches(5.62), Inches(6.0), Inches(0.3),
