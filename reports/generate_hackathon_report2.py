@@ -3,8 +3,9 @@
 Copilot Studio 活用ハッカソン 第2回 事前相談会 チームごとの状況報告
 Copilot生成のたたき台をベースに、第1回と同一のデザインで再構成する。
 - 一覧（全11チーム）＋各チーム詳細1枚
-- メンター担当検討（難易度・使用アプリ比較）を追加
-個人名（各チームメンバー）は不使用。メンターは運営側のため実名（中村／甲佐）で担当案を記載。
+- 難易度・使用アプリの比較（メンター担当検討の材料）を追加。メンター割当は行わない。
+- 課題整理は第2回トランスクリプトで実際に挙がった論点のみを対象とする。
+個人名（各チームメンバー）は不使用。
 """
 from pptx import Presentation
 from pptx.util import Inches, Pt
@@ -272,7 +273,7 @@ footer(s)
 add_text(s, Inches(0.55), Inches(1.4), Inches(12.2), Inches(0.9),
          "7月22日〜24日に実施した第2回 事前相談会では、第1回後に提出された各チームの企画書を前提に、"
          "構築フェーズへ進むための「進捗確認」「技術論点の整理」「ネクストアクションの明確化」を行った。"
-         "本資料では、各チームの状況を一覧・個票で整理し、あわせてメンター担当検討の材料を提示する。",
+         "本資料では、各チームの状況を一覧・個票で整理し、あわせて難易度・使用アプリの種類を比較整理する。",
          size=13, color=DARK, ls=1.15)
 
 by = Inches(2.6); bh = Inches(2.75); bw = Inches(5.9)
@@ -305,7 +306,7 @@ purpose(rx, "技術面 ｜ TECHNOLOGY", TEAL, "適合性・実現可能性の助
 
 add_text(s, Inches(0.6), Inches(5.55), Inches(12.1), Inches(0.5),
          "第2回は「企画書提出後の棚卸し」。特に外部参照禁止・M365外連携・本番移行・手順書整備など、"
-         "事務局判断や横断整理が必要な論点が増加。本資料では難易度・使用アプリ・メンター担当案も比較整理する。",
+         "事務局判断や横断整理が必要な論点が増加。本資料では各チームの難易度・使用アプリの種類も比較整理する。",
          size=11, color=MUTE, ls=1.1)
 add_text(s, Inches(0.6), Inches(6.35), Inches(12.1), Inches(0.4),
          "※ 特定案への誘導は行わず、各チームの主体的な意思決定を尊重しながら技術・運用・ガバナンス面の助言を実施。",
@@ -319,7 +320,7 @@ s = prs.slides.add_slide(BLANK)
 header(s, 2, "各チームの状況一覧", "PROGRESS SUMMARY ｜ 全11チーム")
 footer(s)
 add_text(s, Inches(0.55), Inches(1.28), Inches(12.3), Inches(0.3),
-         "全11チームが企画書提出を経て原則1案に整理済み。進捗レベル（Lv1〜5）・難易度・メンター担当案とあわせて一覧化。",
+         "全11チームが企画書提出を経て原則1案に整理済み。進捗レベル（Lv1〜5）・難易度とあわせて一覧化。",
          size=11, color=DARK)
 add_text(s, Inches(0.55), Inches(1.60), Inches(12.3), Inches(0.5),
          "進捗レベル ▶ Lv1:未絞込／Lv2:2案まで／Lv3:1案確定・理解途上／Lv4:To-Be・アーキ具体化／Lv5:定量効果まで概ね完成"
@@ -327,12 +328,12 @@ add_text(s, Inches(0.55), Inches(1.60), Inches(12.3), Inches(0.5),
          size=9, color=MUTE, ls=1.1)
 
 tx = Inches(0.55); ty0 = Inches(2.16); rowh = Inches(0.415); hh = Inches(0.36)
-t = s.shapes.add_table(12, 6, tx, ty0, Inches(12.25), Inches(5.0)).table
-cw = [Inches(0.62), Inches(2.05), Inches(3.35), Inches(3.63), Inches(1.05), Inches(1.55)]
+t = s.shapes.add_table(12, 5, tx, ty0, Inches(12.25), Inches(5.0)).table
+cw = [Inches(0.62), Inches(2.15), Inches(3.5), Inches(4.4), Inches(1.58)]
 for i, w in enumerate(cw):
     t.columns[i].width = w
 for c, htx in enumerate(["チーム", "進捗レベル", "案概要（エージェント名）",
-                         "第2回の主な論点・相談", "難易度", "メンター案"]):
+                         "第2回の主な論点・相談", "難易度"]):
     cell(t.cell(0, c), htx, size=10, color=WHITE, bold=True, fill=NAVY, align=PP_ALIGN.CENTER)
 rh(t, 0, hh)
 for i, (no, lv, name, diff, mt, topic, done) in enumerate(overview, start=1):
@@ -342,8 +343,6 @@ for i, (no, lv, name, diff, mt, topic, done) in enumerate(overview, start=1):
     cell(t.cell(i, 2), name, size=9, color=DARK, bold=True, fill=rf)
     cell(t.cell(i, 3), topic, size=8.5, color=(MUTE if not done else DARK), fill=rf)
     cell(t.cell(i, 4), diff, size=9.5, color=diff_color(diff), bold=True, fill=rf, align=PP_ALIGN.CENTER)
-    cell(t.cell(i, 5), mt, size=9.5, color=(MENTOR_N if mt == "中村" else MENTOR_K),
-         bold=True, fill=rf, align=PP_ALIGN.CENTER)
     rh(t, i, rowh)
 # 進捗レベル矢印を重ねる
 cx0 = tx + cw[0] + Inches(0.12)
@@ -356,49 +355,41 @@ for i, (no, lv, *_r) in enumerate(overview, start=1):
 
 
 # ==================================================================
-# スライド3：メンター担当検討
+# スライド3：難易度・使用アプリの比較（メンター担当検討の材料）
 # ==================================================================
 s = prs.slides.add_slide(BLANK)
-header(s, 3, "メンター担当検討（難易度・使用アプリ比較）", "MENTOR ASSIGNMENT ｜ 担当決めの検討材料")
+header(s, 3, "難易度・使用アプリの比較", "DIFFICULTY & APPS ｜ チーム別比較")
 footer(s)
-add_text(s, Inches(0.55), Inches(1.26), Inches(12.3), Inches(0.5),
-         "各チームに中村・甲佐のいずれかがメンターとして伴走予定。難易度・使用アプリの種類・外部連携/制約の重さを比較し、"
-         "担当案を提示（入れ替え可）。難易度・制約の重いチームを甲佐、M365標準・業務設計中心を中村に寄せた配分。",
+add_text(s, Inches(0.55), Inches(1.24), Inches(12.3), Inches(0.5),
+         "各チームの難易度・使用アプリの種類・外部連携/制約を比較整理（メンター担当検討の材料）。"
+         "難易度は相談会での論点量・外部連携/制約・作り込み範囲からの暫定評価。",
          size=10.5, color=DARK, ls=1.12)
 
-tx = Inches(0.55); ty0 = Inches(1.9); rowh = Inches(0.36); hh = Inches(0.32)
-t = s.shapes.add_table(12, 6, tx, ty0, Inches(12.25), Inches(4.6)).table
-cw = [Inches(0.55), Inches(2.45), Inches(0.95), Inches(3.15), Inches(3.4), Inches(1.75)]
+tx = Inches(0.55); ty0 = Inches(1.86); rowh = Inches(0.38); hh = Inches(0.32)
+t = s.shapes.add_table(12, 5, tx, ty0, Inches(12.25), Inches(4.6)).table
+cw = [Inches(0.6), Inches(2.6), Inches(1.05), Inches(3.9), Inches(4.1)]
 for i, w in enumerate(cw):
     t.columns[i].width = w
-for c, htx in enumerate(["チーム", "案概要", "難易度", "主要アプリ（種類数）",
-                         "外部連携・制約", "メンター案"]):
+for c, htx in enumerate(["チーム", "案概要", "難易度", "主要アプリ（種類数）", "外部連携・制約"]):
     cell(t.cell(0, c), htx, size=9.5, color=WHITE, bold=True, fill=TEAL, align=PP_ALIGN.CENTER)
 rh(t, 0, hh)
 for i, (no, lv, name, diff, mt, topic, done) in enumerate(overview, start=1):
     rf = WHITE if i % 2 else LIGHT
     apps, cons = mentor[no]
     cell(t.cell(i, 0), f"T{no}", size=10, color=NAVY, bold=True, fill=rf, align=PP_ALIGN.CENTER)
-    cell(t.cell(i, 1), name.split("（")[0], size=8.6, color=DARK, bold=True, fill=rf)
+    cell(t.cell(i, 1), name.split("（")[0], size=8.8, color=DARK, bold=True, fill=rf)
     cell(t.cell(i, 2), diff, size=9.5, color=diff_color(diff), bold=True, fill=rf, align=PP_ALIGN.CENTER)
-    cell(t.cell(i, 3), apps, size=8.2, color=DARK, fill=rf)
-    cell(t.cell(i, 4), cons, size=8.4, color=DARK, fill=rf)
-    cell(t.cell(i, 5), mt, size=9.5, color=(MENTOR_N if mt == "中村" else MENTOR_K),
-         bold=True, fill=rf, align=PP_ALIGN.CENTER)
+    cell(t.cell(i, 3), apps, size=8.4, color=DARK, fill=rf)
+    cell(t.cell(i, 4), cons, size=8.5, color=DARK, fill=rf)
     rh(t, i, rowh)
-# 下部：担当案サマリ
-sy = ty0 + hh + rowh * 11 + Inches(0.12)
-half = Inches(6.05)
-add_rect(s, tx, sy, half, Inches(0.6), RGBColor(0xE8, 0xEE, 0xF4))
-add_rect(s, tx, sy, Inches(0.12), Inches(0.6), MENTOR_N)
-add_text(s, tx + Inches(0.26), sy + Inches(0.02), half - Inches(0.4), Inches(0.56),
-         "中村（案）：M365標準・業務設計中心\nT1・2・5・7・8・10（6チーム）",
-         size=10, color=MENTOR_N, bold=True, anchor=MSO_ANCHOR.MIDDLE, ls=1.05)
-add_rect(s, tx + half + Inches(0.15), sy, half, Inches(0.6), RGBColor(0xE6, 0xF1, 0xEC))
-add_rect(s, tx + half + Inches(0.15), sy, Inches(0.12), Inches(0.6), MENTOR_K)
-add_text(s, tx + half + Inches(0.41), sy + Inches(0.02), half - Inches(0.4), Inches(0.56),
-         "甲佐（案）：難易度高・制約/連携検証中心\nT3・4・6・9・11（5チーム）",
-         size=10, color=MENTOR_K, bold=True, anchor=MSO_ANCHOR.MIDDLE, ls=1.05)
+# 下部：難易度の目安（凡例）
+sy = ty0 + hh + rowh * 11 + Inches(0.14)
+add_rect(s, tx, sy, Inches(12.25), Inches(0.56), LIGHT)
+add_text(s, tx + Inches(0.25), sy + Inches(0.02), Inches(11.8), Inches(0.52),
+         "難易度の目安 ▶ 　中：M365標準中心で実現性が高い　／　"
+         "中〜高：連携・運用の検証項目が多い　／　高：外部連携・制約が大きく再設計や事務局判断を伴う"
+         "　（※暫定評価・要調整）",
+         size=9.5, color=DARK, anchor=MSO_ANCHOR.MIDDLE)
 
 
 # ==================================================================
@@ -408,45 +399,45 @@ s = prs.slides.add_slide(BLANK)
 header(s, 4, "質疑で挙がった課題の整理", "ISSUE CATEGORIZATION ｜ 横断的な論点")
 footer(s)
 add_text(s, Inches(0.55), Inches(1.26), Inches(12.3), Inches(0.35),
-         "第2回では構築に向けた具体論点（外部Web参照制約・本番移行・運用保守・8月デモの作り方）が増加。事務局側で優先整理したいカテゴリ。",
+         "第2回の相談会（チーム1・2・3・4・5・10・11）で実際に挙がった論点のみを整理。構築に向けた具体的な進め方・制約・展開に関する相談が中心。",
          size=11, color=DARK)
 cats = [
-    ("読込ファイルのセキュリティ・ガバナンス",
-     "社外秘・開発中案件・営業情報・レビュー対象物を読み込ませてよいかの判断。", "3, 4, 9, 11"),
-    ("M365以外の製品との連携",
-     "Salesforce・N-MARK・CNC・J-SCRUM・共有ファイルサーバ等の取得可否。案の成否に直結。", "3, 4, 6, 7, 9"),
-    ("外部サイト参照・Web検索制約",
-     "外部Web情報取得は原則禁止。市場調査・IR取得を主機能とする案は再設計が必要。", "3, 4"),
-    ("格納場所・アクセス制約",
-     "共有フォルダパスは直接参照困難。SharePoint格納や依頼元運用ルールの整備が必要。", "5, 6, 9, 11"),
-    ("読込ファイル形式・精度",
-     "Excel/PDF/トランスクリプトの読取精度、レイアウト崩れ、隠れセル情報の扱い。", "2, 7, 10"),
-    ("Copilot Studio／Automate の使い分け",
-     "AI判断・ルール処理・自動通知・下書き作成・管理表更新をどのアプリが担うか分解。", "1, 2, 5, 6, 7, 10, 11"),
-    ("ライセンス・利用環境・本番移行",
-     "CSライセンス、開発→本番環境移行、社内申請フロー、年度末展開の目線。", "3, 10, 11"),
-    ("スコープ／効果試算／デモ設計",
-     "8月までに一本通すデモ、9月に発表準備。削減効果・導入価値・運用項目の整理。", "1, 2, 5, 6, 10, 11"),
+    ("外部サイト参照・Web検索の制約／案の再設計",
+     "外部Web・IR情報の取得は原則禁止（相手先サーバ負荷・訴訟リスク）。抵触する案は練り直しが必要。代替は事前取得してナレッジ化。", "3, 4"),
+    ("開発の進め方・基本フォーマット／スケジュール提示",
+     "何を優先しどの手順で進めるかの基本フォーマットが欲しい。8〜9月のスケジュール案内の要望。", "1, 5"),
+    ("設計相談の進め方・プロンプト見本",
+     "成果物の作り方・使うアプリ・設定をCopilotチャットで相談する型と、プロンプト見本の提供要望。", "1, 2"),
+    ("8月デモ設計・効果の見極め",
+     "タスク列を仮決め→サンプル数件→Automateで一本通すMVP。整形/ドラフトのみで効果が出るかの見極め。", "4, 5"),
+    ("Copilot回答の信頼性・検証",
+     "Copilotチャットの回答をそのまま信じてよいか。根拠提示を求め、画面操作・実検証で精度を確認。", "10"),
+    ("本番環境移行・展開時期・社内申請フロー",
+     "開発環境→本番環境移行の申請/決裁フロー、年度末（3月末）展開を見据えたスピード感・フェーズ設定。", "11"),
+    ("手順書・利用ルール／運用保守",
+     "手順書・利用ルールの整備時期（項目出し・全量把握が重要）。Copilot Studio更新に伴う運用保守の懸念。", "5, 11"),
+    ("メンター制・今後の進め方",
+     "8月以降のメンター定例（週次/隔週）の進め方を事務局から案内予定。", "2, 10"),
 ]
 tx = Inches(0.55); ty0 = Inches(1.7)
 t = s.shapes.add_table(len(cats) + 1, 3, tx, ty0, Inches(12.25), Inches(3.5)).table
-for i, w in enumerate([Inches(3.95), Inches(6.6), Inches(1.7)]):
+for i, w in enumerate([Inches(4.1), Inches(6.45), Inches(1.7)]):
     t.columns[i].width = w
-for c, htx in enumerate(["カテゴリ", "主な論点", "該当チーム"]):
+for c, htx in enumerate(["カテゴリ（第2回で挙がった論点）", "主な内容", "該当チーム"]):
     cell(t.cell(0, c), htx, size=10, color=WHITE, bold=True, fill=TEAL, align=PP_ALIGN.CENTER)
 rh(t, 0, Inches(0.34))
 for i, (cat, pt, tms) in enumerate(cats, start=1):
     rf = WHITE if i % 2 else LIGHT
-    cell(t.cell(i, 0), cat, size=9.5, color=NAVY, bold=True, fill=rf)
-    cell(t.cell(i, 1), pt, size=9, color=DARK, fill=rf)
+    cell(t.cell(i, 0), cat, size=9.3, color=NAVY, bold=True, fill=rf)
+    cell(t.cell(i, 1), pt, size=8.8, color=DARK, fill=rf)
     cell(t.cell(i, 2), tms, size=9, color=DARK, bold=True, fill=rf, align=PP_ALIGN.CENTER)
-    rh(t, i, Inches(0.36))
-cy = ty0 + Inches(0.34) + Inches(0.36) * len(cats) + Inches(0.12)
+    rh(t, i, Inches(0.38))
+cy = ty0 + Inches(0.34) + Inches(0.38) * len(cats) + Inches(0.12)
 add_rect(s, tx, cy, Inches(12.25), Inches(0.62), RGBColor(0xFC, 0xF1, 0xE6))
 add_rect(s, tx, cy, Inches(0.13), Inches(0.62), ORANGE)
 add_text(s, tx + Inches(0.3), cy + Inches(0.03), Inches(11.7), Inches(0.58),
-         "▲ 重要：読み込ませたいファイルのOK/NG判断が怪しい場合は、自チームの見解を添えて早めに事務局へ相談。"
-         "事務局判断によっては決定済み案が頓挫する可能性があり、早期確認が必要。",
+         "▲ 重要：外部Web参照・M365外システム連携・個人情報/機密情報の取り扱いはガイドライン上の制約がある。"
+         "これらに依存する案は抵触時に再設計が必要となるため、可否は早めに事務局へ確認を（第2回ではチーム3・4が該当）。",
          size=10.5, color=DARK, bold=True, anchor=MSO_ANCHOR.MIDDLE, ls=1.05)
 
 
@@ -535,9 +526,10 @@ def detail_slide(no, idx):
              bold=True, anchor=MSO_ANCHOR.MIDDLE)
     pill(s, Inches(5.35), sy, Inches(2.1), Inches(0.42),
          f"難易度：{d['diff']}", diff_color(d['diff']))
-    mtcol = MENTOR_N if d['mentor'] == "中村" else MENTOR_K
+    done = ov[6]
     pill(s, Inches(7.7), sy, Inches(3.15), Inches(0.42),
-         f"メンター案：{d['mentor']}", mtcol)
+         ("第2回：実施済" if done else "第2回：未実施（第1回＋企画書）"),
+         (NAVY if done else MUTE))
 
     # 3カード
     r1y = Inches(2.0); r1h = Inches(1.72); cwd = Inches(3.93); gap = Inches(0.23)
