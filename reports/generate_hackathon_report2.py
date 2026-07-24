@@ -209,13 +209,35 @@ app_use = {
     10: {"CS", "SP", "Tm", "WP"},
     11: {"CS", "SP", "Tm"},
 }
-# 10月発表の見込み（暫定）: ◎=順調 / ○=概ね順調 / △=要フォロー
-forecast = {1: "○", 2: "○", 3: "△", 4: "△", 5: "◎",
-            6: "○", 7: "◎", 8: "○", 9: "△", 10: "○", 11: "○"}
+# 10月発表の見込み（暫定）— 基準＝デモに向けた道筋の明確さ／自走可能性
+# ◎=道筋明確・自走可 / ○=道筋は概ね見える（壁打ち・スコープ調整で間に合う） / △=要フォロー（作るものが未確定・再設計中）
+forecast = {1: "○", 2: "○", 3: "○", 4: "△", 5: "◎",
+            6: "○", 7: "◎", 8: "○", 9: "○", 10: "○", 11: "○"}
+# 見込みの根拠（各チーム1行）
+fc_reason = {
+    1: "アプリ像は明確。開発手順の型と事務局のスケジュール提示があれば自走可（壁打ちで解消）。",
+    2: "対象エラーと回答テンプレを絞ればMVP化可。プロンプト見本で加速。",
+    3: "エージェント構想は明確。使用データのOK/NGを整理しスコープを絞れば発表可（ボリューム大）。",
+    4: "外部Web参照禁止で企画の中核が抵触。代替ユースケースが未確定で再設計中＝作るものが定まっていない。",
+    5: "業務フロー・効果・構成が具体化。8月デモの道筋が明確。",
+    6: "構成は明確。ファイル収集/PPT生成/会議通知の役割分担を分けて検証すれば発表可（第2回未実施）。",
+    7: "固定ナレッジ＋入力照合の構成が明確で実現性が高い（第2回未実施）。",
+    8: "会議調整/タスク抽出のどちらを軸にするか決めれば1本デモ可（第2回未実施）。",
+    9: "管理ツール構想は明確。社外秘/連携は別論点化し、メール検知→管理表→下書きに絞れば発表可（第2回未実施）。",
+    10: "構成は明確。トランスクリプト権限とドラフト品質の検証を進めれば発表可。",
+    11: "構成・前提は明確。FAQ整備・本番移行・運用項目の洗い出しを進めれば発表可。",
+}
+# ボリューム（企画着手〜実業務での利用開始まで）: 小/中/大
+volume = {1: "中", 2: "中", 3: "大", 4: "中〜大", 5: "中", 6: "大",
+          7: "中", 8: "中", 9: "大", 10: "中", 11: "大"}
 
 
 def fc_color(m):
     return GREEN if m == "◎" else TEAL if m == "○" else AMBER
+
+
+def vol_color(v):
+    return GREEN if v == "小" else TEAL if v == "中" else AMBER if v == "中〜大" else ORANGE
 
 # 各チーム詳細
 detail = {
@@ -357,10 +379,11 @@ footer(s)
 add_text(s, Inches(0.55), Inches(1.28), Inches(12.3), Inches(0.3),
          "全11チームが企画書提出を経て原則1案に整理済み。進捗レベル・難易度・10月発表の見込みとあわせて一覧化。",
          size=11, color=DARK)
-add_text(s, Inches(0.55), Inches(1.60), Inches(12.3), Inches(0.5),
+add_text(s, Inches(0.55), Inches(1.58), Inches(12.3), Inches(0.56),
          "進捗レベル ▶ Lv1:未絞込／Lv2:2案まで／Lv3:1案確定・理解途上／Lv4:To-Be・アーキ具体化／Lv5:定量効果まで概ね完成"
-         "　／　10月見込み ◎:順調 ○:概ね ○ △:要フォロー　（第2回実施済＝1・2・3・4・5・10・11）",
-         size=9, color=MUTE, ls=1.1)
+         "　（第2回実施済＝1・2・3・4・5・10・11）\n"
+         "10月見込み（基準＝10月デモに向けた道筋の明確さ）▶ ◎:道筋明確・自走可／○:壁打ち・スコープ調整で間に合う／△:要フォロー（作るものが未確定・再設計中）",
+         size=8.6, color=MUTE, ls=1.12)
 
 tx = Inches(0.55); ty0 = Inches(2.16); rowh = Inches(0.415); hh = Inches(0.36)
 t = s.shapes.add_table(12, 6, tx, ty0, Inches(12.25), Inches(5.0)).table
@@ -396,12 +419,12 @@ for i, (no, lv, *_r) in enumerate(overview, start=1):
 # スライド3：難易度・使用アプリの比較（メンター担当検討の材料）
 # ==================================================================
 s = prs.slides.add_slide(BLANK)
-header(s, 3, "難易度・使用アプリの比較", "DIFFICULTY & APPS ｜ チーム別比較")
+header(s, 3, "使用アプリ（想定）・難易度・ボリュームの比較", "APPS ・ DIFFICULTY ・ VOLUME ｜ チーム別比較")
 footer(s)
-add_text(s, Inches(0.55), Inches(1.22), Inches(12.3), Inches(0.42),
-         "各チームの使用アプリを列（アプリ別）で可視化し、難易度・アプリ数（ボリューム）とあわせて比較（メンター担当検討の材料）。"
+add_text(s, Inches(0.55), Inches(1.20), Inches(12.3), Inches(0.5),
+         "各チームの取り組みに対して「想定される」使用アプリ（企画書＋相談会ベースの予想）を列で可視化し、難易度・ボリュームを併記（メンター担当検討の材料）。"
          "色タイル＝使用アプリ。全チームがCopilot Studioを使用。",
-         size=10, color=DARK, ls=1.1)
+         size=9.5, color=DARK, ls=1.1)
 
 tx = Inches(0.55); ty0 = Inches(1.76); rowh = Inches(0.37); hh = Inches(0.52)
 ncol = 4 + len(APP_COLS)   # チーム,案概要,難易度 + apps + アプリ数
@@ -415,7 +438,7 @@ cell(t.cell(0, 1), "案概要", size=8.5, color=WHITE, bold=True, fill=NAVY, ali
 cell(t.cell(0, 2), "難易度", size=8.5, color=WHITE, bold=True, fill=NAVY, align=PP_ALIGN.CENTER)
 for j, (key, label, col, tc) in enumerate(APP_COLS):
     cell(t.cell(0, 3 + j), label, size=7, color=tc, bold=True, fill=col, align=PP_ALIGN.CENTER)
-cell(t.cell(0, ncol - 1), "アプリ\n数", size=7.5, color=WHITE, bold=True, fill=NAVY, align=PP_ALIGN.CENTER)
+cell(t.cell(0, ncol - 1), "ボリューム", size=7, color=WHITE, bold=True, fill=NAVY, align=PP_ALIGN.CENTER)
 rh(t, 0, hh)
 for i, (no, lv, name, diff, mt, topic, done) in enumerate(overview, start=1):
     rf = WHITE if i % 2 else LIGHT
@@ -428,15 +451,17 @@ for i, (no, lv, name, diff, mt, topic, done) in enumerate(overview, start=1):
             cell(t.cell(i, 3 + j), "●", size=9, color=tc, bold=True, fill=col, align=PP_ALIGN.CENTER)
         else:
             cell(t.cell(i, 3 + j), "", size=8, fill=rf)
-    cell(t.cell(i, ncol - 1), str(len(used)), size=9.5, color=NAVY, bold=True, fill=rf, align=PP_ALIGN.CENTER)
+    vv = volume[no]
+    cell(t.cell(i, ncol - 1), vv, size=8.5, color=vol_color(vv), bold=True, fill=rf, align=PP_ALIGN.CENTER)
     rh(t, i, rowh)
-# 下部：凡例
-sy = ty0 + hh + rowh * 11 + Inches(0.12)
-add_rect(s, tx, sy, Inches(12.25), Inches(0.5), LIGHT)
-add_text(s, tx + Inches(0.25), sy + Inches(0.01), Inches(11.8), Inches(0.48),
-         "●＝使用アプリ（列見出しの色が各アプリ）。「アプリ数」＝使用アプリの種類数（実装ボリュームの目安）。"
-         "難易度・見込みは暫定評価・要調整。",
-         size=9, color=DARK, anchor=MSO_ANCHOR.MIDDLE)
+# 下部：凡例（アプリ／ボリューム定義）
+sy = ty0 + hh + rowh * 11 + Inches(0.1)
+add_rect(s, tx, sy, Inches(12.25), Inches(0.66), LIGHT)
+add_text(s, tx + Inches(0.22), sy + Inches(0.03), Inches(11.85), Inches(0.62),
+         "●＝想定される使用アプリ（列見出しの色＝各アプリ）。全チームがCopilot Studioを使用。\n"
+         "「ボリューム」＝企画着手〜実業務での利用開始（リリース）までに必要な総作業量（開発対象＝エージェント/フロー＋読み込むナレッジ/資料の整備＋連携・権限・本番移行・運用/展開）。"
+         "10月デモではなく実運用まで／小・中・大で暫定評価。",
+         size=8.3, color=DARK, ls=1.12)
 
 
 # ==================================================================
@@ -520,10 +545,10 @@ scol(xs[0], GREEN, "先行・順調なチーム",
      ["T5：業務フロー・効果試算・M365標準活用が具体化。8月デモ化に着手可能。",
       "T7：固定ナレッジ＋入力ファイル照合の構成が明確。",
       "T10・11：構成・前提は見えており、権限・運用項目の洗い出しが次フェーズ。"])
-scol(xs[1], AMBER, "フォローが必要なチーム",
-     ["T4：外部Web参照禁止で企画価値の中核が揺らぎ、再設計が必要。",
-      "T3・9：Salesforce・社外秘・外部/共有サーバ等の扱いが重要論点。",
-      "T1・2・6：構築ステップ・プロンプト例・アプリ使い分けの具体化支援が必要。"])
+scol(xs[1], AMBER, "留意・支援が必要なチーム",
+     ["T4：外部Web参照禁止で企画の中核が抵触し再設計中。作るものの再定義が最優先（唯一の△）。",
+      "T3・9：難易度・ボリュームが大。データのOK/NG整理とスコープ設定が前提（道筋はあり）。",
+      "T1・2・6：開発手順の型・プロンプト見本・アプリ使い分けの提供で加速。"])
 scol(xs[2], TEAL, "事務局からの提言",
      ["ガバナンス判断を早めに（外部Web・M365外連携・社外秘ファイル読込）。",
       "8月は「一本通るデモ」優先。入力→処理→出力の流れを示す。",
@@ -581,8 +606,13 @@ def detail_slide(no, idx):
          ("第2回：実施済" if done else "第2回：未実施（第1回＋企画書）"),
          (NAVY if done else MUTE))
 
+    # 見込みの根拠＋ボリューム
+    add_text(s, Inches(0.55), Inches(1.85), Inches(12.25), Inches(0.2),
+             f"▶ 10月見込み（{fc}）の根拠：{fc_reason[no]}　｜　ボリューム（〜実業務利用）：{volume[no]}",
+             size=8.5, color=DARK, anchor=MSO_ANCHOR.MIDDLE)
+
     # 3カード
-    r1y = Inches(2.0); r1h = Inches(1.72); cwd = Inches(3.93); gap = Inches(0.23)
+    r1y = Inches(2.16); r1h = Inches(1.58); cwd = Inches(3.93); gap = Inches(0.23)
     cols = [Inches(0.55), Inches(0.55) + cwd + gap, Inches(0.55) + (cwd + gap) * 2]
     cards1 = [("取り組み内容", d['work'], NAVY),
               ("使用アプリ・データ", d['apps'], TEAL),
