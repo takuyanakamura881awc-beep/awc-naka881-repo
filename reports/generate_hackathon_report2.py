@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 """
 Copilot Studio 活用ハッカソン 第2回 事前相談会 チームごとの状況報告
-Copilot生成のたたき台をベースに、第1回と同一のデザインで再構成する。
-- 一覧（全11チーム）＋各チーム詳細1枚
-- 難易度・使用アプリの比較（メンター担当検討の材料）を追加。メンター割当は行わない。
-- 課題整理は第2回トランスクリプトで実際に挙がった論点のみを対象とする。
-個人名（各チームメンバー）は不使用。
+顧客（事務局）との会議資料として、表紙／サマリ（結論先出し）／一覧／比較／課題／
+セクション区切り／各チーム個票の構成で生成する。
+- 専門用語は会議で口頭説明しやすい平易な表現に統一
+- 進捗は5段階に「意味の分かる名称」を併記（Lv番号だけにしない）
+- メンター割当は行わず、難易度・使用アプリ（想定）・ボリュームのみ提示
+- 課題は第2回トランスクリプトで実際に挙がった論点のみ／大きく3点に集約
+チームメンバーの個人名は不使用。
 """
 from pptx import Presentation
 from pptx.util import Inches, Pt
@@ -13,22 +15,20 @@ from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.enum.shapes import MSO_SHAPE
 
-# ---- パレット（第1回と統一）----
+# ---- パレット ----
 NAVY      = RGBColor(0x1F, 0x38, 0x5C)
-NAVY_DARK = RGBColor(0x16, 0x28, 0x42)
+NAVY_DARK = RGBColor(0x14, 0x25, 0x3D)
 TEAL      = RGBColor(0x2E, 0x8B, 0x9E)
 ORANGE    = RGBColor(0xE8, 0x83, 0x3A)
 LIGHT     = RGBColor(0xF2, 0xF4, 0xF7)
-MIDGRAY   = RGBColor(0xD9, 0xDE, 0xE5)
 DARK      = RGBColor(0x25, 0x2A, 0x31)
 WHITE     = RGBColor(0xFF, 0xFF, 0xFF)
 GREEN     = RGBColor(0x3F, 0x8F, 0x5B)
 AMBER     = RGBColor(0xC9, 0x8A, 0x1B)
 RED       = RGBColor(0xB0, 0x3A, 0x2E)
 MUTE      = RGBColor(0x6B, 0x74, 0x80)
+PALE      = RGBColor(0xBF, 0xD3, 0xE0)
 CHEV_OFF  = RGBColor(0xDD, 0xE1, 0xE7)
-MENTOR_N  = RGBColor(0x24, 0x5A, 0x8C)   # 中村
-MENTOR_K  = RGBColor(0x2E, 0x7D, 0x5B)   # 甲佐
 
 FONT = "Meiryo"
 
@@ -37,7 +37,7 @@ prs.slide_width = Inches(13.333)
 prs.slide_height = Inches(7.5)
 SW, SH = prs.slide_width, prs.slide_height
 BLANK = prs.slide_layouts[6]
-TOTAL = 16
+TOTAL = 18
 
 
 def set_fill(sp, color):
@@ -68,25 +68,22 @@ def add_text(s, x, y, w, h, text, size=14, color=DARK, bold=False,
 
 def header(s, no, title, kicker):
     add_rect(s, 0, 0, SW, SH, WHITE)
-    add_rect(s, 0, 0, Inches(0.14), SH, TEAL)
-    add_rect(s, 0, 0, SW, Inches(1.12), NAVY)
-    add_rect(s, 0, Inches(1.12), SW, Inches(0.05), ORANGE)
-    add_text(s, Inches(0.55), Inches(0.15), Inches(9.6), Inches(0.3),
-             kicker, size=10.5, color=RGBColor(0xBF, 0xD3, 0xE0), bold=True)
-    add_text(s, Inches(0.52), Inches(0.42), Inches(11.2), Inches(0.62),
-             title, size=24, color=WHITE, bold=True, anchor=MSO_ANCHOR.MIDDLE)
-    add_text(s, Inches(11.9), Inches(0.15), Inches(1.15), Inches(0.35),
-             f"{no} / {TOTAL}", size=11.5, color=RGBColor(0xBF, 0xD3, 0xE0),
-             bold=True, align=PP_ALIGN.RIGHT)
+    add_rect(s, 0, 0, SW, Inches(1.08), NAVY)
+    add_text(s, Inches(0.55), Inches(0.13), Inches(9.6), Inches(0.3),
+             kicker, size=10, color=PALE, bold=True)
+    add_text(s, Inches(0.52), Inches(0.40), Inches(11.2), Inches(0.6),
+             title, size=23, color=WHITE, bold=True, anchor=MSO_ANCHOR.MIDDLE)
+    if no:
+        add_text(s, Inches(11.9), Inches(0.13), Inches(1.15), Inches(0.35),
+                 f"{no} / {TOTAL}", size=11, color=PALE, bold=True, align=PP_ALIGN.RIGHT)
 
 
 def footer(s):
-    add_rect(s, 0, SH - Inches(0.32), SW, Inches(0.32), LIGHT)
-    add_text(s, Inches(0.55), SH - Inches(0.31), Inches(9.0), Inches(0.3),
-             "Microsoft 365 Copilot Studio 活用ハッカソン｜第2回 事前相談会 報告（2026/7/22〜24）",
-             size=8.5, color=RGBColor(0x8A, 0x93, 0x9E), anchor=MSO_ANCHOR.MIDDLE)
-    add_text(s, SW - Inches(3.2), SH - Inches(0.31), Inches(2.65), Inches(0.3),
-             "社外秘 / Confidential", size=8.5, color=RGBColor(0x8A, 0x93, 0x9E),
+    add_text(s, Inches(0.55), SH - Inches(0.42), Inches(9.0), Inches(0.3),
+             "Microsoft 365 Copilot Studio 活用ハッカソン｜第2回 事前相談会 状況報告（2026年7月22日〜24日 実施）",
+             size=8.5, color=MUTE, anchor=MSO_ANCHOR.MIDDLE)
+    add_text(s, SW - Inches(3.2), SH - Inches(0.42), Inches(2.65), Inches(0.3),
+             "社外秘 / Confidential", size=8.5, color=MUTE,
              align=PP_ALIGN.RIGHT, anchor=MSO_ANCHOR.MIDDLE)
 
 
@@ -99,7 +96,7 @@ def cell(c, text, size=10, color=DARK, bold=False, fill=None,
     tf = c.text_frame; tf.word_wrap = True
     for i, line in enumerate(text.split("\n")):
         p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
-        p.alignment = align; p.line_spacing = 0.98
+        p.alignment = align; p.line_spacing = 0.96
         r = p.add_run(); r.text = line
         r.font.size = Pt(size); r.font.bold = bold
         r.font.name = FONT; r.font.color.rgb = color
@@ -109,8 +106,21 @@ def rh(t, i, h):
     t.rows[i].height = h
 
 
-def chevrons(s, x0, y_center, level, w=Inches(0.28), h=Inches(0.16),
-             step=Inches(0.24), on=TEAL):
+def pill(s, x, y, w, h, text, fill, tcolor=WHITE, size=9.5, bold=True):
+    sp = s.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, x, y, w, h)
+    set_fill(sp, fill)
+    tf = sp.text_frame; tf.word_wrap = True
+    tf.margin_left = Pt(4); tf.margin_right = Pt(4)
+    tf.margin_top = Pt(1); tf.margin_bottom = Pt(1)
+    p = tf.paragraphs[0]; p.alignment = PP_ALIGN.CENTER
+    r = p.add_run(); r.text = text
+    r.font.size = Pt(size); r.font.bold = bold; r.font.name = FONT
+    r.font.color.rgb = tcolor
+    return sp
+
+
+def chevrons(s, x0, y_center, level, w=Inches(0.26), h=Inches(0.16),
+             step=Inches(0.235), on=TEAL):
     for k in range(5):
         col = on if k < level else CHEV_OFF
         sp = s.shapes.add_shape(MSO_SHAPE.CHEVRON, x0 + step * k,
@@ -126,63 +136,52 @@ def diff_color(d):
     return TEAL if d == "中" else RED if d == "高" else AMBER
 
 
-def pill(s, x, y, w, h, text, fill, tcolor=WHITE, size=10.5, bold=True):
-    sp = s.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, x, y, w, h)
-    set_fill(sp, fill)
-    tf = sp.text_frame; tf.word_wrap = True
-    tf.margin_left = Pt(4); tf.margin_right = Pt(4)
-    tf.margin_top = Pt(1); tf.margin_bottom = Pt(1)
-    p = tf.paragraphs[0]; p.alignment = PP_ALIGN.CENTER
-    r = p.add_run(); r.text = text
-    r.font.size = Pt(size); r.font.bold = bold; r.font.name = FONT
-    r.font.color.rgb = tcolor
+def fc_color(m):
+    return GREEN if m == "◎" else TEAL if m == "○" else AMBER
+
+
+def vol_color(v):
+    return TEAL if v == "中" else AMBER if v == "中〜大" else ORANGE
 
 
 # ==================================================================
 # データ
 # ==================================================================
-# level, 案概要(短), 難易度, メンター, 第2回主トピック, 実施済みか
+# 進捗5段階：番号だけでなく「意味の分かる名称」を併記して口頭説明しやすくする
+STAGE = {1: "案の絞り込み中", 2: "2案から選定中", 3: "1案確定",
+         4: "設計まで具体化", 5: "効果試算まで完了"}
+STAGE_NO = {1: "①", 2: "②", 3: "③", 4: "④", 5: "⑤"}
+# 一覧表（列幅が狭い箇所）用の短縮表記。正式名は同スライドの凡例に記載
+STAGE_SHORT = {1: "絞り込み中", 2: "2案選定中", 3: "1案確定",
+               4: "設計具体化", 5: "効果試算済"}
+
+# (チーム番号, 進捗段階, 案概要, 難易度, 第2回の主な論点, 第2回実施済み)
 overview = [
-    (1, 3, "様式チェックAI（カクニンジャ）", "中", "中村",
-     "構築の優先順位・開発フォーマット/スケジュール提示の要望", True),
-    (2, 3, "受付Cエラー原因ナビ", "中", "中村",
-     "設計相談用のプロンプト見本が欲しい", True),
-    (3, 3, "加盟店防衛マネジメント支援", "高", "甲佐",
-     "外部情報参照禁止のリスクと代替策", True),
-    (4, 2, "市場・企業分析", "高", "甲佐",
-     "外部Web参照禁止で現行案がガイドラインに抵触", True),
-    (5, 5, "自動リマインド（おはようリマインドくん）", "中", "中村",
-     "タスク列の作り方・更新に伴う運用保守", True),
-    (6, 3, "PPT資料作成・会議招集（Forecast ONE）", "中〜高", "甲佐",
-     "（第2回未実施）Automate/CSの使い分け・役割分担", False),
-    (7, 5, "課金精算チェック", "中", "中村",
-     "（第2回未実施）ナレッジと入力ファイルの分離構成", False),
-    (8, 4, "段取りAI", "中", "中村",
-     "（第2回未実施）1案以外を裏で進めてよいか", False),
-    (9, 3, "レビュー進捗管理", "中〜高", "甲佐",
-     "（第2回未実施）社外秘/Salesforce/メール送付可否", False),
-    (10, 4, "議事録ドラフト生成", "中", "中村",
-     "Copilot回答の信頼性・メンター定例の進め方", True),
-    (11, 4, "社内LAN問合せBot", "中〜高", "甲佐",
-     "本番環境移行・手順書/利用ルールの完成時期", True),
+    (1, 3, "加盟店提出様式の自動チェック", "中",
+     "構築の優先順位・開発手順の型／スケジュールの提示要望", True),
+    (2, 3, "受付Cエラーの原因案内", "中",
+     "設計相談に使うプロンプト（指示文）の見本が欲しい", True),
+    (3, 3, "加盟店防衛マネジメント支援", "高",
+     "外部情報の参照が禁止となるリスクと代替策", True),
+    (4, 2, "市場・企業分析", "高",
+     "外部Web参照の禁止により、現在の案がガイドラインに抵触", True),
+    (5, 5, "依頼事項の自動リマインド", "中",
+     "管理表の項目立ての進め方／サービス更新に伴う保守", True),
+    (6, 3, "会議資料作成と会議招集の自動化", "中〜高",
+     "（第2回未実施）Power AutomateとCopilot Studioの役割分担", False),
+    (7, 5, "加盟店課金精算のチェック", "中",
+     "（第2回未実施）判断基準と毎月の入力ファイルを分ける構成", False),
+    (8, 4, "会議調整・タスク整理の支援", "中",
+     "（第2回未実施）発表する1案以外を並行して進めてよいか", False),
+    (9, 3, "レビュー進捗の管理", "中〜高",
+     "（第2回未実施）社外秘資料・外部システム連携・メール送付の可否", False),
+    (10, 4, "対面会議の議事録ドラフト生成", "中",
+     "Copilotの回答をそのまま信じてよいか／今後の定例の進め方", True),
+    (11, 4, "社内LAN問い合わせチャットボット", "中〜高",
+     "本番環境への移行、手順書・利用ルールの完成時期", True),
 ]
 
-# メンター比較用：外部連携・制約（S3の右端に表示）
-mentor = {
-    1: ("", "M365内中心／判定基準の作り込みが肝"),
-    2: ("", "FAQ・ガイド整備が成否を左右"),
-    3: ("", "外部Web・Salesforce等の取得制約が大"),
-    4: ("", "外部Web参照禁止で案の再設計が必要"),
-    5: ("", "M365標準のみ／制約は小さい"),
-    6: ("", "ファイルサーバ／PPT自動生成の検証"),
-    7: ("", "外部連携なし（人手取得データ前提）"),
-    8: ("", "予定表・会議室・メール権限の整備"),
-    9: ("", "社外秘・共有サーバ・メール送信可否"),
-    10: ("", "トランスクリプト取得権限・転記精度"),
-    11: ("", "本番移行・FAQ品質・運用保守"),
-}
-
-# アプリ列（key, 2行ラベル, 色, 文字色）— 列＝アプリ、色タイル＝使用
+# 使用アプリ（想定）の列定義：key, 2行ラベル, 色, 文字色
 APP_COLS = [
     ("CS",  "Copilot\nStudio", RGBColor(0x74, 0x5C, 0xA6), WHITE),
     ("PA",  "Power\nAutomate", RGBColor(0x0B, 0x72, 0xC4), WHITE),
@@ -190,12 +189,11 @@ APP_COLS = [
     ("Tm",  "Teams",           RGBColor(0x4B, 0x53, 0xBC), WHITE),
     ("OL",  "Outlook",         RGBColor(0x0A, 0x6F, 0xC2), WHITE),
     ("Fm",  "Forms",           RGBColor(0x1F, 0x8A, 0x70), WHITE),
-    ("BI",  "Power\nBI",       RGBColor(0xE3, 0xB1, 0x0A), DARK),
+    ("BI",  "Power\nBI",       RGBColor(0xC9, 0x9A, 0x06), WHITE),
     ("Xl",  "Excel",           RGBColor(0x21, 0x73, 0x46), WHITE),
     ("WP",  "Word/\nPPT",      RGBColor(0xB0, 0x47, 0x2A), WHITE),
     ("Ext", "外部/\nその他",   RGBColor(0x6B, 0x72, 0x80), WHITE),
 ]
-# 各チームが使用するアプリ（APP_COLSのkey集合）
 app_use = {
     1: {"CS", "SP", "Xl"},
     2: {"CS", "PA", "SP", "Tm"},
@@ -209,350 +207,249 @@ app_use = {
     10: {"CS", "SP", "Tm", "WP"},
     11: {"CS", "SP", "Tm"},
 }
-# 10月発表の見込み（暫定）— 基準＝デモに向けた道筋の明確さ／自走可能性
-# ◎=道筋明確・自走可 / ○=道筋は概ね見える（壁打ち・スコープ調整で間に合う） / △=要フォロー（作るものが未確定・再設計中）
-forecast = {1: "○", 2: "○", 3: "○", 4: "△", 5: "◎",
-            6: "○", 7: "◎", 8: "○", 9: "○", 10: "○", 11: "○"}
-# 見込みの根拠（各チーム1行）
-fc_reason = {
-    1: "アプリ像は明確。開発手順の型と事務局のスケジュール提示があれば自走可（壁打ちで解消）。",
-    2: "対象エラーと回答テンプレを絞ればMVP化可。プロンプト見本で加速。",
-    3: "エージェント構想は明確。使用データのOK/NGを整理しスコープを絞れば発表可（ボリューム大）。",
-    4: "外部Web参照禁止で企画の中核が抵触。代替ユースケースが未確定で再設計中＝作るものが定まっていない。",
-    5: "業務フロー・効果・構成が具体化。8月デモの道筋が明確。",
-    6: "構成は明確。ファイル収集/PPT生成/会議通知の役割分担を分けて検証すれば発表可（第2回未実施）。",
-    7: "固定ナレッジ＋入力照合の構成が明確で実現性が高い（第2回未実施）。",
-    8: "会議調整/タスク抽出のどちらを軸にするか決めれば1本デモ可（第2回未実施）。",
-    9: "管理ツール構想は明確。社外秘/連携は別論点化し、メール検知→管理表→下書きに絞れば発表可（第2回未実施）。",
-    10: "構成は明確。トランスクリプト権限とドラフト品質の検証を進めれば発表可。",
-    11: "構成・前提は明確。FAQ整備・本番移行・運用項目の洗い出しを進めれば発表可。",
+# 主な制約・留意（メンター検討の材料。短文）
+constraint = {
+    1: "M365内で完結／判定基準の作り込みが要",
+    2: "FAQ・ガイドの整備が前提",
+    3: "外部Web・営業システム等の取得制約が大",
+    4: "外部Web禁止のため案の再設計が必要",
+    5: "M365標準のみ／制約は小さい",
+    6: "共有サーバ参照・資料自動生成の検証が要",
+    7: "外部連携なし（データは人手取得が前提）",
+    8: "予定表・会議室・メールの権限整備が要",
+    9: "社外秘資料・共有サーバ・メール送信の可否",
+    10: "文字起こしの取得権限・転記精度の検証",
+    11: "本番移行・FAQ品質・運用保守が焦点",
 }
-# ボリューム（企画着手〜実業務での利用開始まで）: 小/中/大
+# ボリューム＝企画着手〜実業務での利用開始（リリース）までの総作業量
 volume = {1: "中", 2: "中", 3: "大", 4: "中〜大", 5: "中", 6: "大",
           7: "中", 8: "中", 9: "大", 10: "中", 11: "大"}
 
+# 10月発表の見込み（基準＝発表に向けた道筋の明確さ／自走できるか）
+forecast = {1: "○", 2: "○", 3: "○", 4: "△", 5: "◎",
+            6: "○", 7: "◎", 8: "○", 9: "○", 10: "○", 11: "○"}
+fc_reason = {
+    1: "作るものは明確。開発手順の型とスケジュール提示があれば自走できる。",
+    2: "対象エラーと回答テンプレートを絞れば動くデモを作れる。指示文の見本で加速。",
+    3: "構想は明確。使うデータの可否を整理し範囲を絞れば発表できる（作業量は大）。",
+    4: "外部Web参照の禁止で企画の中心が抵触。代替案が未確定で、作るものが定まっていない。",
+    5: "業務の流れ・効果・構成まで具体化済み。8月のデモまで道筋が明確。",
+    6: "構成は明確。資料収集・資料生成・会議通知を分けて検証すれば発表できる。",
+    7: "固定の判断基準＋毎月の入力照合という構成が明確で、実現性が高い。",
+    8: "会議調整とタスク整理のどちらを軸にするか決めれば、デモを1本作れる。",
+    9: "構想は明確。社外秘・外部連携は別課題として切り出し、範囲を絞れば発表できる。",
+    10: "構成は明確。文字起こしの権限とドラフト品質の検証を進めれば発表できる。",
+    11: "構成・前提は明確。FAQ整備・本番移行・運用項目の洗い出しを進めれば発表できる。",
+}
 
-def fc_color(m):
-    return GREEN if m == "◎" else TEAL if m == "○" else AMBER
-
-
-def vol_color(v):
-    return GREEN if v == "小" else TEAL if v == "中" else AMBER if v == "中〜大" else ORANGE
-
-# 各チーム詳細
+# 各チーム個票
 detail = {
-    1: dict(title="様式チェックAI", diff="中", mentor="中村",
-            work="カクニンジャ／加盟店提出様式の記載漏れ・形式不備を自動チェック",
-            apps="Copilot Studio／Copilot Chat／Excel／SharePoint（想定）",
-            risk="出力結果の揺れが残る。検証条件・判定基準と、AIが担う範囲/人が見る範囲の分離が必要。",
-            q="第2回：構築フェーズで何を優先すべきか、開発の基本フォーマット・スケジュール提示への要望。第1回：回答範囲・フォーマット制御を確認。",
-            a="8〜9月の進め方・運用設計の道筋を事務局から共有する方向。Copilot Studioは単なるチャットより回答範囲・形式を制御しやすい。",
-            nxt="チェック項目を分解し、AI判断・自動化・人手確認の境界を設計。サンプル様式で再現性を確認。"),
-    2: dict(title="受付Cエラー原因ナビ", diff="中", mentor="中村",
-            work="受付Cエラー原因ナビゲーター／カード会社向けセルフ解決エージェント",
-            apps="Copilot Studio／SharePoint／Teams・Web UI／Power Automate（想定）",
-            risk="エラーファイルの取り込み形式と、回答根拠となるFAQ・ガイドの整備が成否を左右。",
-            q="第2回：設計内容を相談する際のプロンプト見本が欲しいとの要望。第1回：Excel/PDF読込精度が論点。",
-            a="企画内容を貼り付け、必要な設定・使うべきアプリ・構成案をCopilot Chatに確認する進め方を助言。Excel/PDFは試行で見極める。",
-            nxt="代表的なエラーパターンと回答テンプレートを絞り、MVP対象の入力・出力例を作成。"),
-    3: dict(title="加盟店防衛マネジメント支援", diff="高", mentor="甲佐",
-            work="加盟店防衛マネジメントエージェント／営業データ統合・リスク分析・訪問前サマリ",
-            apps="Power Automate／Power Query／SharePoint／Power BI／Copilot Studio／Salesforce・N-MARK等（取得可否が論点）",
-            risk="外部情報・Salesforce等の取得制約が大きい。データソースの棚卸しとOK/NG判断が必要。",
-            q="第2回：外部IR等を参照したいが外部情報参照禁止のリスクと代替策。やりたいこと起点で考えるべきかも確認。",
-            a="外部サイト自動参照は先方サイト負荷・リスク観点で原則NG。必要なら事前取得資料をナレッジ化。To-Beは既存フローに引きずられず設計。",
-            nxt="使用データをM365内・M365外・外部Webに分類し、MVPで扱う範囲を再定義。"),
-    4: dict(title="市場・企業分析", diff="高", mentor="甲佐",
-            work="市場・企業分析エージェント／企業名・キーワード起点の調査・提案書生成",
-            apps="Copilot Studio／Power Automate／SharePoint／Teams／Word・PPT／外部Web・RSS・APIは原則不可",
-            risk="企画価値の中心が外部情報取得の場合、ハッカソン条件下では実装効果が大きく低下。",
-            q="第2回：外部サイトの情報取得が原則禁止となり、現行案がガイドラインに抵触する可能性を確認。",
-            a="Webサーチを主機能とする場合は案の練り直しが必要。内部資料の整形・ドラフト化だけで効果が出るかを検討するよう助言。",
-            nxt="外部参照なしで成立するユースケースへ再設計。過去調査DB・社内資料ベースの差分整理などに軸足変更を検討。"),
-    5: dict(title="自動リマインド", diff="中", mentor="中村",
-            work="おはようリマインドくん／依頼事項の登録・通知・回答集約・未回答リマインド",
-            apps="Copilot Studio／Microsoft Forms／Power Automate／Teams／管理ダッシュボード",
-            risk="運用定着と依頼元の入力ルールが鍵。リマインド設計・回答形式の標準化が必要。",
-            q="第2回：タスク列構成をどう始めるか、Copilot Studio更新に伴う運用保守リスク。第1回：共有フォルダ参照制約。",
-            a="まずタスク列を仮決めし、3件程度のサンプルを作成してAutomateから一本通す。クラウド更新に伴う不具合は運用保守観点で考慮。",
-            nxt="MVPは「1依頼登録→対象者通知→回答集約→未回答リマインド」の一連実行を8月中にデモ化。"),
-    6: dict(title="PPT資料作成・会議招集", diff="中〜高", mentor="甲佐",
-            work="Forecast ONE／フォーキャスト会議の資料作成と会議招集を自動化",
-            apps="Copilot Studio／Power Automate／SharePoint・OneDrive／Outlook／Teams／PowerPoint",
-            risk="ファイルサーバ・OneDrive/SharePoint格納、PPTの自動生成、会議招集の自動化可否を分けて検証が必要。",
-            q="第2回トランスクリプト未添付。第1回：AutomateとCopilot Studioの違い、研修スケジュール、相談先を確認。",
-            a="AutomateはAIではなく自動化ツールだが時間削減に重要。ファイル収集・PPT生成・会議通知の役割分担を明確化する必要。",
-            nxt="3つの入力ファイル・前月PPT・出力PPT・会議通知のデータフローをM365内で再設計。"),
-    7: dict(title="課金精算チェック", diff="中", mentor="中村",
-            work="加盟店課金精算チェックエージェント／請求・N-Mark・J-SCRUM・CNCデータの突合",
-            apps="Copilot Studio／SharePoint／ExcelまたはCSV／手動取得データ",
-            risk="外部システム連携は行わず人手取得データを前提。ファイル命名・フォルダ構成の維持が前提条件。",
-            q="第2回トランスクリプト未添付。第1回：判断基準（ナレッジ）と毎月の入力ファイルを分ける構成を確認。",
-            a="固定のチェックリストをナレッジとし、毎月の入力ファイルを都度読み込ませて照合・修正出力する設計は実現しやすい。",
-            nxt="MVPは3種類程度のデータと固定チェック項目で突合結果レポートを作成。"),
-    8: dict(title="段取りAI", diff="中", mentor="中村",
-            work="段取（Dandori）AI／会議調整・タスク整理・レビュー観点の蓄積",
-            apps="Copilot Studio／Power Automate／Outlook／Teams／SharePoint",
-            risk="予定表・会議室・メールへの権限、退職者除外や対象者候補の整備が必要。",
-            q="第2回トランスクリプト未添付。第1回：発表対象の1案以外を裏で作ってよいかを確認。",
-            a="最終発表は1案だが、2案目を並行して進めることは可。会議調整・タスク抽出を主軸に、レビュー観点蓄積は付加価値と整理。",
-            nxt="会議調整とタスク抽出のどちらをMVPの中心にするかを確定し、1本のデモシナリオを作る。"),
-    9: dict(title="レビュー進捗管理", diff="中〜高", mentor="甲佐",
-            work="レビュー進捗管理アシスタント／レビュー対象一覧・依頼・完了確認・リマインド",
-            apps="Copilot Studio／Power Automate／Outlook／Excel／Teams／共有ファイルサーバ（制約あり）",
-            risk="開発中案件・社外秘情報の扱い、ファイルサーバ参照、メール自動送信の可否を整理する必要。",
-            q="第2回トランスクリプト未添付。第1回：社外秘ファイルやSalesforce取得、メール下書き・送付可否が論点。",
-            a="管理ツール化の色が強くCopilot Studioで作りやすい一方、社外秘・共有サーバ・Salesforce等の扱いは事務局判断が必要。",
-            nxt="まずメール検知→管理表反映→下書き作成までを対象に絞り、ファイルサーバ処理は別論点化。"),
-    10: dict(title="議事録ドラフト生成", diff="中", mentor="中村",
-             work="対面クライテリア議事録ドラフト生成／資料・トランスクリプト・出席者情報から議事録を生成",
-             apps="Copilot Studio／Teamsトランスクリプト／SharePoint／議事録フォーマット／Word（想定）",
-             risk="トランスクリプト取得権限、会議形式・ライセンス、フォーマット転記の精度検証が必要。",
-             q="第2回：Copilot Chatの回答をそのまま信じてよいか、今後のメンター定例の進め方を確認。",
-             a="Copilot回答は必ず正解とは限らないため、根拠提示を求め画面操作・実検証で確認。8〜9月はメンター定例で伴走予定。",
-             nxt="サンプル会議資料・トランスクリプト・議事録テンプレを用意し、ドラフト生成品質を確認。"),
-    11: dict(title="社内LAN問合せBot", diff="中〜高", mentor="甲佐",
-             work="社内LAN問い合わせチャットボット／FAQ・申請種別案内の一次受付",
-             apps="Copilot Studio／SharePointナレッジ／TeamsまたはチャットUI／FAQ整備",
-             risk="FAQ整備、参照先ナレッジの品質、本番環境移行、利用ルール・運用保守が焦点。",
-             q="第2回：開発環境から本番環境への移行、年度末展開、手順書・利用ルールを社長報告までに完了すべきか。",
-             a="手順書は完成していれば望ましいが10月時点では準備中でも可。項目出しと全量把握が重要。本番移行は社内申請フローを要確認。",
-             nxt="FAQをCopilot Studioが処理しやすい形式に整備し、Ph1→Ph2→Ph3展開の運用項目を洗い出す。"),
+    1: dict(title="加盟店提出様式の自動チェック", agent="カクニンジャ",
+            work="加盟店から提出される様式の記載漏れ・形式不備をAIがチェックする。",
+            apps="Copilot Studio ／ Copilot チャット ／ Excel ／ SharePoint（想定）",
+            risk="AIの判定結果にばらつきが出る可能性。判定基準と「AIに任せる範囲／人が確認する範囲」の切り分けが必要。",
+            q="第2回：構築フェーズで何を優先すべきか。開発手順の型（基本フォーマット）と8〜9月のスケジュール提示が欲しい。",
+            a="8〜9月の進め方は事務局から共有する方針。Copilot Studioは通常のチャットより回答範囲・出力形式を制御しやすい点が利点。",
+            nxt="チェック項目を分解し、AI判断・自動化・人の確認の境界を設計。サンプル様式で結果の再現性を確認する。"),
+    2: dict(title="受付Cエラーの原因案内", agent="受付Cエラー原因ナビゲーター",
+            work="カード会社が受付エラーの原因を自分で解決できるよう、AIが原因と対処を案内する。",
+            apps="Copilot Studio ／ SharePoint ／ Teams・Web画面 ／ Power Automate（想定）",
+            risk="エラーファイルの取り込み形式と、回答の根拠となるFAQ・ガイドの整備状況が成否を左右する。",
+            q="第2回：Copilotに設計や成果物を相談するときの指示文（プロンプト）の見本が欲しい。",
+            a="企画内容をそのまま貼り付け、「必要な設定・使うべきアプリ・構成案」を尋ねる進め方を助言。ファイル形式は試して見極める。",
+            nxt="代表的なエラーパターンと回答テンプレートを絞り、最初に作る範囲の入力・出力例を用意する。"),
+    3: dict(title="加盟店防衛マネジメント支援", agent="加盟店防衛マネジメントエージェント",
+            work="営業データを統合し、リスク分析や訪問前のサマリをAIが作成する。",
+            apps="Power Automate ／ Power Query ／ SharePoint ／ Power BI ／ Copilot Studio ／ 営業システム等（取得可否が論点）",
+            risk="外部情報・営業システムからの取得制約が大きい。使うデータを洗い出し、可否の判断を得る必要がある。",
+            q="第2回：外部のIR情報等を参照したいが、外部情報の参照禁止によるリスクと代替策を知りたい。",
+            a="外部サイトの自動参照は相手先サーバへの負荷などの観点から原則不可。必要な資料は事前に取得し参照資料として登録する方法が現実的。",
+            nxt="使うデータを「M365内／M365外／外部Web」に分類し、最初に作る範囲を再定義する。"),
+    4: dict(title="市場・企業分析", agent="市場・企業分析エージェント",
+            work="企業名やキーワードを起点に、調査結果の整理と提案書のドラフトをAIが作成する。",
+            apps="Copilot Studio ／ Power Automate ／ SharePoint ／ Teams ／ Word・PowerPoint（外部Web・RSS・APIは原則不可）",
+            risk="企画の中心が外部情報の取得であるため、今回の条件下では実装できる効果が大きく下がる。",
+            q="第2回：外部サイトからの情報取得が原則禁止となり、現在の案がガイドラインに抵触する可能性を確認したい。",
+            a="Web検索が主機能となる場合は案の練り直しが必要。手元の資料を整えてドラフト化するだけで効果が出るかを検討するよう助言。",
+            nxt="外部参照なしで成立する使い方に再設計する（過去の調査結果や社内資料をもとにした整理など）。"),
+    5: dict(title="依頼事項の自動リマインド", agent="おはようリマインドくん",
+            work="依頼事項の登録・通知・回答集約・未回答者へのリマインドを自動化する。",
+            apps="Copilot Studio ／ Microsoft Forms ／ Power Automate ／ Teams ／ 管理ダッシュボード",
+            risk="運用の定着と、依頼元の入力ルールが鍵。リマインドの設計と回答形式の標準化が必要。",
+            q="第2回：管理表の項目立てをどう始めるか。Copilot Studioの更新に伴う保守リスクも知りたい。",
+            a="まず項目を仮決めし、3件程度のサンプルで Power Automate から一連の流れを通す。更新による不具合は運用保守の観点で考慮が必要。",
+            nxt="「依頼1件の登録→対象者へ通知→回答集約→未回答リマインド」を8月中に動くデモにする。"),
+    6: dict(title="会議資料作成と会議招集の自動化", agent="Forecast ONE",
+            work="フォーキャスト会議の資料作成と、会議の招集をあわせて自動化する。",
+            apps="Copilot Studio ／ Power Automate ／ SharePoint・OneDrive ／ Outlook ／ Teams ／ PowerPoint",
+            risk="資料の保管場所、資料の自動生成、会議招集の自動化は、それぞれ分けて実現性を検証する必要がある。",
+            q="第2回は未実施。第1回では Power Automate と Copilot Studio の違い、研修の予定、困ったときの相談先を確認。",
+            a="Power AutomateはAIではなく自動化の道具だが、時間削減には重要。資料収集・資料生成・会議通知の役割分担を明確にする必要がある。",
+            nxt="3つの入力資料・前月資料・出力資料・会議通知について、データの流れをM365内で整理する。"),
+    7: dict(title="加盟店課金精算のチェック", agent="加盟店課金精算チェックエージェント",
+            work="請求データと関連システムのデータを突き合わせ、差異をAIがチェックする。",
+            apps="Copilot Studio ／ SharePoint ／ Excel または CSV ／ 人手で取得したデータ",
+            risk="外部システムと直接つながず人手取得データを前提とするため、ファイル名やフォルダ構成の維持が前提条件になる。",
+            q="第2回は未実施。第1回では、判断基準と毎月の入力ファイルを分ける構成について確認。",
+            a="固定のチェックリストを判断基準として登録し、毎月の入力ファイルは都度読み込んで照合・修正出力する構成は実現しやすい。",
+            nxt="まず3種類程度のデータと固定のチェック項目で、突合結果のレポートを作成する。"),
+    8: dict(title="会議調整・タスク整理の支援", agent="段取（Dandori）AI",
+            work="会議の調整、タスクの洗い出し、レビュー観点の蓄積をAIが支援する。",
+            apps="Copilot Studio ／ Power Automate ／ Outlook ／ Teams ／ SharePoint",
+            risk="予定表・会議室・メールへのアクセス権限、対象者リストの整備が必要。",
+            q="第2回は未実施。第1回では、発表する1案以外の案も並行して進めてよいかを確認。",
+            a="発表は1案だが、2案目を並行して進めることは問題ない。会議調整・タスク洗い出しを主軸に、レビュー観点の蓄積は付加価値と整理。",
+            nxt="会議調整とタスク洗い出しのどちらを中心にするか決め、デモの筋書きを1本作る。"),
+    9: dict(title="レビュー進捗の管理", agent="レビュー進捗管理アシスタント",
+            work="レビュー対象の一覧化、依頼、完了確認、リマインドまでを自動化する。",
+            apps="Copilot Studio ／ Power Automate ／ Outlook ／ Excel ／ Teams ／ 共有ファイルサーバ（制約あり）",
+            risk="開発中案件・社外秘情報の扱い、共有サーバの参照、メール自動送信の可否を整理する必要がある。",
+            q="第2回は未実施。第1回では、社外秘ファイルや外部システムからの取得、メールの下書き・送付可否が論点。",
+            a="管理ツールとしての性格が強くCopilot Studioで作りやすい一方、社外秘・共有サーバ・外部システムの扱いは事務局の判断が必要。",
+            nxt="まずメール検知→管理表への反映→下書き作成までに絞り、共有サーバの処理は別課題として切り出す。"),
+    10: dict(title="対面会議の議事録ドラフト生成", agent="議事録ドラフト生成エージェント",
+            work="会議資料・文字起こし・出席者情報から、議事録のドラフトをAIが作成する。",
+            apps="Copilot Studio ／ Teams の文字起こし ／ SharePoint ／ 議事録フォーマット ／ Word（想定）",
+            risk="文字起こしの取得権限、会議形式やライセンス、決まった書式への転記精度の検証が必要。",
+            q="第2回：Copilotチャットの回答をそのまま信じて進めてよいか。今後の定例の進め方も知りたい。",
+            a="Copilotの回答は必ず正解とは限らないため、根拠の提示を求め、実際の画面操作で確認する。8〜9月は定例で伴走予定。",
+            nxt="サンプルの会議資料・文字起こし・議事録テンプレートを用意し、ドラフトの品質を確認する。"),
+    11: dict(title="社内LAN問い合わせチャットボット", agent="社内LAN問い合わせチャットボット",
+             work="社内LANに関するFAQや申請種別の案内を、チャットボットが一次受付する。",
+             apps="Copilot Studio ／ SharePoint（参照資料） ／ Teams またはチャット画面 ／ FAQ",
+             risk="FAQの整備状況と参照資料の品質、本番環境への移行、利用ルールと運用保守が焦点。",
+             q="第2回：開発環境から本番環境への移行、年度末の展開、手順書・利用ルールを社長報告までに完成させるべきか。",
+             a="手順書は完成していれば望ましいが、10月時点では準備中でも可。項目の洗い出しと全体量の把握が重要。本番移行は社内の申請フローを要確認。",
+             nxt="FAQをCopilot Studioが扱いやすい形に整備し、段階展開（第1〜第3フェーズ）の運用項目を洗い出す。"),
 }
 
 
 # ==================================================================
-# スライド1：目的
+# スライド1：表紙
 # ==================================================================
 s = prs.slides.add_slide(BLANK)
-header(s, 1, "第2回 事前相談会の目的", "MICROSOFT 365 COPILOT STUDIO 活用ハッカソン")
-footer(s)
-add_text(s, Inches(0.55), Inches(1.4), Inches(12.2), Inches(0.9),
-         "7月22日〜24日に実施した第2回 事前相談会では、第1回後に提出された各チームの企画書を前提に、"
-         "構築フェーズへ進むための「進捗確認」「技術論点の整理」「ネクストアクションの明確化」を行った。"
-         "本資料では、各チームの状況を一覧・個票で整理し、あわせて難易度・使用アプリの種類・10月発表の見込みを比較整理する。",
-         size=13, color=DARK, ls=1.15)
+add_rect(s, 0, 0, SW, SH, NAVY_DARK)
+add_rect(s, Inches(1.0), Inches(2.42), Inches(1.5), Inches(0.06), TEAL)
+add_text(s, Inches(1.0), Inches(1.85), Inches(11.0), Inches(0.4),
+         "MICROSOFT 365 COPILOT STUDIO 活用ハッカソン", size=12, color=TEAL, bold=True)
+add_text(s, Inches(0.96), Inches(2.68), Inches(11.4), Inches(1.5),
+         "第2回 事前相談会\nチームごとの状況報告",
+         size=36, color=WHITE, bold=True, ls=1.16)
+add_text(s, Inches(1.0), Inches(4.55), Inches(11.0), Inches(0.75),
+         "全11チームの進捗状況・使用アプリ・難易度／10月発表に向けた見込みと課題",
+         size=13.5, color=PALE, ls=1.2)
+add_text(s, Inches(1.0), Inches(6.1), Inches(6.0), Inches(0.3),
+         "実施日：2026年7月22日（水）〜 7月24日（金）", size=11, color=PALE)
+add_text(s, Inches(1.0), Inches(6.45), Inches(6.0), Inches(0.3),
+         "報告日：2026年7月24日", size=11, color=PALE)
+add_text(s, SW - Inches(4.2), Inches(6.45), Inches(3.2), Inches(0.3),
+         "社外秘 / Confidential", size=10, color=MUTE, align=PP_ALIGN.RIGHT)
 
-by = Inches(2.6); bh = Inches(2.75); bw = Inches(5.9)
+
+# ==================================================================
+# スライド2：本日の目的と流れ
+# ==================================================================
+s = prs.slides.add_slide(BLANK)
+header(s, 2, "本日の目的と進め方", "PURPOSE ｜ 第2回 事前相談会の位置づけ")
+footer(s)
+add_text(s, Inches(0.55), Inches(1.32), Inches(12.2), Inches(0.75),
+         "7月22日〜24日に、第1回後に提出された企画書を前提として第2回 事前相談会を実施した。"
+         "本資料は、事務局への進捗報告として各チームの状況を整理し、10月発表に向けた課題と依頼事項をまとめたものである。",
+         size=12.5, color=DARK, ls=1.2)
+
+by = Inches(2.25); bh = Inches(2.5); bw = Inches(5.9)
 lx = Inches(0.6); rx = lx + bw + Inches(0.4)
 
 
 def purpose(x, tag, tcol, title, items):
     add_rect(s, x, by, bw, bh, LIGHT)
-    add_rect(s, x, by, bw, Inches(0.85), tcol)
-    add_text(s, x + Inches(0.32), by + Inches(0.10), bw - Inches(0.6), Inches(0.3),
-             tag, size=10.5, color=WHITE, bold=True)
-    add_text(s, x + Inches(0.32), by + Inches(0.38), bw - Inches(0.6), Inches(0.4),
-             title, size=16, color=WHITE, bold=True)
-    ty = by + Inches(1.05)
+    add_rect(s, x, by, bw, Inches(0.8), tcol)
+    add_text(s, x + Inches(0.3), by + Inches(0.1), bw - Inches(0.6), Inches(0.28),
+             tag, size=10, color=WHITE, bold=True)
+    add_text(s, x + Inches(0.3), by + Inches(0.36), bw - Inches(0.6), Inches(0.38),
+             title, size=15.5, color=WHITE, bold=True)
+    ty = by + Inches(0.95)
     for head, body in items:
-        add_rect(s, x + Inches(0.32), ty + Inches(0.05), Inches(0.14), Inches(0.14), tcol)
-        add_text(s, x + Inches(0.56), ty - Inches(0.05), bw - Inches(0.9), Inches(0.3),
-                 head, size=12.5, color=NAVY, bold=True)
-        add_text(s, x + Inches(0.56), ty + Inches(0.26), bw - Inches(0.85), Inches(0.55),
-                 body, size=11, color=DARK, ls=1.05)
-        ty += Inches(0.82)
+        add_rect(s, x + Inches(0.3), ty + Inches(0.05), Inches(0.13), Inches(0.13), tcol)
+        add_text(s, x + Inches(0.53), ty - Inches(0.05), bw - Inches(0.85), Inches(0.28),
+                 head, size=12, color=NAVY, bold=True)
+        add_text(s, x + Inches(0.53), ty + Inches(0.24), bw - Inches(0.85), Inches(0.5),
+                 body, size=10.5, color=DARK, ls=1.08)
+        ty += Inches(0.74)
 
 
-purpose(lx, "進行面 ｜ PROGRESS", NAVY, "進捗確認・伴走支援",
-        [("各チームの進捗状況の確認", "1案の具体化・構築着手に向けた準備度を確認。"),
-         ("ネクストアクションの整理", "8月デモ化／9月発表準備／10月役職者向け発表に向け優先順位を明確化。")])
-purpose(rx, "技術面 ｜ TECHNOLOGY", TEAL, "適合性・実現可能性の助言",
-        [("Copilot Studio／M365アプリの使い分け", "CS・Power Automate・SharePoint・Teams・Forms・Outlook等を助言。"),
-         ("実現可能性・制約の早期論点化", "外部Web参照・M365外連携・共有フォルダ・情報区分・本番移行など。")])
+purpose(lx, "進行面 ｜ PROGRESS", NAVY, "進捗の確認と次アクションの整理",
+        [("各チームの進捗状況の確認",
+          "企画の具体化の度合いと、構築に着手できる準備が整っているかを確認。"),
+         ("次アクションの整理",
+          "8月：動くデモ／9月：発表準備／10月：発表 に向けた優先順位を明確化。")])
+purpose(rx, "技術面 ｜ TECHNOLOGY", TEAL, "適合性と実現可能性の助言",
+        [("使うアプリの適合性",
+          "Copilot Studio・Power Automate・SharePoint・Teams等の使い分けを助言。"),
+         ("実現可能性と制約の早期確認",
+          "外部Web参照、M365外システム連携、資料の保管場所、本番移行などを論点化。")])
 
-add_text(s, Inches(0.6), Inches(5.55), Inches(12.1), Inches(0.5),
-         "第2回は「企画書提出後の棚卸し」。特に外部参照禁止・M365外連携・本番移行・手順書整備など、"
-         "事務局判断や横断整理が必要な論点が増加。本資料では各チームの難易度・使用アプリの種類も比較整理する。",
-         size=11, color=MUTE, ls=1.1)
-add_text(s, Inches(0.6), Inches(6.35), Inches(12.1), Inches(0.4),
-         "※ 特定案への誘導は行わず、各チームの主体的な意思決定を尊重しながら技術・運用・ガバナンス面の助言を実施。",
+add_text(s, Inches(0.6), Inches(4.9), Inches(12.1), Inches(0.4),
+         "※ 特定の案へ誘導することはせず、各チームの主体的な判断を尊重しながら技術・運用・ガバナンス面の助言を実施。",
          size=10.5, color=MUTE, italic=True)
 
-
-# ==================================================================
-# スライド2：各チーム状況 一覧
-# ==================================================================
-s = prs.slides.add_slide(BLANK)
-header(s, 2, "各チームの状況一覧", "PROGRESS SUMMARY ｜ 全11チーム")
-footer(s)
-add_text(s, Inches(0.55), Inches(1.28), Inches(12.3), Inches(0.3),
-         "全11チームが企画書提出を経て原則1案に整理済み。進捗レベル・難易度・10月発表の見込みとあわせて一覧化。",
-         size=11, color=DARK)
-add_text(s, Inches(0.55), Inches(1.58), Inches(12.3), Inches(0.56),
-         "進捗レベル ▶ Lv1:未絞込／Lv2:2案まで／Lv3:1案確定・理解途上／Lv4:To-Be・アーキ具体化／Lv5:定量効果まで概ね完成"
-         "　（第2回実施済＝1・2・3・4・5・10・11）\n"
-         "10月見込み（基準＝10月デモに向けた道筋の明確さ）▶ ◎:道筋明確・自走可／○:壁打ち・スコープ調整で間に合う／△:要フォロー（作るものが未確定・再設計中）",
-         size=8.6, color=MUTE, ls=1.12)
-
-tx = Inches(0.55); ty0 = Inches(2.16); rowh = Inches(0.415); hh = Inches(0.36)
-t = s.shapes.add_table(12, 6, tx, ty0, Inches(12.25), Inches(5.0)).table
-cw = [Inches(0.55), Inches(2.0), Inches(3.1), Inches(3.95), Inches(0.9), Inches(1.75)]
-for i, w in enumerate(cw):
-    t.columns[i].width = w
-for c, htx in enumerate(["チーム", "進捗レベル", "案概要（エージェント名）",
-                         "第2回の主な論点・相談", "難易度", "10月発表 見込み"]):
-    cell(t.cell(0, c), htx, size=9.5, color=WHITE, bold=True, fill=NAVY, align=PP_ALIGN.CENTER)
-rh(t, 0, hh)
-fc_word = {"◎": "◎ 順調", "○": "○ 概ね順調", "△": "△ 要フォロー"}
-for i, (no, lv, name, diff, mt, topic, done) in enumerate(overview, start=1):
-    rf = WHITE if i % 2 else LIGHT
-    cell(t.cell(i, 0), f"T{no}", size=10.5, color=NAVY, bold=True, fill=rf, align=PP_ALIGN.CENTER)
-    cell(t.cell(i, 1), "", fill=rf)
-    cell(t.cell(i, 2), name, size=8.8, color=DARK, bold=True, fill=rf)
-    cell(t.cell(i, 3), topic, size=8.5, color=(MUTE if not done else DARK), fill=rf)
-    cell(t.cell(i, 4), diff, size=9.5, color=diff_color(diff), bold=True, fill=rf, align=PP_ALIGN.CENTER)
-    fc = forecast[no]
-    cell(t.cell(i, 5), fc_word[fc], size=9, color=fc_color(fc), bold=True, fill=rf, align=PP_ALIGN.CENTER)
-    rh(t, i, rowh)
-# 進捗レベル矢印を重ねる
-cx0 = tx + cw[0] + Inches(0.12)
-for i, (no, lv, *_r) in enumerate(overview, start=1):
-    yc = ty0 + hh + rowh * (i - 1) + rowh / 2
-    chevrons(s, cx0, yc, lv, on=tier(lv))
-    add_text(s, cx0 + Inches(0.24) * 5 + Inches(0.03), yc - Inches(0.11),
-             Inches(0.5), Inches(0.24), f"Lv{lv}", size=8.5,
-             color=tier(lv), bold=True, anchor=MSO_ANCHOR.MIDDLE)
+add_text(s, Inches(0.55), Inches(5.5), Inches(6.0), Inches(0.3),
+         "本日の流れ", size=12, color=NAVY, bold=True)
+flow = ["① サマリ（結論）", "② 各チームの状況一覧", "③ 使用アプリ・難易度",
+        "④ 課題は大きく3点", "⑤ 各チームの個別状況"]
+fw = Inches(2.42); fdx = Inches(2.48)
+for i, txt in enumerate(flow):
+    x = Inches(0.55) + fdx * i
+    add_rect(s, x, Inches(5.85), fw, Inches(0.5), LIGHT)
+    add_text(s, x, Inches(5.87), fw, Inches(0.46), txt, size=10.5, color=NAVY,
+             bold=True, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
 
 
 # ==================================================================
-# スライド3：難易度・使用アプリの比較（メンター担当検討の材料）
+# スライド3：サマリ（結論先出し）
 # ==================================================================
 s = prs.slides.add_slide(BLANK)
-header(s, 3, "使用アプリ（想定）・難易度・ボリュームの比較", "APPS ・ DIFFICULTY ・ VOLUME ｜ チーム別比較")
+header(s, 3, "サマリ", "EXECUTIVE SUMMARY ｜ 結論")
 footer(s)
-add_text(s, Inches(0.55), Inches(1.20), Inches(12.3), Inches(0.5),
-         "各チームの取り組みに対して「想定される」使用アプリ（企画書＋相談会ベースの予想）を列で可視化し、難易度・ボリュームを併記（メンター担当検討の材料）。"
-         "色タイル＝使用アプリ。全チームがCopilot Studioを使用。",
-         size=9.5, color=DARK, ls=1.1)
-
-tx = Inches(0.55); ty0 = Inches(1.76); rowh = Inches(0.37); hh = Inches(0.52)
-ncol = 4 + len(APP_COLS)   # チーム,案概要,難易度 + apps + アプリ数
-t = s.shapes.add_table(12, ncol, tx, ty0, Inches(12.25), Inches(4.6)).table
-cw = [Inches(0.5), Inches(1.95), Inches(0.7)] + [Inches(0.85)] * len(APP_COLS) + [Inches(0.6)]
-for i, w in enumerate(cw):
-    t.columns[i].width = w
-# ヘッダー
-cell(t.cell(0, 0), "チーム", size=8.5, color=WHITE, bold=True, fill=NAVY, align=PP_ALIGN.CENTER)
-cell(t.cell(0, 1), "案概要", size=8.5, color=WHITE, bold=True, fill=NAVY, align=PP_ALIGN.CENTER)
-cell(t.cell(0, 2), "難易度", size=8.5, color=WHITE, bold=True, fill=NAVY, align=PP_ALIGN.CENTER)
-for j, (key, label, col, tc) in enumerate(APP_COLS):
-    cell(t.cell(0, 3 + j), label, size=7, color=tc, bold=True, fill=col, align=PP_ALIGN.CENTER)
-cell(t.cell(0, ncol - 1), "ボリューム", size=7, color=WHITE, bold=True, fill=NAVY, align=PP_ALIGN.CENTER)
-rh(t, 0, hh)
-for i, (no, lv, name, diff, mt, topic, done) in enumerate(overview, start=1):
-    rf = WHITE if i % 2 else LIGHT
-    cell(t.cell(i, 0), f"T{no}", size=9.5, color=NAVY, bold=True, fill=rf, align=PP_ALIGN.CENTER)
-    cell(t.cell(i, 1), name.split("（")[0], size=8, color=DARK, bold=True, fill=rf)
-    cell(t.cell(i, 2), diff, size=9, color=diff_color(diff), bold=True, fill=rf, align=PP_ALIGN.CENTER)
-    used = app_use[no]
-    for j, (key, label, col, tc) in enumerate(APP_COLS):
-        if key in used:
-            cell(t.cell(i, 3 + j), "●", size=9, color=tc, bold=True, fill=col, align=PP_ALIGN.CENTER)
-        else:
-            cell(t.cell(i, 3 + j), "", size=8, fill=rf)
-    vv = volume[no]
-    cell(t.cell(i, ncol - 1), vv, size=8.5, color=vol_color(vv), bold=True, fill=rf, align=PP_ALIGN.CENTER)
-    rh(t, i, rowh)
-# 下部：凡例（アプリ／ボリューム定義）
-sy = ty0 + hh + rowh * 11 + Inches(0.1)
-add_rect(s, tx, sy, Inches(12.25), Inches(0.66), LIGHT)
-add_text(s, tx + Inches(0.22), sy + Inches(0.03), Inches(11.85), Inches(0.62),
-         "●＝想定される使用アプリ（列見出しの色＝各アプリ）。全チームがCopilot Studioを使用。\n"
-         "「ボリューム」＝企画着手〜実業務での利用開始（リリース）までに必要な総作業量（開発対象＝エージェント/フロー＋読み込むナレッジ/資料の整備＋連携・権限・本番移行・運用/展開）。"
-         "10月デモではなく実運用まで／小・中・大で暫定評価。",
-         size=8.3, color=DARK, ls=1.12)
-
-
-# ==================================================================
-# スライド4：課題カテゴライズ
-# ==================================================================
-s = prs.slides.add_slide(BLANK)
-header(s, 4, "質疑で挙がった課題 ― 大きく3点", "ISSUE SUMMARY ｜ 第2回の論点")
-footer(s)
-add_text(s, Inches(0.55), Inches(1.28), Inches(12.3), Inches(0.35),
-         "第2回（チーム1・2・3・4・5・10・11）で挙がった論点は、大きく次の3点に整理できる。",
-         size=12, color=DARK)
-
-issues = [
-    ("1", "ガバナンス・制約", ORANGE,
-     ["外部Web参照・M365外連携・機密情報は原則NG。依存する案は再設計が必要　… T3・T4",
-      "開発環境→本番環境への移行は、社内の申請/決裁フローを要確認　… T11"],
-     "事務局：可否判断を早期に。抵触時は案が頓挫するため最優先で確認。"),
-    ("2", "構築の進め方", NAVY,
-     ["開発の基本フォーマット・手順、8〜9月スケジュールの提示　… T1・T5",
-      "設計相談の型／プロンプト見本の提供　… T1・T2",
-      "Copilotの回答は鵜呑みにせず、根拠提示・実検証で精度確認　… T10"],
-     "事務局：進め方の型・スケジュール・プロンプト見本を配布。"),
-    ("3", "展開・運用（10月以降）", TEAL,
-     ["8月デモは「一本通し」でスコープを絞る／効果の見極め　… T4・T5",
-      "手順書・利用ルールの整備（項目出し・全量把握）と更新に伴う運用保守　… T5・T11",
-      "メンター定例（週次/隔週）の進め方を案内　… T2・T10"],
-     "事務局：展開・運用の枠組みとメンター定例を案内。"),
-]
-cy0 = Inches(1.8); card_h = Inches(1.63); cgap = Inches(0.17)
-for k, (num, title, col, bullets, action) in enumerate(issues):
-    y = cy0 + (card_h + cgap) * k
-    add_rect(s, Inches(0.55), y, Inches(12.25), card_h, LIGHT)
-    add_rect(s, Inches(0.55), y, Inches(3.15), card_h, col)
-    add_text(s, Inches(0.7), y, Inches(0.85), card_h, num, size=32, color=WHITE,
-             bold=True, anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.CENTER)
-    add_text(s, Inches(1.55), y, Inches(2.05), card_h, title, size=13.5, color=WHITE,
-             bold=True, anchor=MSO_ANCHOR.MIDDLE, ls=1.05)
-    bx = Inches(3.95); by = y + Inches(0.13)
-    for b in bullets:
-        add_rect(s, bx, by + Inches(0.05), Inches(0.1), Inches(0.1), col)
-        add_text(s, bx + Inches(0.2), by - Inches(0.04), Inches(8.55), Inches(0.32),
-                 b, size=9.8, color=DARK)
-        by += Inches(0.31)
-    add_text(s, bx, y + card_h - Inches(0.33), Inches(8.6), Inches(0.3),
-             "▶ " + action, size=9.5, color=col, bold=True)
-
-
-# ==================================================================
-# スライド5：全体総括＋スケジュール
-# ==================================================================
-s = prs.slides.add_slide(BLANK)
-header(s, 5, "全体総括", "OVERALL ASSESSMENT")
-footer(s)
-add_rect(s, Inches(0.55), Inches(1.4), Inches(12.25), Inches(0.85), NAVY)
-add_text(s, Inches(0.9), Inches(1.45), Inches(11.6), Inches(0.75),
-         "全チームが企画書提出を経て構築フェーズへ移行。大半は10月発表に向け順調で、要フォローはT4のみ。",
+add_rect(s, Inches(0.55), Inches(1.32), Inches(12.25), Inches(0.82), NAVY)
+add_text(s, Inches(0.9), Inches(1.36), Inches(11.6), Inches(0.74),
+         "全11チームが企画を1案に固め、構築フェーズへ移行。10チームは10月発表に間に合う見込みで、要フォローは1チーム。",
          size=14, color=WHITE, bold=True, anchor=MSO_ANCHOR.MIDDLE)
 
-# 見込み分布タイル（◎/○/△）
-ty = Inches(2.55); th = Inches(1.95)
+ty = Inches(2.4); th = Inches(1.92)
 tiles = [
-    ("◎ 先行", "2チーム", "T5・T7", "構成・効果まで具体化", GREEN, Inches(0.55), Inches(3.0)),
-    ("○ 概ね順調", "8チーム", "T1・2・3・6・8・9・10・11",
-     "壁打ち・スコープ調整で\n発表に間に合う見込み", TEAL, Inches(3.7), Inches(5.35)),
-    ("△ 要フォロー", "1チーム", "T4", "外部参照禁止で再設計中。\n作るものの再定義が最優先",
-     AMBER, Inches(9.25), Inches(3.55)),
+    ("◎ 先行", "2チーム", "チーム5・7", "業務の流れ・効果・構成まで\n具体化済み", GREEN,
+     Inches(0.55), Inches(3.0)),
+    ("○ 概ね順調", "8チーム", "チーム1・2・3・6・8・9・10・11",
+     "不明点はCopilotとの相談で解消でき、\n作業量が多い場合も範囲を絞れば発表可能", TEAL,
+     Inches(3.7), Inches(5.35)),
+    ("△ 要フォロー", "1チーム", "チーム4", "外部Web参照の禁止で再設計中。\n作るものの再定義が最優先", AMBER,
+     Inches(9.25), Inches(3.55)),
 ]
 for label, cnt, teams, note, col, x, w in tiles:
     add_rect(s, x, ty, w, th, LIGHT)
-    add_rect(s, x, ty, w, Inches(0.5), col)
-    add_text(s, x, ty + Inches(0.06), w, Inches(0.4), label, size=13, color=WHITE,
+    add_rect(s, x, ty, w, Inches(0.48), col)
+    add_text(s, x, ty + Inches(0.05), w, Inches(0.38), label, size=12.5, color=WHITE,
              bold=True, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
-    add_text(s, x, ty + Inches(0.62), w, Inches(0.5), cnt, size=21, color=NAVY,
+    add_text(s, x, ty + Inches(0.56), w, Inches(0.55), cnt, size=24, color=NAVY,
              bold=True, align=PP_ALIGN.CENTER)
-    add_text(s, x + Inches(0.2), ty + Inches(1.14), w - Inches(0.4), Inches(0.3),
+    add_text(s, x + Inches(0.15), ty + Inches(1.12), w - Inches(0.3), Inches(0.28),
              teams, size=10, color=DARK, bold=True, align=PP_ALIGN.CENTER)
-    add_text(s, x + Inches(0.2), ty + Inches(1.44), w - Inches(0.4), Inches(0.45),
-             note, size=9, color=MUTE, align=PP_ALIGN.CENTER, ls=1.05)
+    add_text(s, x + Inches(0.15), ty + Inches(1.42), w - Inches(0.3), Inches(0.45),
+             note, size=8.8, color=MUTE, align=PP_ALIGN.CENTER, ls=1.08)
 
-# 事務局の重点（1行）
-add_text(s, Inches(0.55), Inches(4.72), Inches(12.25), Inches(0.5),
-         "事務局の重点 ▶ ①ガバナンス判断の早期化　②進め方の型・スケジュール提示　③8月は「一本通し」デモに集中",
-         size=11.5, color=NAVY, bold=True, anchor=MSO_ANCHOR.MIDDLE)
+add_rect(s, Inches(0.55), Inches(4.55), Inches(12.25), Inches(0.5), LIGHT)
+add_text(s, Inches(0.75), Inches(4.57), Inches(11.9), Inches(0.46),
+         "事務局への依頼（重点3点） ▶ ① 使えるデータ・環境の可否判断を早期に　"
+         "② 進め方の型とスケジュールの提示　③ 8月は「一本通す」デモに集中する方針の共有",
+         size=11, color=NAVY, bold=True, anchor=MSO_ANCHOR.MIDDLE)
 
-# 下部：スケジュール
-add_text(s, Inches(0.55), Inches(5.62), Inches(6.0), Inches(0.3),
-         "全体スケジュール", size=12, color=NAVY, bold=True)
-steps = [("7/9〜13", "事前相談会①", TEAL), ("〜7/17", "企画書提出", NAVY),
-         ("7/22〜24", "事前相談会②（今回）", ORANGE), ("8月", "構築・デモ化", NAVY),
-         ("9月", "発表準備・運用整理", NAVY), ("10月", "最終発表", NAVY_DARK)]
-tly = Inches(5.95); tlh = Inches(0.58); stw = Inches(2.18); stdx = Inches(2.03)
+add_text(s, Inches(0.55), Inches(5.32), Inches(6.0), Inches(0.3),
+         "全体スケジュール", size=11.5, color=NAVY, bold=True)
+steps = [("7/9〜13", "事前相談会①", TEAL), ("〜7/17", "企画書 提出", NAVY),
+         ("7/22〜24", "事前相談会②（今回）", ORANGE), ("8月", "構築・デモ作成", NAVY),
+         ("9月", "発表準備・運用整理", NAVY), ("10月初旬", "最終発表", NAVY_DARK)]
+tly = Inches(5.68); tlh = Inches(0.56); stw = Inches(2.18); stdx = Inches(2.03)
 for idx, (d, lb, col) in enumerate(steps):
     x = Inches(0.55) + stdx * idx
     sp = s.shapes.add_shape(MSO_SHAPE.CHEVRON, x, tly, stw, tlh)
@@ -561,87 +458,255 @@ for idx, (d, lb, col) in enumerate(steps):
     tf.margin_left = Pt(10); tf.margin_right = Pt(6)
     tf.margin_top = Pt(1); tf.margin_bottom = Pt(1)
     p = tf.paragraphs[0]; p.alignment = PP_ALIGN.CENTER
-    r = p.add_run(); r.text = d; r.font.size = Pt(10.5); r.font.bold = True
+    r = p.add_run(); r.text = d; r.font.size = Pt(10); r.font.bold = True
     r.font.name = FONT; r.font.color.rgb = WHITE
     p2 = tf.add_paragraph(); p2.alignment = PP_ALIGN.CENTER
-    r2 = p2.add_run(); r2.text = lb; r2.font.size = Pt(8); r2.font.name = FONT
+    r2 = p2.add_run(); r2.text = lb; r2.font.size = Pt(7.5); r2.font.name = FONT
     r2.font.color.rgb = WHITE
 
 
 # ==================================================================
-# スライド6〜16：各チーム詳細
+# スライド4：各チームの状況一覧
+# ==================================================================
+s = prs.slides.add_slide(BLANK)
+header(s, 4, "各チームの状況一覧", "PROGRESS SUMMARY ｜ 全11チーム")
+footer(s)
+add_text(s, Inches(0.55), Inches(1.26), Inches(12.3), Inches(0.3),
+         "全11チームが1案に確定。進捗の段階・難易度・10月発表の見込みをあわせて一覧化。",
+         size=11.5, color=DARK)
+add_text(s, Inches(0.55), Inches(1.60), Inches(12.3), Inches(0.55),
+         "進捗の段階 ▶ ①案の絞り込み中　②2案から選定中　③1案確定（内容の詰めは途上）　④設計まで具体化　⑤効果試算まで完了"
+         "　／　第2回 実施済み＝チーム1・2・3・4・5・10・11\n"
+         "10月発表の見込み（基準＝発表に向けた道筋の明確さ）▶ ◎ 道筋が明確で自走できる　"
+         "○ Copilotとの相談や範囲の絞り込みで間に合う　△ 要フォロー（作るものが未確定・再設計中）",
+         size=8.6, color=MUTE, ls=1.15)
+
+tx = Inches(0.55); ty0 = Inches(2.2); rowh = Inches(0.398); hh = Inches(0.36)
+t = s.shapes.add_table(12, 6, tx, ty0, Inches(12.25), Inches(4.9)).table
+cw = [Inches(0.82), Inches(2.28), Inches(2.75), Inches(3.85), Inches(0.85), Inches(1.7)]
+for i, w in enumerate(cw):
+    t.columns[i].width = w
+for c, htx in enumerate(["チーム", "進捗の段階", "取り組み内容",
+                         "第2回の主な論点・相談", "難易度", "10月発表 見込み"]):
+    cell(t.cell(0, c), htx, size=9.5, color=WHITE, bold=True, fill=NAVY, align=PP_ALIGN.CENTER)
+rh(t, 0, hh)
+fc_word = {"◎": "◎ 順調", "○": "○ 概ね順調", "△": "△ 要フォロー"}
+for i, (no, lv, name, diff, topic, done) in enumerate(overview, start=1):
+    rf = WHITE if i % 2 else LIGHT
+    cell(t.cell(i, 0), f"チーム{no}", size=9.5, color=NAVY, bold=True, fill=rf, align=PP_ALIGN.CENTER)
+    cell(t.cell(i, 1), "", fill=rf)
+    cell(t.cell(i, 2), name, size=8.8, color=DARK, bold=True, fill=rf)
+    cell(t.cell(i, 3), topic, size=8.5, color=(MUTE if not done else DARK), fill=rf)
+    cell(t.cell(i, 4), diff, size=9.5, color=diff_color(diff), bold=True, fill=rf, align=PP_ALIGN.CENTER)
+    fc = forecast[no]
+    cell(t.cell(i, 5), fc_word[fc], size=9, color=fc_color(fc), bold=True, fill=rf, align=PP_ALIGN.CENTER)
+    rh(t, i, rowh)
+# 進捗の段階（矢印＋名称）を重ねる
+cx0 = tx + cw[0] + Inches(0.1)
+for i, (no, lv, *_r) in enumerate(overview, start=1):
+    yc = ty0 + hh + rowh * (i - 1) + rowh / 2
+    chevrons(s, cx0, yc, lv, on=tier(lv))
+    add_text(s, cx0 + Inches(0.235) * 5 + Inches(0.04), yc - Inches(0.115),
+             Inches(1.0), Inches(0.24), f"{STAGE_NO[lv]} {STAGE_SHORT[lv]}", size=7,
+             color=tier(lv), bold=True, anchor=MSO_ANCHOR.MIDDLE)
+
+
+# ==================================================================
+# スライド5：使用アプリ（想定）・難易度・ボリュームの比較
+# ==================================================================
+s = prs.slides.add_slide(BLANK)
+header(s, 5, "使用アプリ（想定）・難易度・ボリュームの比較",
+       "APPS ・ DIFFICULTY ・ VOLUME ｜ メンター検討の材料")
+footer(s)
+add_text(s, Inches(0.55), Inches(1.20), Inches(12.3), Inches(0.5),
+         "各チームの取り組みから想定される使用アプリ（企画書と相談会の内容にもとづく予想）を列で示し、難易度・ボリューム・主な制約を併記。"
+         "全チームがCopilot Studioを使用する。",
+         size=9.5, color=DARK, ls=1.1)
+
+tx = Inches(0.55); ty0 = Inches(1.74); rowh = Inches(0.375); hh = Inches(0.5)
+ncol = 3 + len(APP_COLS) + 2
+t = s.shapes.add_table(12, ncol, tx, ty0, Inches(12.25), Inches(4.6)).table
+cw = ([Inches(0.72), Inches(2.05), Inches(0.6)] + [Inches(0.6)] * len(APP_COLS)
+      + [Inches(0.68), Inches(2.2)])
+for i, w in enumerate(cw):
+    t.columns[i].width = w
+cell(t.cell(0, 0), "チーム", size=8, color=WHITE, bold=True, fill=NAVY, align=PP_ALIGN.CENTER)
+cell(t.cell(0, 1), "取り組み内容", size=8, color=WHITE, bold=True, fill=NAVY, align=PP_ALIGN.CENTER)
+cell(t.cell(0, 2), "難易\n度", size=7.5, color=WHITE, bold=True, fill=NAVY, align=PP_ALIGN.CENTER)
+for j, (key, label, col, tc) in enumerate(APP_COLS):
+    cell(t.cell(0, 3 + j), label, size=6.5, color=tc, bold=True, fill=col, align=PP_ALIGN.CENTER)
+cell(t.cell(0, ncol - 2), "ボリ\nューム", size=7, color=WHITE, bold=True, fill=NAVY, align=PP_ALIGN.CENTER)
+cell(t.cell(0, ncol - 1), "主な制約・留意点", size=8, color=WHITE, bold=True, fill=NAVY, align=PP_ALIGN.CENTER)
+rh(t, 0, hh)
+for i, (no, lv, name, diff, topic, done) in enumerate(overview, start=1):
+    rf = WHITE if i % 2 else LIGHT
+    cell(t.cell(i, 0), f"チーム{no}", size=8.5, color=NAVY, bold=True, fill=rf, align=PP_ALIGN.CENTER)
+    cell(t.cell(i, 1), detail[no]["title"], size=7.8, color=DARK, bold=True, fill=rf)
+    cell(t.cell(i, 2), diff, size=8.5, color=diff_color(diff), bold=True, fill=rf, align=PP_ALIGN.CENTER)
+    used = app_use[no]
+    for j, (key, label, col, tc) in enumerate(APP_COLS):
+        if key in used:
+            cell(t.cell(i, 3 + j), "●", size=8.5, color=tc, bold=True, fill=col, align=PP_ALIGN.CENTER)
+        else:
+            cell(t.cell(i, 3 + j), "", size=8, fill=rf)
+    vv = volume[no]
+    cell(t.cell(i, ncol - 2), vv, size=8.5, color=vol_color(vv), bold=True, fill=rf, align=PP_ALIGN.CENTER)
+    cell(t.cell(i, ncol - 1), constraint[no], size=7.5, color=DARK, fill=rf)
+    rh(t, i, rowh)
+
+sy = ty0 + hh + rowh * 11 + Inches(0.06)
+add_rect(s, tx, sy, Inches(12.25), Inches(0.58), LIGHT)
+add_text(s, tx + Inches(0.22), sy + Inches(0.02), Inches(11.85), Inches(0.56),
+         "● ＝ 想定される使用アプリ（列見出しの色が各アプリ）。難易度：中＝M365標準で実現しやすい／中〜高＝連携・運用の検証項目が多い／高＝外部連携や制約が大きく再設計や判断を伴う。\n"
+         "ボリューム ＝ 企画着手から実業務で使い始める（リリース）までに必要な総作業量。開発するもの＋読み込む資料の整備＋連携・権限・本番移行・運用展開を含む（10月のデモまでではない）。※暫定評価",
+         size=8.2, color=DARK, ls=1.14)
+
+
+# ==================================================================
+# スライド6：課題は大きく3点
+# ==================================================================
+s = prs.slides.add_slide(BLANK)
+header(s, 6, "第2回で挙がった課題は、大きく3点", "ISSUES ｜ 事務局への依頼事項")
+footer(s)
+add_text(s, Inches(0.55), Inches(1.26), Inches(12.3), Inches(0.35),
+         "第2回（チーム1・2・3・4・5・10・11）で実際に挙がった論点を集約すると、次の3点に整理できる。",
+         size=12, color=DARK)
+
+issues = [
+    ("1", "使えるデータ・環境", "ガバナンス・制約", ORANGE,
+     ["外部Webの参照・M365外システム連携・機密情報は原則不可。依存する案は再設計が必要　… チーム3・4",
+      "開発環境から本番環境への移行は、社内の申請・決裁フローを要確認　… チーム11"],
+     "事務局へ：可否の判断を早期に。抵触すると案そのものが頓挫するため最優先で確認したい。"),
+    ("2", "進め方の型", "構築フェーズの支援", NAVY,
+     ["開発手順の型（基本フォーマット）と8〜9月のスケジュール提示　… チーム1・5",
+      "設計相談の進め方と、指示文（プロンプト）の見本　… チーム1・2",
+      "Copilotの回答は鵜呑みにせず、根拠の提示と実機確認で精度を担保　… チーム10"],
+     "事務局へ：進め方の型・スケジュール・指示文の見本を配布いただきたい。"),
+    ("3", "10月以降の展開", "運用・定着", TEAL,
+     ["8月のデモは範囲を絞り「入力→処理→出力」を一本通す／効果の見極め　… チーム4・5",
+      "手順書・利用ルールの整備（項目の洗い出しと全体量の把握）と更新に伴う運用保守　… チーム5・11",
+      "8月以降の定例（週次／隔週）の進め方の案内　… チーム2・10"],
+     "事務局へ：展開・運用の枠組みと定例の進め方を案内いただきたい。"),
+]
+cy0 = Inches(1.78); card_h = Inches(1.55); cgap = Inches(0.16)
+for k, (num, title, sub, col, bullets, action) in enumerate(issues):
+    y = cy0 + (card_h + cgap) * k
+    add_rect(s, Inches(0.55), y, Inches(12.25), card_h, LIGHT)
+    add_rect(s, Inches(0.55), y, Inches(3.3), card_h, col)
+    add_text(s, Inches(0.68), y, Inches(0.8), card_h, num, size=30, color=WHITE,
+             bold=True, anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.CENTER)
+    add_text(s, Inches(1.5), y + Inches(0.28), Inches(2.2), Inches(0.45),
+             title, size=13.5, color=WHITE, bold=True, ls=1.05)
+    add_text(s, Inches(1.5), y + Inches(0.78), Inches(2.2), Inches(0.3),
+             sub, size=9.5, color=PALE)
+    bx = Inches(4.1); by = y + Inches(0.12)
+    for b in bullets:
+        add_rect(s, bx, by + Inches(0.055), Inches(0.09), Inches(0.09), col)
+        add_text(s, bx + Inches(0.19), by - Inches(0.045), Inches(8.4), Inches(0.3),
+                 b, size=9.6, color=DARK)
+        by += Inches(0.3)
+    add_text(s, bx, y + card_h - Inches(0.34), Inches(8.5), Inches(0.3),
+             "▶ " + action, size=9.4, color=col, bold=True)
+
+
+# ==================================================================
+# スライド7：セクション区切り
+# ==================================================================
+s = prs.slides.add_slide(BLANK)
+add_rect(s, 0, 0, SW, SH, NAVY_DARK)
+add_rect(s, Inches(1.0), Inches(3.02), Inches(1.5), Inches(0.06), TEAL)
+add_text(s, Inches(1.0), Inches(2.5), Inches(11.0), Inches(0.4),
+         "TEAM DETAIL", size=12, color=TEAL, bold=True)
+add_text(s, Inches(0.96), Inches(3.3), Inches(11.4), Inches(0.85),
+         "各チームの個別状況", size=32, color=WHITE, bold=True)
+add_text(s, Inches(1.0), Inches(4.3), Inches(11.0), Inches(0.4),
+         "チーム1〜11／1チーム1枚：取り組み内容・使用アプリ・論点・相談内容と助言・次アクション",
+         size=13, color=PALE)
+cx = Inches(1.0)
+for no in range(1, 12):
+    pill(s, cx, Inches(5.25), Inches(0.92), Inches(0.44), f"チーム{no}",
+         NAVY, tcolor=WHITE, size=10)
+    cx += Inches(1.02)
+add_text(s, Inches(11.9), Inches(6.45), Inches(1.15), Inches(0.35),
+         f"7 / {TOTAL}", size=11, color=PALE, bold=True, align=PP_ALIGN.RIGHT)
+
+
+# ==================================================================
+# スライド8〜18：各チーム個票
 # ==================================================================
 def detail_slide(no, idx):
     d = detail[no]
     ov = overview[no - 1]
-    lv = ov[1]
+    lv, diff, done = ov[1], ov[3], ov[5]
     s = prs.slides.add_slide(BLANK)
-    header(s, idx, f"チーム{no}：{d['title']}", f"TEAM {no} DETAIL ｜ 状況整理")
+    header(s, idx, f"チーム{no}：{d['title']}", f"TEAM {no} ｜ 個別状況")
     footer(s)
+
     # ステータス帯
-    sy = Inches(1.35)
-    pill(s, Inches(0.55), sy, Inches(1.35), Inches(0.42), "1案 絞込済", GREEN)
-    add_text(s, Inches(2.05), sy - Inches(0.02), Inches(0.9), Inches(0.45),
-             "進捗", size=10, color=MUTE, bold=True, anchor=MSO_ANCHOR.MIDDLE)
-    chevrons(s, Inches(2.62), sy + Inches(0.21), lv, w=Inches(0.30),
-             h=Inches(0.18), step=Inches(0.27), on=tier(lv))
-    add_text(s, Inches(2.62) + Inches(0.27) * 5 + Inches(0.05), sy - Inches(0.02),
-             Inches(0.7), Inches(0.45), f"Lv{lv}", size=11, color=tier(lv),
-             bold=True, anchor=MSO_ANCHOR.MIDDLE)
-    pill(s, Inches(4.5), sy, Inches(1.7), Inches(0.42),
-         f"難易度：{d['diff']}", diff_color(d['diff']))
+    sy = Inches(1.3)
+    add_rect(s, Inches(0.55), sy, Inches(12.25), Inches(0.52), LIGHT)
+    add_text(s, Inches(0.72), sy, Inches(1.2), Inches(0.52),
+             "エージェント名", size=8, color=MUTE, bold=True, anchor=MSO_ANCHOR.MIDDLE)
+    add_text(s, Inches(1.95), sy, Inches(2.7), Inches(0.52),
+             d["agent"], size=9.5, color=NAVY, bold=True, anchor=MSO_ANCHOR.MIDDLE)
+    add_text(s, Inches(4.75), sy, Inches(0.55), Inches(0.52),
+             "進捗", size=8, color=MUTE, bold=True, anchor=MSO_ANCHOR.MIDDLE)
+    chevrons(s, Inches(5.4), sy + Inches(0.26), lv, on=tier(lv))
+    add_text(s, Inches(6.65), sy, Inches(1.4), Inches(0.52),
+             f"{STAGE_NO[lv]} {STAGE[lv]}", size=9, color=tier(lv), bold=True, anchor=MSO_ANCHOR.MIDDLE)
+    pill(s, Inches(8.1), sy + Inches(0.06), Inches(1.35), Inches(0.4),
+         f"難易度 {diff}", diff_color(diff), size=9)
     fc = forecast[no]
-    pill(s, Inches(6.35), sy, Inches(2.4), Inches(0.42),
-         f"10月見込み：{fc}", fc_color(fc))
-    done = ov[6]
-    pill(s, Inches(8.9), sy, Inches(3.5), Inches(0.42),
-         ("第2回：実施済" if done else "第2回：未実施（第1回＋企画書）"),
-         (NAVY if done else MUTE))
+    pill(s, Inches(9.55), sy + Inches(0.06), Inches(1.45), Inches(0.4),
+         f"10月見込み {fc}", fc_color(fc), size=9)
+    pill(s, Inches(11.1), sy + Inches(0.06), Inches(1.6), Inches(0.4),
+         ("第2回 実施済" if done else "第2回 未実施"), (NAVY if done else MUTE), size=9)
 
-    # 見込みの根拠＋ボリューム
-    add_text(s, Inches(0.55), Inches(1.85), Inches(12.25), Inches(0.2),
-             f"▶ 10月見込み（{fc}）の根拠：{fc_reason[no]}　｜　ボリューム（〜実業務利用）：{volume[no]}",
-             size=8.5, color=DARK, anchor=MSO_ANCHOR.MIDDLE)
+    # 見込みの根拠
+    add_text(s, Inches(0.55), Inches(1.93), Inches(12.25), Inches(0.22),
+             f"10月発表の見込み（{fc}）の根拠：{fc_reason[no]}"
+             f"　｜　ボリューム（実業務で使い始めるまで）：{volume[no]}",
+             size=8.6, color=DARK, anchor=MSO_ANCHOR.MIDDLE)
 
-    # 3カード
-    r1y = Inches(2.16); r1h = Inches(1.58); cwd = Inches(3.93); gap = Inches(0.23)
+    # 上段3カード
+    r1y = Inches(2.24); r1h = Inches(1.56); cwd = Inches(3.93); gap = Inches(0.23)
     cols = [Inches(0.55), Inches(0.55) + cwd + gap, Inches(0.55) + (cwd + gap) * 2]
-    cards1 = [("取り組み内容", d['work'], NAVY),
-              ("使用アプリ・データ", d['apps'], TEAL),
-              ("リスク・論点", d['risk'], ORANGE)]
+    cards1 = [("取り組み内容", d["work"], NAVY),
+              ("使用アプリ・データ（想定）", d["apps"], TEAL),
+              ("リスク・論点", d["risk"], ORANGE)]
     for (title, body, col), cx in zip(cards1, cols):
         add_rect(s, cx, r1y, cwd, r1h, LIGHT)
-        add_rect(s, cx, r1y, cwd, Inches(0.4), col)
-        add_text(s, cx + Inches(0.18), r1y + Inches(0.05), cwd - Inches(0.36), Inches(0.3),
-                 title, size=11, color=WHITE, bold=True, anchor=MSO_ANCHOR.MIDDLE)
-        add_text(s, cx + Inches(0.18), r1y + Inches(0.5), cwd - Inches(0.36), r1h - Inches(0.6),
-                 body, size=10, color=DARK, ls=1.12)
+        add_rect(s, cx, r1y, cwd, Inches(0.38), col)
+        add_text(s, cx + Inches(0.16), r1y + Inches(0.04), cwd - Inches(0.32), Inches(0.3),
+                 title, size=10.5, color=WHITE, bold=True, anchor=MSO_ANCHOR.MIDDLE)
+        add_text(s, cx + Inches(0.16), r1y + Inches(0.46), cwd - Inches(0.32), r1h - Inches(0.56),
+                 body, size=9.6, color=DARK, ls=1.14)
 
-    # 2カード（質問／回答）
-    r2y = Inches(3.9); r2h = Inches(1.5); cwd2 = Inches(6.02)
-    cards2 = [("主な質問・相談", d['q'], NAVY),
-              ("回答・助言", d['a'], TEAL)]
+    # 中段2カード（相談・助言の記録）
+    r2y = Inches(3.98); r2h = Inches(1.5); cwd2 = Inches(6.02)
+    cards2 = [("相談された内容", d["q"], NAVY), ("助言した内容", d["a"], TEAL)]
     cols2 = [Inches(0.55), Inches(0.55) + cwd2 + Inches(0.2)]
     for (title, body, col), cx in zip(cards2, cols2):
         add_rect(s, cx, r2y, cwd2, r2h, LIGHT)
-        add_rect(s, cx, r2y, cwd2, Inches(0.4), col)
-        add_text(s, cx + Inches(0.18), r2y + Inches(0.05), cwd2 - Inches(0.36), Inches(0.3),
-                 title, size=11, color=WHITE, bold=True, anchor=MSO_ANCHOR.MIDDLE)
-        add_text(s, cx + Inches(0.18), r2y + Inches(0.48), cwd2 - Inches(0.36), r2h - Inches(0.58),
-                 body, size=9.8, color=DARK, ls=1.1)
+        add_rect(s, cx, r2y, cwd2, Inches(0.38), col)
+        add_text(s, cx + Inches(0.16), r2y + Inches(0.04), cwd2 - Inches(0.32), Inches(0.3),
+                 title, size=10.5, color=WHITE, bold=True, anchor=MSO_ANCHOR.MIDDLE)
+        add_text(s, cx + Inches(0.16), r2y + Inches(0.44), cwd2 - Inches(0.32), r2h - Inches(0.54),
+                 body, size=9.4, color=DARK, ls=1.14)
 
-    # ネクストアクション
-    ny = Inches(5.58); nh = Inches(0.95)
+    # 次アクション
+    ny = Inches(5.66); nh = Inches(0.9)
     add_rect(s, Inches(0.55), ny, Inches(12.25), nh, RGBColor(0xE8, 0xEE, 0xF4))
-    add_rect(s, Inches(0.55), ny, Inches(0.13), nh, NAVY)
-    add_text(s, Inches(0.8), ny + Inches(0.08), Inches(11.8), Inches(0.3),
-             "ネクストアクション", size=11, color=NAVY, bold=True)
-    add_text(s, Inches(0.8), ny + Inches(0.4), Inches(11.8), Inches(0.5),
-             d['nxt'], size=10.5, color=DARK, ls=1.08)
+    add_text(s, Inches(0.78), ny + Inches(0.08), Inches(11.9), Inches(0.28),
+             "次アクション", size=10.5, color=NAVY, bold=True)
+    add_text(s, Inches(0.78), ny + Inches(0.38), Inches(11.9), Inches(0.45),
+             d["nxt"], size=10.2, color=DARK, ls=1.1)
 
 
 for k, no in enumerate(range(1, 12)):
-    detail_slide(no, 6 + k)
+    detail_slide(no, 8 + k)
 
-prs.save("/home/user/awc-naka881-repo/reports/CopilotStudio_ハッカソン_事前相談会②_状況報告_20260724.pptx")
+OUT = ("/home/user/awc-naka881-repo/reports/"
+       "CopilotStudio_ハッカソン_事前相談会②_状況報告_20260724.pptx")
+prs.save(OUT)
 print("saved OK / slides:", len(prs.slides._sldIdLst))
