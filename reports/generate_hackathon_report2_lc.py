@@ -74,23 +74,29 @@ TOTAL = 18
 # 基本ヘルパー
 # ==================================================================
 def copy_shape(shape, src_slide, dst_slide):
-    """テンプレート内の図形（画像・SVGを含む）を複製して dst_slide に追加する。
-    画像リレーションは複製先スライドに張り替える。"""
+    """テンプレート内の図形を複製して dst_slide に追加する。
+    部分木に含まれるすべてのリレーション参照（画像・SVG・imgLayer 等）を
+    複製先スライドに張り替える。張り替えできない参照は属性を削除して
+    壊れた参照を残さない。"""
     el = copy.deepcopy(shape._element)
-    for tag in (A_NS + "blip", SVG_NS + "svgBlip"):
-        for blip in el.iter(tag):
-            rid = blip.get(R_NS + "embed") or blip.get(R_NS + "link")
-            if not rid:
+    for node in el.iter():
+        for attr in list(node.attrib):
+            if not attr.startswith(R_NS):
+                continue
+            rid = node.get(attr)
+            if not rid or not str(rid).startswith("rId"):
                 continue
             try:
-                part = src_slide.part.related_part(rid)
+                rel = src_slide.part.rels[rid]
             except KeyError:
+                del node.attrib[attr]
                 continue
-            new_rid = dst_slide.part.relate_to(part, RT.IMAGE)
-            if blip.get(R_NS + "embed"):
-                blip.set(R_NS + "embed", new_rid)
+            if rel.is_external:
+                new_rid = dst_slide.part.relate_to(
+                    rel.target_ref, rel.reltype, is_external=True)
             else:
-                blip.set(R_NS + "link", new_rid)
+                new_rid = dst_slide.part.relate_to(rel.target_part, rel.reltype)
+            node.set(attr, new_rid)
     dst_slide.shapes._spTree.append(el)
     return dst_slide.shapes[-1]
 
@@ -128,14 +134,47 @@ def parts(slide_no):
     return SRC[slide_no - 1]
 
 
-def pick(slide_no, shape_id=None, name=None):
-    """テンプレートのスライドから shape_id または name で図形を取得"""
-    for sh in parts(slide_no).shapes:
-        if shape_id is not None and sh.shape_id == shape_id:
-            return sh
-        if name is not None and sh.name == name:
+def _walk(shapes):
+    for sh in shapes:
+        yield sh
+        if sh.shape_type is not None and "GROUP" in str(sh.shape_type):
+            for c in _walk(sh.shapes):
+                yield c
+
+
+def pick(slide_no, shape_id):
+    """テンプレートのスライドから shape_id で図形を取得（グループ内も探索）"""
+    for sh in _walk(parts(slide_no).shapes):
+        if sh.shape_id == shape_id:
             return sh
     return None
+
+
+# テンプレートのパーツ（アイコン・ロゴ）の所在。色・内容を検証済みのものだけを使う
+ICONS = {
+    "CS": (44, 30),    # Copilot Studio（公式アイコン）
+    "PA": (23, 13),    # Power Automate
+    "SP": (44, 36),    # SharePoint
+    "Tm": (44, 33),    # Teams
+    "OL": (44, 31),    # Outlook
+    "Xl": (44, 178),   # Excel
+    "WP": (44, 179),   # PowerPoint
+    "BI": (25, 7),     # 円グラフ（Power BI の代替・#393939）
+    "hourglass": (44, 13),   # 砂時計（#1B5C80）
+    "check": (67, 26),       # バッジ:チェックマーク（#1B5C80）
+    "logo": (53, 4),         # 株式会社Low Code ロゴ
+}
+
+
+def icon(dst_slide, key, x, y, size):
+    """テンプレートのアイコンを複製して配置（縦横比を保って size に収める）"""
+    if key not in ICONS:
+        return None
+    sn, sid = ICONS[key]
+    sh = pick(sn, sid)
+    if sh is None:
+        return None
+    return place(sh, parts(sn), dst_slide, x, y, size, size)
 
 
 def add(layout_idx):
@@ -474,8 +513,12 @@ set_ph(s, 12, "全11チームの進捗状況・使用アプリ・難易度\n10�
        size=SZ_LEAD, ls=1.3)
 set_ph(s, 2, "2026.07.24", size=SZ_LEAD)
 drop_ph(s, 10)
-txt(s, Inches(1.26), Inches(5.42), Inches(6.0), Inches(0.38),
-    "株式会社Low Code", size=SZ_LEAD, color=DK2, bold=True)
+txt(s, Inches(1.26), Inches(5.42), Inches(6.0), Inches(0.34),
+    "株式会社Low Code", size=SZ_BODY, color=DK2, bold=True)
+# テンプレートの会社ロゴを流用
+lg = pick(53, 4)
+if lg is not None:
+    place(lg, parts(53), s, Inches(1.26), Inches(5.85), Inches(2.7), Inches(0.62))
 
 # ==================================================================
 # 2. 目次（1_目次）
@@ -546,8 +589,9 @@ txt(s, CX + Inches(0.24), Inches(5.02), CW - Inches(0.48), Inches(0.56),
     "技術・運用・ガバナンス面の助言を行う方針で実施。",
     size=SZ_BODY, color=DK1, anchor=MSO_ANCHOR.MIDDLE)
 
-txt(s, CX, Inches(5.74), CW, Inches(0.3), "全体スケジュール", size=SZ_LEAD,
-    color=DK2, bold=True)
+icon(s, "hourglass", CX, Inches(5.74), Inches(0.26))
+txt(s, CX + Inches(0.34), Inches(5.72), CW - Inches(0.34), Inches(0.3),
+    "全体スケジュール", size=SZ_LEAD, color=DK2, bold=True)
 steps = [("7/9〜13", "事前相談会①", AC4), ("〜7/17", "企画書 提出", AC4),
          ("7/22〜24", "事前相談会②（今回）", AC1), ("8月", "構築・デモ作成", AC3),
          ("9月", "発表準備・運用整理", AC3), ("10月初旬", "最終発表", DK2)]
@@ -597,8 +641,9 @@ for label, cnt, teams, note, bg, x, w in tiles:
     txt(s, x + Inches(0.14), ty + Inches(1.46), w - Inches(0.28), Inches(0.5),
         note, size=SZ_FINE, color=DK1, align=PP_ALIGN.CENTER, ls=1.14)
 
-txt(s, CX, Inches(4.55), CW, Inches(0.3), "事務局への依頼事項（重点3点）",
-    size=SZ_LEAD, color=DK2, bold=True)
+icon(s, "check", CX, Inches(4.55), Inches(0.26))
+txt(s, CX + Inches(0.34), Inches(4.53), CW - Inches(0.34), Inches(0.3),
+    "事務局への依頼事項（重点3点）", size=SZ_LEAD, color=DK2, bold=True)
 asks = [("01", "使えるデータ・環境の可否判断を早期に",
          "外部Web参照・M365外連携・機密情報の可否。抵触時は案が頓挫するため最優先。"),
         ("02", "進め方の型とスケジュールの提示",
@@ -664,7 +709,7 @@ for i, (no, lv, *_r) in enumerate(overview, start=1):
 # ==================================================================
 s = content_slide(6, "使用アプリ（想定）・難易度・ボリュームの比較",
                   "メンター検討の材料／企画書と相談会の内容にもとづく想定")
-ty0, rowh, hh = Inches(1.46), Inches(0.39), Inches(0.52)
+ty0, rowh, hh = Inches(1.42), Inches(0.375), Inches(0.70)
 APP_SHOW = [c for c in APP_COLS if c[0] != "CS"]   # CSは全チーム共通のため注記に記載
 ncol = 3 + len(APP_SHOW) + 1
 widths = ([Inches(0.9), Inches(0.86), Inches(0.86)]
@@ -677,10 +722,15 @@ cell(t.cell(0, 1), "難易度", size=SZ_TBLS, color=WHITE, bold=True, fill=DK2,
 cell(t.cell(0, 2), "ボリュ\nーム", size=SZ_NOTE, color=WHITE, bold=True, fill=DK2,
      align=PP_ALIGN.CENTER)
 for j, (key, label) in enumerate(APP_SHOW):
-    cell(t.cell(0, 3 + j), label, size=SZ_FINE, color=WHITE, bold=True, fill=DK2,
-         align=PP_ALIGN.CENTER)
+    cell(t.cell(0, 3 + j), label, size=SZ_FINE, color=DK1, bold=True, fill=AC4,
+         align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.BOTTOM)
 cell(t.cell(0, ncol - 1), "主な制約・留意点", size=SZ_TBLS, color=WHITE, bold=True,
      fill=DK2, align=PP_ALIGN.CENTER)
+# アプリ列の見出しに、テンプレートの公式アイコンを重ねて配置
+ax = CX + Inches(0.9) + Inches(0.86) + Inches(0.86)
+for j, (key, label) in enumerate(APP_SHOW):
+    icon(s, key, ax + Inches(0.82) * j + Inches(0.29), ty0 + Inches(0.05),
+         Inches(0.24))
 for i, (no, lv, name, diff, topic, done) in enumerate(overview, start=1):
     rf = WHITE if i % 2 else LT1
     cell(t.cell(i, 0), f"チーム{no}", size=SZ_TBL, color=DK2, bold=True, fill=rf,
@@ -698,12 +748,11 @@ for i, (no, lv, name, diff, topic, done) in enumerate(overview, start=1):
     cell(t.cell(i, ncol - 1), constraint[no], size=SZ_NOTE, color=DK1, fill=rf)
 sy = ty0 + hh + rowh * 11 + Inches(0.08)
 box(s, CX, sy, CW, Inches(0.62), AC5)
-txt(s, CX + Inches(0.22), sy + Inches(0.02), CW - Inches(0.44), Inches(0.58),
-    "● ＝ 想定される使用アプリ（Copilot Studio は全11チームが使用のため列を省略）　／　"
-    "難易度：中＝M365標準で実現しやすい・"
-    "中〜高＝連携や運用の検証項目が多い・高＝外部連携や制約が大きく再設計や判断を伴う\n"
-    "ボリューム ＝ 企画着手から実業務で使い始める（リリース）までに必要な総作業量。"
-    "開発するもの＋読み込む資料の整備＋連携・権限・本番移行・運用展開を含む　※暫定評価",
+icon(s, "CS", CX + Inches(0.14), sy + Inches(0.08), Inches(0.2))
+txt(s, CX + Inches(0.4), sy + Inches(0.02), CW - Inches(0.54), Inches(0.58),
+    "● ＝ 想定される使用アプリ（Copilot Studio は全11チームが使用のため列を省略）／"
+    "難易度：中＝M365標準で実現しやすい・中〜高＝検証項目が多い・高＝外部連携や制約が大きい\n"
+    "ボリューム ＝ 企画着手から実業務で使い始めるまでの総作業量（開発＋資料整備＋連携・権限・本番移行・運用展開）　※暫定評価",
     size=SZ_NOTE, color=DK1, ls=1.2)
 
 # ==================================================================
@@ -792,8 +841,18 @@ def team_slide(no, page):
         box(s, x, r1y, cwd, Inches(0.4), col)
         txt(s, x + Inches(0.14), r1y, cwd - Inches(0.28), Inches(0.4), ttl,
             size=SZ_FINE, color=ink(col), bold=True, anchor=MSO_ANCHOR.MIDDLE)
-        txt(s, x + Inches(0.14), r1y + Inches(0.48), cwd - Inches(0.28),
-            r1h - Inches(0.58), body, size=SZ_TBLS, color=DK1, ls=1.2)
+        if i == 1:
+            # テンプレートの公式アイコンで使用アプリを図示
+            keys = [k for k in ("CS", "PA", "SP", "Tm", "OL", "Xl", "WP", "BI")
+                    if k in app_use[no]]
+            for j, k in enumerate(keys):
+                icon(s, k, x + Inches(0.16) + Inches(0.32) * j,
+                     r1y + Inches(0.5), Inches(0.26))
+            txt(s, x + Inches(0.14), r1y + Inches(0.84), cwd - Inches(0.28),
+                r1h - Inches(0.94), body, size=SZ_TBLS, color=DK1, ls=1.2)
+        else:
+            txt(s, x + Inches(0.14), r1y + Inches(0.48), cwd - Inches(0.28),
+                r1h - Inches(0.58), body, size=SZ_TBLS, color=DK1, ls=1.2)
 
     # 中段2カード（相談・助言の記録）
     r2y, r2h = Inches(4.12), Inches(1.5)
