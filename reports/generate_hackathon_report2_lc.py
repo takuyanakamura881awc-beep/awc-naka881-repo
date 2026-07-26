@@ -46,16 +46,20 @@ CY = Inches(1.45)          # 本文上端
 PGX, PGY = Inches(12.67), Inches(7.00)
 
 # ---- 文字サイズ（テンプレートの実測値に合わせる）----
-SZ_LEAD  = 14.5   # 本文リード
-SZ_HEAD  = 16.3   # カード見出し
-SZ_BODY  = 12.7   # 本文小
-SZ_FINE  = 10.9   # 注記
-SZ_SUB   = 12.0   # 見出し（サブタイトル）
+# 会議投影を前提に、テンプレートの文字サイズ体系の中で大きめの段階を採用
+SZ_LEAD  = 16.3   # 本文リード
+SZ_HEAD  = 18.1   # カード見出し
+SZ_BODY  = 14.5   # 本文小
+SZ_FINE  = 12.7   # 注記・チップ
+SZ_SUB   = 14.5   # 見出し（サブタイトル）
+SZ_TBL   = 12.0   # 表の標準
+SZ_TBLS  = 11.0   # 表の小（説明列）
+SZ_NOTE  = 10.5   # 凡例（最小）
 
 prs = Presentation(TEMPLATE)
 SW, SH = prs.slide_width, prs.slide_height
 LY_COVER, LY_TOC, LY_SECTION, LY_BODY = 0, 1, 2, 17
-TOTAL = 20
+TOTAL = 18
 
 
 # ==================================================================
@@ -152,6 +156,24 @@ def chip(slide, x, y, w, h, text, fill, tcolor=WHITE, size=SZ_FINE, bold=True):
     r = para.add_run(); r.text = text
     r.font.size = Pt(size); r.font.bold = bold; r.font.color.rgb = tcolor
     return sp
+
+
+def ink(fill):
+    """塗り色に対してコントラストが確保できる文字色を返す
+    （白文字は濃紺 DK2 のみ。薄い色地は本文色 DK1）"""
+    return WHITE if fill == DK2 else DK1
+
+
+def diff_fill(d):
+    return AC4 if d == "中" else AC5 if d == "中〜高" else AC6
+
+
+def fc_fill(m):
+    return AC3 if m == "◎" else AC4 if m == "○" else AC6
+
+
+def vol_fill(v):
+    return AC4 if v == "中" else AC5 if v == "中〜大" else AC6
 
 
 def page_no(slide, n):
@@ -275,11 +297,11 @@ app_use = {
     10: {"CS", "SP", "Tm", "WP"}, 11: {"CS", "SP", "Tm"},
 }
 constraint = {
-    1: "M365内で完結／判定基準の作り込みが要", 2: "FAQ・ガイドの整備が前提",
-    3: "外部Web・営業システム等の取得制約が大", 4: "外部Web禁止のため案の再設計が必要",
-    5: "M365標準のみ／制約は小さい", 6: "共有サーバ参照・資料自動生成の検証が要",
-    7: "外部連携なし（データは人手取得が前提）", 8: "予定表・会議室・メールの権限整備が要",
-    9: "社外秘資料・共有サーバ・メール送信の可否", 10: "文字起こしの取得権限・転記精度の検証",
+    1: "M365内で完結／判定基準の作り込み", 2: "FAQ・ガイドの整備が前提",
+    3: "外部Web・営業システムの取得制約が大", 4: "外部Web禁止のため案の再設計が必要",
+    5: "M365標準のみ／制約は小さい", 6: "共有サーバ参照・資料生成の検証が要",
+    7: "外部連携なし（データは人手取得）", 8: "予定表・会議室・メールの権限整備が要",
+    9: "社外秘資料・共有サーバ・送信可否", 10: "文字起こしの権限・転記精度の検証",
     11: "本番移行・FAQ品質・運用保守が焦点",
 }
 volume = {1: "中", 2: "中", 3: "大", 4: "中〜大", 5: "中", 6: "大",
@@ -379,27 +401,28 @@ detail = {
              nxt="FAQをCopilot Studioが扱いやすい形に整備し、段階展開（第1〜第3フェーズ）の運用項目を洗い出す。"),
 }
 
-
 # ==================================================================
 # 1. 表紙（1_表紙）
 # ==================================================================
 s = add(LY_COVER)
-set_ph(s, 1, "Microsoft 365 Copilot Studio 活用ハッカソン", size=16.3, color=DK2)
-t = set_ph(s, 0, "第2回 事前相談会\nチームごとの状況報告", size=32, bold=True, ls=1.2)
+set_ph(s, 1, "Microsoft 365 Copilot Studio 活用ハッカソン", size=SZ_HEAD, color=DK2)
+t = set_ph(s, 0, "第2回 事前相談会\nチームごとの状況報告", size=34, bold=True, ls=1.2)
 # 位置・サイズは4値すべて明示（一部だけ指定すると 0 が書き込まれ表示が崩れる）
-t.left, t.top, t.width, t.height = Inches(1.26), Inches(2.5), Inches(10.30), Inches(1.55)
-set_ph(s, 12, "全11チームの進捗状況・使用アプリ・難易度\n10月発表に向けた見込みと課題", size=14.5, ls=1.3)
-set_ph(s, 2, "2026.07.24", size=14.5)
+t.left, t.top, t.width, t.height = Inches(1.26), Inches(2.45), Inches(10.30), Inches(1.6)
+set_ph(s, 12, "全11チームの進捗状況・使用アプリ・難易度\n10月発表に向けた見込みと課題",
+       size=SZ_LEAD, ls=1.3)
+set_ph(s, 2, "2026.07.24", size=SZ_LEAD)
 drop_ph(s, 10)
-txt(s, Inches(1.26), Inches(5.42), Inches(6.0), Inches(0.34),
-    "株式会社Low Code", size=14.5, color=DK2, bold=True)
+txt(s, Inches(1.26), Inches(5.42), Inches(6.0), Inches(0.38),
+    "株式会社Low Code", size=SZ_LEAD, color=DK2, bold=True)
 
 # ==================================================================
 # 2. 目次（1_目次）
 # ==================================================================
 s = add(LY_TOC)
 set_ph(s, 0, "本日の内容")
-set_ph(s, 2, "第2回 事前相談会（2026年7月22日〜24日 実施）の状況報告", size=SZ_SUB, color=MUTE)
+set_ph(s, 2, "第2回 事前相談会（2026年7月22日〜24日 実施）の状況報告",
+       size=SZ_SUB, color=MUTE)
 page_no(s, 2)
 toc = [("01", "本日の目的", "第2回の位置づけと、確認・整理する範囲"),
        ("02", "エグゼクティブサマリ", "全体の状況と、事務局への依頼事項（重点3点）"),
@@ -407,259 +430,262 @@ toc = [("01", "本日の目的", "第2回の位置づけと、確認・整理す
        ("04", "使用アプリ・難易度・ボリューム", "メンター検討の材料としての比較"),
        ("05", "第2回で挙がった課題", "大きく3点に整理"),
        ("06", "各チームの状況", "チーム1〜11の個別状況（1チーム1枚）")]
-ty = Inches(1.72)
+ty = Inches(1.68)
 for num, ttl, note in toc:
-    box(s, CX, ty, Inches(0.62), Inches(0.62), AC4)
-    txt(s, CX, ty, Inches(0.62), Inches(0.62), num, size=16.3, color=DK2,
+    box(s, CX, ty, Inches(0.72), Inches(0.72), AC4)
+    txt(s, CX, ty, Inches(0.72), Inches(0.72), num, size=SZ_HEAD, color=DK2,
         bold=True, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
-    txt(s, CX + Inches(0.82), ty + Inches(0.04), Inches(4.6), Inches(0.3),
-        ttl, size=16.3, color=DK1, bold=True)
-    txt(s, CX + Inches(0.82), ty + Inches(0.36), Inches(9.5), Inches(0.24),
+    txt(s, CX + Inches(0.92), ty + Inches(0.02), Inches(5.2), Inches(0.36),
+        ttl, size=SZ_HEAD, color=DK1, bold=True)
+    txt(s, CX + Inches(0.92), ty + Inches(0.42), Inches(9.5), Inches(0.28),
         note, size=SZ_BODY, color=MUTE)
-    ty += Inches(0.82)
+    ty += Inches(0.86)
 
 # ==================================================================
-# 3. 章区切り 01
+# 3. 本日の目的
 # ==================================================================
-s = add(LY_SECTION)
-set_ph(s, 13, "01")
-set_ph(s, 0, "全体の状況と課題")
-
-# ==================================================================
-# 4. 本日の目的
-# ==================================================================
-s = content_slide(4, "本日の目的", "第1回後に提出された企画書を前提に、構築フェーズへ進むための確認を実施")
+s = content_slide(3, "本日の目的",
+                  "第1回後に提出された企画書を前提に、構築フェーズへ進むための確認を実施")
 txt(s, CX, Inches(1.42), CW, Inches(0.62),
     "本資料は、株式会社Low Codeが第2回 事前相談会の結果を取りまとめ、事務局向けに各チームの進捗と"
     "10月発表に向けた課題・依頼事項を報告するものである。",
     size=SZ_LEAD, ls=1.25)
 
-bw = Inches(5.72); bh = Inches(2.35); by = Inches(2.3)
+bw, bh, by = Inches(5.72), Inches(2.62), Inches(2.24)
 for i, (tag, ttl, col, bgc, items) in enumerate([
     ("進行面", "進捗の確認と次アクションの整理", DK2, AC4,
-     [("各チームの進捗状況の確認", "企画の具体化の度合いと、構築に着手できる準備が整っているかを確認。"),
-      ("次アクションの整理", "8月：動くデモ／9月：発表準備／10月：発表 に向けた優先順位を明確化。")]),
+     [("各チームの進捗状況の確認",
+       "企画の具体化の度合いと、構築に着手できる準備が整っているかを確認。"),
+      ("次アクションの整理",
+       "8月：動くデモ／9月：発表準備／10月：発表 に向けた優先順位を明確化。")]),
     ("技術面", "適合性と実現可能性の助言", AC2, AC5,
-     [("使うアプリの適合性", "Copilot Studio・Power Automate・SharePoint・Teams等の使い分けを助言。"),
-      ("実現可能性と制約の早期確認", "外部Web参照、M365外システム連携、資料の保管場所、本番移行などを論点化。")])]):
+     [("使うアプリの適合性",
+       "Copilot Studio・Power Automate・SharePoint・Teams等の使い分けを助言。"),
+      ("実現可能性と制約の早期確認",
+       "外部Web参照、M365外システム連携、資料の保管場所、本番移行などを論点化。")])]):
     x = CX + (bw + Inches(0.28)) * i
     box(s, x, by, bw, bh, bgc)
-    box(s, x, by, bw, Inches(0.46), col)
-    txt(s, x + Inches(0.22), by, Inches(1.2), Inches(0.46), tag, size=SZ_FINE,
-        color=WHITE, bold=True, anchor=MSO_ANCHOR.MIDDLE)
-    txt(s, x + Inches(1.35), by, bw - Inches(1.5), Inches(0.46), ttl,
-        size=SZ_HEAD, color=WHITE, bold=True, anchor=MSO_ANCHOR.MIDDLE)
-    iy = by + Inches(0.62)
+    box(s, x, by, bw, Inches(0.52), col)
+    txt(s, x + Inches(0.22), by, Inches(1.3), Inches(0.52), tag, size=SZ_FINE,
+        color=ink(col), bold=True, anchor=MSO_ANCHOR.MIDDLE)
+    txt(s, x + Inches(1.5), by, bw - Inches(1.65), Inches(0.52), ttl,
+        size=SZ_HEAD, color=ink(col), bold=True, anchor=MSO_ANCHOR.MIDDLE)
+    iy = by + Inches(0.68)
     for head, body in items:
-        box(s, x + Inches(0.26), iy + Inches(0.07), Inches(0.1), Inches(0.1), col)
-        txt(s, x + Inches(0.46), iy - Inches(0.03), bw - Inches(0.7), Inches(0.28),
+        box(s, x + Inches(0.26), iy + Inches(0.08), Inches(0.11), Inches(0.11), col)
+        txt(s, x + Inches(0.48), iy - Inches(0.04), bw - Inches(0.72), Inches(0.3),
             head, size=SZ_LEAD, color=DK2, bold=True)
-        txt(s, x + Inches(0.46), iy + Inches(0.27), bw - Inches(0.72), Inches(0.6),
-            body, size=SZ_BODY, ls=1.15)
-        iy += Inches(0.85)
+        txt(s, x + Inches(0.48), iy + Inches(0.3), bw - Inches(0.74), Inches(0.62),
+            body, size=SZ_BODY, ls=1.18)
+        iy += Inches(0.94)
 
-box(s, CX, Inches(4.95), CW, Inches(0.5), AC6)
-txt(s, CX + Inches(0.22), Inches(4.95), CW - Inches(0.44), Inches(0.5),
-    "特定の案へ誘導することはせず、各チームの主体的な判断を尊重しながら、技術・運用・ガバナンス面の助言を行う方針で実施。",
+box(s, CX, Inches(5.02), CW, Inches(0.56), AC6)
+txt(s, CX + Inches(0.24), Inches(5.02), CW - Inches(0.48), Inches(0.56),
+    "特定の案へ誘導することはせず、各チームの主体的な判断を尊重しながら、"
+    "技術・運用・ガバナンス面の助言を行う方針で実施。",
     size=SZ_BODY, color=DK1, anchor=MSO_ANCHOR.MIDDLE)
 
-txt(s, CX, Inches(5.7), CW, Inches(0.28), "全体スケジュール", size=SZ_LEAD,
+txt(s, CX, Inches(5.74), CW, Inches(0.3), "全体スケジュール", size=SZ_LEAD,
     color=DK2, bold=True)
-steps = [("7/9〜13", "事前相談会①", AC3, DK1), ("〜7/17", "企画書 提出", AC3, DK1),
-         ("7/22〜24", "事前相談会②（今回）", AC1, WHITE), ("8月", "構築・デモ作成", AC2, WHITE),
-         ("9月", "発表準備・運用整理", AC2, WHITE), ("10月初旬", "最終発表", DK2, WHITE)]
-sx, stw, sdx = CX, Inches(2.1), Inches(1.95)
-for i, (d, lb, col, tc) in enumerate(steps):
-    sp = s.shapes.add_shape(MSO_SHAPE.CHEVRON, sx + sdx * i, Inches(6.05), stw, Inches(0.54))
+steps = [("7/9〜13", "事前相談会①", AC4), ("〜7/17", "企画書 提出", AC4),
+         ("7/22〜24", "事前相談会②（今回）", AC1), ("8月", "構築・デモ作成", AC3),
+         ("9月", "発表準備・運用整理", AC3), ("10月初旬", "最終発表", DK2)]
+sx, stw, sdx = CX, Inches(2.15), Inches(1.95)
+for i, (d, lb, col) in enumerate(steps):
+    sp = s.shapes.add_shape(MSO_SHAPE.CHEVRON, sx + sdx * i, Inches(6.1),
+                            stw, Inches(0.6))
     sp.fill.solid(); sp.fill.fore_color.rgb = col
     sp.line.fill.background(); sp.shadow.inherit = False
     tf = sp.text_frame; tf.word_wrap = True
-    tf.margin_left = Pt(9); tf.margin_right = Pt(5)
+    tf.margin_left = Pt(10); tf.margin_right = Pt(5)
     p1 = tf.paragraphs[0]; p1.alignment = PP_ALIGN.CENTER
-    r = p1.add_run(); r.text = d; r.font.size = Pt(10.9); r.font.bold = True
-    r.font.color.rgb = tc
+    r = p1.add_run(); r.text = d; r.font.size = Pt(SZ_FINE); r.font.bold = True
+    r.font.color.rgb = ink(col)
     p2 = tf.add_paragraph(); p2.alignment = PP_ALIGN.CENTER
-    r2 = p2.add_run(); r2.text = lb; r2.font.size = Pt(8); r2.font.color.rgb = tc
+    r2 = p2.add_run(); r2.text = lb; r2.font.size = Pt(SZ_NOTE)
+    r2.font.color.rgb = ink(col)
 
 # ==================================================================
-# 5. エグゼクティブサマリ
+# 4. エグゼクティブサマリ
 # ==================================================================
-s = content_slide(5, "エグゼクティブサマリ", "全体の状況と、事務局への依頼事項")
-box(s, CX, Inches(1.45), CW, Inches(0.72), DK2)
-txt(s, CX + Inches(0.3), Inches(1.45), CW - Inches(0.6), Inches(0.72),
-    "全11チームが企画を1案に固め、構築フェーズへ移行。10チームは10月発表に間に合う見込みで、要フォローは1チーム。",
+s = content_slide(4, "エグゼクティブサマリ", "全体の状況と、事務局への依頼事項")
+box(s, CX, Inches(1.42), CW, Inches(0.78), DK2)
+txt(s, CX + Inches(0.3), Inches(1.42), CW - Inches(0.6), Inches(0.78),
+    "全11チームが企画を1案に固め、構築フェーズへ移行。"
+    "10チームは10月発表に間に合う見込みで、要フォローは1チーム。",
     size=SZ_HEAD, color=WHITE, bold=True, anchor=MSO_ANCHOR.MIDDLE)
 
 tiles = [("◎ 先行", "2チーム", "チーム5・7", "業務の流れ・効果・構成まで具体化済み",
-          DK2, AC4, CX, Inches(2.9)),
+          AC3, CX, Inches(3.06)),
          ("○ 概ね順調", "8チーム", "チーム1・2・3・6・8・9・10・11",
-          "不明点はCopilotとの相談で解消でき、作業量が多い場合も範囲を絞れば発表可能",
-          AC2, AC4, CX + Inches(3.06), Inches(5.4)),
-         ("△ 要フォロー", "1チーム", "チーム4", "外部Web参照の禁止で再設計中。作るものの再定義が最優先",
-          AC1, AC6, CX + Inches(8.62), Inches(3.1))]
-ty, th = Inches(2.42), Inches(1.9)
-for label, cnt, teams, note, col, bg, x, w in tiles:
+          "不明点はCopilotとの相談で解消でき、\n作業量が多い場合も範囲を絞れば発表可能",
+          AC4, CX + Inches(3.22), Inches(5.28)),
+         ("△ 要フォロー", "1チーム", "チーム4",
+          "外部Web参照の禁止で再設計中。\n作るものの再定義が最優先",
+          AC6, CX + Inches(8.66), Inches(3.06))]
+ty, th = Inches(2.36), Inches(2.0)
+for label, cnt, teams, note, bg, x, w in tiles:
     box(s, x, ty, w, th, bg)
-    box(s, x, ty, w, Inches(0.44), col)
-    txt(s, x, ty, w, Inches(0.44), label, size=SZ_LEAD, color=WHITE, bold=True,
+    box(s, x, ty, w, Inches(0.5), DK2)
+    txt(s, x, ty, w, Inches(0.5), label, size=SZ_LEAD, color=WHITE, bold=True,
         align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
-    txt(s, x, ty + Inches(0.5), w, Inches(0.5), cnt, size=24, color=DK2,
+    txt(s, x, ty + Inches(0.56), w, Inches(0.52), cnt, size=26, color=DK2,
         bold=True, align=PP_ALIGN.CENTER)
-    txt(s, x + Inches(0.12), ty + Inches(1.06), w - Inches(0.24), Inches(0.26),
+    txt(s, x + Inches(0.12), ty + Inches(1.14), w - Inches(0.24), Inches(0.3),
         teams, size=SZ_BODY, color=DK1, bold=True, align=PP_ALIGN.CENTER)
-    txt(s, x + Inches(0.14), ty + Inches(1.34), w - Inches(0.28), Inches(0.5),
-        note, size=SZ_FINE, color=MUTE, align=PP_ALIGN.CENTER, ls=1.12)
+    txt(s, x + Inches(0.14), ty + Inches(1.46), w - Inches(0.28), Inches(0.5),
+        note, size=SZ_FINE, color=DK1, align=PP_ALIGN.CENTER, ls=1.14)
 
-txt(s, CX, Inches(4.58), CW, Inches(0.28), "事務局への依頼事項（重点3点）",
+txt(s, CX, Inches(4.55), CW, Inches(0.3), "事務局への依頼事項（重点3点）",
     size=SZ_LEAD, color=DK2, bold=True)
 asks = [("01", "使えるデータ・環境の可否判断を早期に",
-         "外部Web参照・M365外連携・機密情報の可否。抵触すると案が頓挫するため最優先。"),
+         "外部Web参照・M365外連携・機密情報の可否。抵触時は案が頓挫するため最優先。"),
         ("02", "進め方の型とスケジュールの提示",
-         "開発手順の基本フォーマット、8〜9月の予定、指示文（プロンプト）の見本。"),
-        ("03", "8月は「一本通す」デモに集中する方針の共有",
-         "入力→処理→出力を一本通すことを優先し、細部の作り込みは9月以降。")]
-ay, aw = Inches(4.92), Inches(3.83)
+         "開発手順の基本フォーマット、8〜9月の予定、指示文の見本を配布いただきたい。"),
+        ("03", "8月は「一本通す」デモに集中",
+         "入力→処理→出力を一本通すことを優先し、細部の作り込みは9月以降とする。")]
+ay, aw, ah = Inches(4.92), Inches(3.83), Inches(1.5)
 for i, (num, ttl, note) in enumerate(asks):
     x = CX + (aw + Inches(0.12)) * i
-    box(s, x, ay, aw, Inches(1.28), AC5)
-    box(s, x, ay, Inches(0.5), Inches(1.28), AC2)
-    txt(s, x, ay, Inches(0.5), Inches(1.28), num, size=SZ_HEAD, color=WHITE,
+    box(s, x, ay, aw, ah, AC5)
+    box(s, x, ay, Inches(0.56), ah, DK2)
+    txt(s, x, ay, Inches(0.56), ah, num, size=SZ_HEAD, color=WHITE,
         bold=True, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
-    txt(s, x + Inches(0.62), ay + Inches(0.1), aw - Inches(0.78), Inches(0.44),
-        ttl, size=SZ_BODY, color=DK2, bold=True, ls=1.1)
-    txt(s, x + Inches(0.62), ay + Inches(0.58), aw - Inches(0.78), Inches(0.6),
-        note, size=SZ_FINE, color=DK1, ls=1.14)
+    txt(s, x + Inches(0.68), ay + Inches(0.1), aw - Inches(0.84), Inches(0.5),
+        ttl, size=SZ_BODY, color=DK2, bold=True, ls=1.12)
+    txt(s, x + Inches(0.68), ay + Inches(0.66), aw - Inches(0.84), Inches(0.74),
+        note, size=SZ_FINE, color=DK1, ls=1.16)
 
 # ==================================================================
-# 6. 各チームの状況一覧
+# 5. 各チームの状況一覧
 # ==================================================================
-s = content_slide(6, "各チームの状況一覧",
+s = content_slide(5, "各チームの状況一覧",
                   "全11チームが1案に確定／第2回 実施済み＝チーム1・2・3・4・5・10・11")
-txt(s, CX, Inches(1.4), CW, Inches(0.46),
-    "進捗の段階 ▶ ①案の絞り込み中　②2案から選定中　③1案確定（内容の詰めは途上）　④設計まで具体化　⑤効果試算まで完了\n"
-    "10月発表の見込み（基準＝発表に向けた道筋の明確さ）▶ ◎ 道筋が明確で自走できる　○ Copilotとの相談や範囲の絞り込みで間に合う　△ 要フォロー（作るものが未確定・再設計中）",
-    size=9.2, color=MUTE, ls=1.2)
+txt(s, CX, Inches(1.38), CW, Inches(0.5),
+    "進捗の段階 ▶ ①案の絞り込み中　②2案から選定中　③1案確定（内容の詰めは途上）　"
+    "④設計まで具体化　⑤効果試算まで完了\n"
+    "10月発表の見込み（基準＝発表に向けた道筋の明確さ）▶ "
+    "◎ 道筋が明確で自走できる　○ Copilotとの相談や範囲の絞り込みで間に合う　"
+    "△ 要フォロー（作るものが未確定・再設計中）",
+    size=SZ_NOTE, color=DK1, ls=1.25)
 
-ty0, rowh, hh = Inches(1.98), Inches(0.408), Inches(0.34)
+ty0, rowh, hh = Inches(1.94), Inches(0.418), Inches(0.38)
 t = table(s, CX, ty0, CW, 12, 6,
-          [Inches(0.82), Inches(2.28), Inches(2.75), Inches(3.85),
-           Inches(0.85), Inches(1.17)], hh, rowh)
+          [Inches(0.95), Inches(2.45), Inches(2.95), Inches(3.27),
+           Inches(0.85), Inches(1.25)], hh, rowh)
 for c, h in enumerate(["チーム", "進捗の段階", "取り組み内容",
                        "第2回の主な論点・相談", "難易度", "10月見込み"]):
-    cell(t.cell(0, c), h, size=SZ_FINE, color=WHITE, bold=True, fill=DK2,
+    cell(t.cell(0, c), h, size=SZ_TBL, color=WHITE, bold=True, fill=DK2,
          align=PP_ALIGN.CENTER)
 fcw = {"◎": "◎ 順調", "○": "○ 概ね順調", "△": "△ 要フォロー"}
 for i, (no, lv, name, diff, topic, done) in enumerate(overview, start=1):
-    rf = WHITE if i % 2 else AC4
-    cell(t.cell(i, 0), f"チーム{no}", size=SZ_FINE, color=DK2, bold=True, fill=rf,
+    rf = WHITE if i % 2 else LT1
+    cell(t.cell(i, 0), f"チーム{no}", size=SZ_TBL, color=DK2, bold=True, fill=rf,
          align=PP_ALIGN.CENTER)
     cell(t.cell(i, 1), "", fill=rf)
-    cell(t.cell(i, 2), name, size=9.4, color=DK1, bold=True, fill=rf)
-    cell(t.cell(i, 3), topic, size=9, color=(MUTE if not done else DK1), fill=rf)
-    cell(t.cell(i, 4), diff, size=SZ_FINE, color=diff_color(diff), bold=True,
-         fill=rf, align=PP_ALIGN.CENTER)
-    cell(t.cell(i, 5), fcw[forecast[no]], size=8.6, color=fc_color(forecast[no]),
-         bold=True, fill=rf, align=PP_ALIGN.CENTER)
-cx0 = CX + Inches(0.82) + Inches(0.1)
+    cell(t.cell(i, 2), name, size=SZ_TBLS, color=DK1, bold=True, fill=rf)
+    cell(t.cell(i, 3), topic, size=SZ_TBLS, color=DK1, fill=rf)
+    cell(t.cell(i, 4), diff, size=SZ_TBL, color=DK1, bold=True,
+         fill=diff_fill(diff), align=PP_ALIGN.CENTER)
+    cell(t.cell(i, 5), fcw[forecast[no]], size=SZ_TBLS, color=DK1, bold=True,
+         fill=fc_fill(forecast[no]), align=PP_ALIGN.CENTER)
+cx0 = CX + Inches(0.95) + Inches(0.1)
 for i, (no, lv, *_r) in enumerate(overview, start=1):
     yc = ty0 + hh + rowh * (i - 1) + rowh / 2
-    stages(s, cx0, yc, lv, on=stage_color(lv))
-    txt(s, cx0 + Inches(0.235) * 5 + Inches(0.04), yc - Inches(0.115),
-        Inches(1.0), Inches(0.24), f"{NO[lv]} {STAGE_SHORT[lv]}", size=7.2,
-        color=stage_color(lv), bold=True, anchor=MSO_ANCHOR.MIDDLE)
+    stages(s, cx0, yc, lv, on=stage_color(lv), step=Inches(0.215),
+           w=Inches(0.24))
+    txt(s, cx0 + Inches(0.215) * 5 + Inches(0.05), yc - Inches(0.13),
+        Inches(1.22), Inches(0.26), f"{NO[lv]} {STAGE_SHORT[lv]}", size=SZ_TBLS,
+        color=DK2, bold=True, anchor=MSO_ANCHOR.MIDDLE)
 
 # ==================================================================
-# 7. 使用アプリ（想定）・難易度・ボリューム
+# 6. 使用アプリ（想定）・難易度・ボリューム
 # ==================================================================
-s = content_slide(7, "使用アプリ（想定）・難易度・ボリュームの比較",
+s = content_slide(6, "使用アプリ（想定）・難易度・ボリュームの比較",
                   "メンター検討の材料／企画書と相談会の内容にもとづく想定")
-ty0, rowh, hh = Inches(1.5), Inches(0.375), Inches(0.5)
-ncol = 3 + len(APP_COLS) + 2
-widths = ([Inches(0.72), Inches(2.05), Inches(0.6)] + [Inches(0.6)] * len(APP_COLS)
-          + [Inches(0.68), Inches(2.07)])
+ty0, rowh, hh = Inches(1.46), Inches(0.39), Inches(0.52)
+ncol = 3 + len(APP_COLS) + 1
+widths = ([Inches(0.9), Inches(0.86), Inches(0.86)]
+          + [Inches(0.73)] * len(APP_COLS) + [Inches(1.8)])
 t = table(s, CX, ty0, CW, 12, ncol, widths, hh, rowh)
-cell(t.cell(0, 0), "チーム", size=8.4, color=WHITE, bold=True, fill=DK2, align=PP_ALIGN.CENTER)
-cell(t.cell(0, 1), "取り組み内容", size=8.4, color=WHITE, bold=True, fill=DK2, align=PP_ALIGN.CENTER)
-cell(t.cell(0, 2), "難易\n度", size=8, color=WHITE, bold=True, fill=DK2, align=PP_ALIGN.CENTER)
+cell(t.cell(0, 0), "チーム", size=SZ_TBLS, color=WHITE, bold=True, fill=DK2,
+     align=PP_ALIGN.CENTER)
+cell(t.cell(0, 1), "難易度", size=SZ_TBLS, color=WHITE, bold=True, fill=DK2,
+     align=PP_ALIGN.CENTER)
+cell(t.cell(0, 2), "ボリュ\nーム", size=SZ_NOTE, color=WHITE, bold=True, fill=DK2,
+     align=PP_ALIGN.CENTER)
 for j, (key, label) in enumerate(APP_COLS):
-    cell(t.cell(0, 3 + j), label, size=7, color=WHITE, bold=True, fill=AC2,
+    cell(t.cell(0, 3 + j), label, size=10, color=WHITE, bold=True, fill=DK2,
          align=PP_ALIGN.CENTER)
-cell(t.cell(0, ncol - 2), "ボリ\nューム", size=7.4, color=WHITE, bold=True, fill=DK2,
-     align=PP_ALIGN.CENTER)
-cell(t.cell(0, ncol - 1), "主な制約・留意点", size=8.4, color=WHITE, bold=True, fill=DK2,
-     align=PP_ALIGN.CENTER)
+cell(t.cell(0, ncol - 1), "主な制約・留意点", size=SZ_TBLS, color=WHITE, bold=True,
+     fill=DK2, align=PP_ALIGN.CENTER)
 for i, (no, lv, name, diff, topic, done) in enumerate(overview, start=1):
-    rf = WHITE if i % 2 else AC4
-    cell(t.cell(i, 0), f"チーム{no}", size=8.8, color=DK2, bold=True, fill=rf, align=PP_ALIGN.CENTER)
-    cell(t.cell(i, 1), name, size=8, color=DK1, bold=True, fill=rf)
-    cell(t.cell(i, 2), diff, size=8.8, color=diff_color(diff), bold=True, fill=rf,
+    rf = WHITE if i % 2 else LT1
+    cell(t.cell(i, 0), f"チーム{no}", size=SZ_TBL, color=DK2, bold=True, fill=rf,
          align=PP_ALIGN.CENTER)
+    cell(t.cell(i, 1), diff, size=SZ_TBL, color=DK1, bold=True,
+         fill=diff_fill(diff), align=PP_ALIGN.CENTER)
+    cell(t.cell(i, 2), volume[no], size=SZ_TBL, color=DK1, bold=True,
+         fill=vol_fill(volume[no]), align=PP_ALIGN.CENTER)
     for j, (key, label) in enumerate(APP_COLS):
         if key in app_use[no]:
-            cell(t.cell(i, 3 + j), "●", size=8.8, color=WHITE, bold=True, fill=AC2,
-                 align=PP_ALIGN.CENTER)
+            cell(t.cell(i, 3 + j), "●", size=SZ_TBL, color=DK2, bold=True,
+                 fill=AC3, align=PP_ALIGN.CENTER)
         else:
-            cell(t.cell(i, 3 + j), "", size=8, fill=rf)
-    cell(t.cell(i, ncol - 2), volume[no], size=8.8, color=vol_color(volume[no]),
-         bold=True, fill=rf, align=PP_ALIGN.CENTER)
-    cell(t.cell(i, ncol - 1), constraint[no], size=7.6, color=DK1, fill=rf)
+            cell(t.cell(i, 3 + j), "", size=10, fill=rf)
+    cell(t.cell(i, ncol - 1), constraint[no], size=SZ_NOTE, color=DK1, fill=rf)
 sy = ty0 + hh + rowh * 11 + Inches(0.08)
 box(s, CX, sy, CW, Inches(0.62), AC5)
-txt(s, CX + Inches(0.2), sy + Inches(0.02), CW - Inches(0.4), Inches(0.58),
-    "● ＝ 想定される使用アプリ　／　難易度：中＝M365標準で実現しやすい・中〜高＝連携や運用の検証項目が多い・高＝外部連携や制約が大きく再設計や判断を伴う\n"
-    "ボリューム ＝ 企画着手から実業務で使い始める（リリース）までに必要な総作業量。開発するもの＋読み込む資料の整備＋連携・権限・本番移行・運用展開を含む（10月のデモまでではない）　※暫定評価",
-    size=8, color=DK1, ls=1.16)
+txt(s, CX + Inches(0.22), sy + Inches(0.02), CW - Inches(0.44), Inches(0.58),
+    "● ＝ 想定される使用アプリ　／　難易度：中＝M365標準で実現しやすい・"
+    "中〜高＝連携や運用の検証項目が多い・高＝外部連携や制約が大きく再設計や判断を伴う\n"
+    "ボリューム ＝ 企画着手から実業務で使い始める（リリース）までに必要な総作業量。"
+    "開発するもの＋読み込む資料の整備＋連携・権限・本番移行・運用展開を含む　※暫定評価",
+    size=SZ_NOTE, color=DK1, ls=1.2)
 
 # ==================================================================
-# 8. 課題は大きく3点
+# 7. 課題は大きく3点
 # ==================================================================
-s = content_slide(8, "第2回で挙がった課題は、大きく3点",
+s = content_slide(7, "第2回で挙がった課題は、大きく3点",
                   "チーム1・2・3・4・5・10・11で実際に挙がった論点を集約")
 issues = [
     ("01", "使えるデータ・環境", "ガバナンス・制約", AC1, AC6,
      ["外部Web参照・M365外連携・機密情報は原則不可。依存する案は再設計が必要　… チーム3・4",
       "開発環境から本番環境への移行は、社内の申請・決裁フローを要確認　… チーム11"],
-     "可否の判断を早期に。抵触すると案そのものが頓挫するため最優先で確認したい。"),
-    ("02", "進め方の型", "構築フェーズの支援", DK2, AC4,
+     "可否の判断を早期に。抵触時は案が頓挫するため最優先で確認したい。"),
+    ("02", "進め方の型", "構築フェーズの支援", AC2, AC4,
      ["開発手順の型（基本フォーマット）と8〜9月のスケジュール提示　… チーム1・5",
       "設計相談の進め方と、指示文（プロンプト）の見本　… チーム1・2",
       "Copilotの回答は鵜呑みにせず、根拠の提示と実機確認で精度を担保　… チーム10"],
      "進め方の型・スケジュール・指示文の見本を配布いただきたい。"),
-    ("03", "10月以降の展開", "運用・定着", AC2, AC5,
-     ["8月のデモは範囲を絞り「入力→処理→出力」を一本通す／効果の見極め　… チーム4・5",
+    ("03", "10月以降の展開", "運用・定着", AC3, AC5,
+     ["8月のデモは範囲を絞り「入力→処理→出力」を一本通す　… チーム4・5",
       "手順書・利用ルールの整備（項目の洗い出しと全体量の把握）と運用保守　… チーム5・11",
       "8月以降の定例（週次／隔週）の進め方の案内　… チーム2・10"],
      "展開・運用の枠組みと定例の進め方を案内いただきたい。"),
 ]
-cy0, ch, cgap = Inches(1.5), Inches(1.6), Inches(0.16)
+cy0, ch, cgap = Inches(1.45), Inches(1.71), Inches(0.16)
 for k, (num, ttl, sub, col, bg, bullets, action) in enumerate(issues):
     y = cy0 + (ch + cgap) * k
     box(s, CX, y, CW, ch, bg)
-    box(s, CX, y, Inches(3.2), ch, col)
-    txt(s, CX + Inches(0.16), y + Inches(0.16), Inches(0.7), Inches(0.5), num,
-        size=24, color=WHITE, bold=True, align=PP_ALIGN.CENTER)
-    txt(s, CX + Inches(0.9), y + Inches(0.28), Inches(2.25), Inches(0.46), ttl,
-        size=15, color=WHITE, bold=True, ls=1.05)
-    txt(s, CX + Inches(0.9), y + Inches(0.82), Inches(2.25), Inches(0.28), sub,
-        size=SZ_FINE, color=WHITE)
-    bx, by2 = CX + Inches(3.4), y + Inches(0.14)
+    box(s, CX, y, Inches(3.5), ch, col)
+    txt(s, CX + Inches(0.18), y + Inches(0.2), Inches(0.8), Inches(0.55), num,
+        size=28, color=ink(col), bold=True, align=PP_ALIGN.CENTER)
+    txt(s, CX + Inches(1.0), y + Inches(0.3), Inches(2.4), Inches(0.5), ttl,
+        size=SZ_HEAD, color=ink(col), bold=True, ls=1.05)
+    txt(s, CX + Inches(1.0), y + Inches(0.88), Inches(2.4), Inches(0.3), sub,
+        size=SZ_FINE, color=ink(col))
+    bx, by2 = CX + Inches(3.72), y + Inches(0.16)
     for b in bullets:
-        box(s, bx, by2 + Inches(0.06), Inches(0.09), Inches(0.09), col)
-        txt(s, bx + Inches(0.19), by2 - Inches(0.04), Inches(8.05), Inches(0.3),
-            b, size=11.6, color=DK1)
-        by2 += Inches(0.3)
-    txt(s, bx, y + ch - Inches(0.36), Inches(8.1), Inches(0.3),
-        "▶ 事務局へ：" + action, size=SZ_BODY, color=col, bold=True)
+        box(s, bx, by2 + Inches(0.08), Inches(0.1), Inches(0.1), col)
+        txt(s, bx + Inches(0.22), by2 - Inches(0.04), Inches(7.6), Inches(0.32),
+            b, size=SZ_FINE, color=DK1)
+        by2 += Inches(0.34)
+    txt(s, bx, y + ch - Inches(0.42), Inches(7.95), Inches(0.34),
+        "▶ 事務局へ：" + action, size=SZ_FINE, color=DK2, bold=True)
 
 # ==================================================================
-# 9. 章区切り 02
-# ==================================================================
-s = add(LY_SECTION)
-set_ph(s, 13, "02")
-set_ph(s, 0, "各チームの状況")
-
-# ==================================================================
-# 10〜20. 各チーム個票
+# 8〜18. 各チーム個票
 # ==================================================================
 def team_slide(no, page):
     d = detail[no]
@@ -669,29 +695,30 @@ def team_slide(no, page):
     s = content_slide(page, f"チーム{no}：{name}", f"エージェント名：{d['agent']}")
 
     # ステータス帯
-    sy = Inches(1.42)
-    box(s, CX, sy, CW, Inches(0.5), AC4)
-    txt(s, CX + Inches(0.18), sy, Inches(0.55), Inches(0.5), "進捗", size=8.6,
-        color=MUTE, bold=True, anchor=MSO_ANCHOR.MIDDLE)
-    stages(s, CX + Inches(0.78), sy + Inches(0.25), lv, on=stage_color(lv))
-    txt(s, CX + Inches(2.03), sy, Inches(1.5), Inches(0.5), f"{NO[lv]} {STAGE[lv]}",
-        size=SZ_FINE, color=stage_color(lv), bold=True, anchor=MSO_ANCHOR.MIDDLE)
-    chip(s, CX + Inches(3.62), sy + Inches(0.07), Inches(1.3), Inches(0.36),
-         f"難易度 {diff}", diff_color(diff), size=9.4)
-    chip(s, CX + Inches(5.04), sy + Inches(0.07), Inches(1.5), Inches(0.36),
-         f"10月見込み {fc}", fc_color(fc), size=9.4)
-    chip(s, CX + Inches(6.66), sy + Inches(0.07), Inches(1.6), Inches(0.36),
+    sy = Inches(1.4)
+    box(s, CX, sy, CW, Inches(0.54), AC4)
+    txt(s, CX + Inches(0.2), sy, Inches(0.6), Inches(0.54), "進捗", size=SZ_FINE,
+        color=DK1, bold=True, anchor=MSO_ANCHOR.MIDDLE)
+    stages(s, CX + Inches(0.88), sy + Inches(0.27), lv, on=stage_color(lv))
+    txt(s, CX + Inches(2.15), sy, Inches(1.75), Inches(0.54),
+        f"{NO[lv]} {STAGE[lv]}", size=SZ_FINE, color=DK2, bold=True,
+        anchor=MSO_ANCHOR.MIDDLE)
+    chip(s, CX + Inches(4.0), sy + Inches(0.08), Inches(1.5), Inches(0.38),
+         f"難易度 {diff}", diff_fill(diff), tcolor=DK1, size=SZ_FINE)
+    chip(s, CX + Inches(5.62), sy + Inches(0.08), Inches(1.75), Inches(0.38),
+         f"10月見込み {fc}", fc_fill(fc), tcolor=DK1, size=SZ_FINE)
+    chip(s, CX + Inches(7.49), sy + Inches(0.08), Inches(1.6), Inches(0.38),
          ("第2回 実施済" if done else "第2回 未実施"), (DK2 if done else GRAY),
-         tcolor=(WHITE if done else DK1), size=9.4)
-    txt(s, CX + Inches(8.4), sy, Inches(3.2), Inches(0.5),
-        f"ボリューム（実業務で使い始めるまで）：{volume[no]}", size=9,
-        color=DK1, anchor=MSO_ANCHOR.MIDDLE)
+         tcolor=(WHITE if done else DK1), size=SZ_FINE)
+    txt(s, CX + Inches(9.25), sy, Inches(2.4), Inches(0.54),
+        f"ボリューム {volume[no]}", size=SZ_FINE, color=DK1, bold=True,
+        align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
 
-    txt(s, CX, Inches(2.0), CW, Inches(0.24),
-        f"10月発表の見込み（{fc}）の根拠：{fc_reason[no]}", size=9.2, color=MUTE)
+    txt(s, CX, Inches(2.02), CW, Inches(0.28),
+        f"10月発表の見込み（{fc}）の根拠：{fc_reason[no]}", size=SZ_TBLS, color=DK1)
 
     # 上段3カード
-    r1y, r1h = Inches(2.3), Inches(1.55)
+    r1y, r1h = Inches(2.36), Inches(1.62)
     cwd, gap = Inches(3.79), Inches(0.18)
     for i, (ttl, body, col, bg) in enumerate([
             ("取り組み内容", d["work"], DK2, AC4),
@@ -699,36 +726,36 @@ def team_slide(no, page):
             ("リスク・論点", d["risk"], AC1, AC6)]):
         x = CX + (cwd + gap) * i
         box(s, x, r1y, cwd, r1h, bg)
-        box(s, x, r1y, cwd, Inches(0.36), col)
-        txt(s, x + Inches(0.14), r1y, cwd - Inches(0.28), Inches(0.36), ttl,
-            size=SZ_FINE, color=WHITE, bold=True, anchor=MSO_ANCHOR.MIDDLE)
-        txt(s, x + Inches(0.14), r1y + Inches(0.44), cwd - Inches(0.28),
-            r1h - Inches(0.54), body, size=9.4, color=DK1, ls=1.18)
+        box(s, x, r1y, cwd, Inches(0.4), col)
+        txt(s, x + Inches(0.14), r1y, cwd - Inches(0.28), Inches(0.4), ttl,
+            size=SZ_FINE, color=ink(col), bold=True, anchor=MSO_ANCHOR.MIDDLE)
+        txt(s, x + Inches(0.14), r1y + Inches(0.48), cwd - Inches(0.28),
+            r1h - Inches(0.58), body, size=SZ_TBLS, color=DK1, ls=1.2)
 
     # 中段2カード（相談・助言の記録）
-    r2y, r2h = Inches(4.02), Inches(1.5)
+    r2y, r2h = Inches(4.12), Inches(1.5)
     cwd2 = Inches(5.79)
     for i, (ttl, body, col) in enumerate([
             ("相談された内容", d["q"], DK2), ("助言した内容", d["a"], AC2)]):
         x = CX + (cwd2 + Inches(0.14)) * i
         box(s, x, r2y, cwd2, r2h, AC4)
-        box(s, x, r2y, cwd2, Inches(0.36), col)
-        txt(s, x + Inches(0.14), r2y, cwd2 - Inches(0.28), Inches(0.36), ttl,
-            size=SZ_FINE, color=WHITE, bold=True, anchor=MSO_ANCHOR.MIDDLE)
-        txt(s, x + Inches(0.14), r2y + Inches(0.42), cwd2 - Inches(0.28),
-            r2h - Inches(0.52), body, size=9.2, color=DK1, ls=1.18)
+        box(s, x, r2y, cwd2, Inches(0.4), col)
+        txt(s, x + Inches(0.14), r2y, cwd2 - Inches(0.28), Inches(0.4), ttl,
+            size=SZ_FINE, color=ink(col), bold=True, anchor=MSO_ANCHOR.MIDDLE)
+        txt(s, x + Inches(0.14), r2y + Inches(0.46), cwd2 - Inches(0.28),
+            r2h - Inches(0.56), body, size=SZ_TBLS, color=DK1, ls=1.2)
 
     # 次アクション
-    ny, nh = Inches(5.66), Inches(0.88)
+    ny, nh = Inches(5.76), Inches(0.86)
     box(s, CX, ny, CW, nh, AC5)
-    txt(s, CX + Inches(0.22), ny + Inches(0.07), CW - Inches(0.44), Inches(0.26),
+    txt(s, CX + Inches(0.24), ny + Inches(0.06), CW - Inches(0.48), Inches(0.28),
         "次アクション", size=SZ_FINE, color=DK2, bold=True)
-    txt(s, CX + Inches(0.22), ny + Inches(0.36), CW - Inches(0.44), Inches(0.44),
-        d["nxt"], size=9.6, color=DK1, ls=1.12)
+    txt(s, CX + Inches(0.24), ny + Inches(0.36), CW - Inches(0.48), Inches(0.44),
+        d["nxt"], size=SZ_TBLS, color=DK1, ls=1.14)
 
 
 for k, no in enumerate(range(1, 12)):
-    team_slide(no, 10 + k)
+    team_slide(no, 8 + k)
 
 prs.save(OUT)
 print("saved:", OUT)
