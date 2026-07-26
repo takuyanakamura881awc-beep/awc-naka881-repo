@@ -66,8 +66,8 @@ SZ_NOTE  = 10.89  # 凡例
 
 prs = Presentation(TEMPLATE)
 SW, SH = prs.slide_width, prs.slide_height
-LY_COVER, LY_TOC, LY_SECTION, LY_BODY = 0, 1, 2, 17
-TOTAL = 18
+LY_COVER, LY_BODY, LY_BLANK = 0, 17, 15
+TOTAL = 20
 
 
 # ==================================================================
@@ -294,6 +294,17 @@ def content_slide(n, title, sub=None):
     return s
 
 
+def section_slide(n, num, title):
+    """章区切り（白背景・テキストのみ）。これから話す範囲を示す"""
+    s = add(LY_BLANK)
+    txt(s, CX, Inches(2.55), Inches(2.0), Inches(1.0), num, size=54,
+        color=AC3, bold=True)
+    txt(s, CX, Inches(3.5), CW, Inches(0.8), title, size=32, color=DK2, bold=True)
+    box(s, CX, Inches(4.45), Inches(1.6), Inches(0.05), AC2)
+    page_no(s, n)
+    return s
+
+
 def cell(c, text, size=SZ_FINE, color=DK1, bold=False, fill=None,
          align=PP_ALIGN.LEFT, anchor=MSO_ANCHOR.MIDDLE):
     c.margin_left = Pt(4); c.margin_right = Pt(4)
@@ -511,7 +522,7 @@ t = set_ph(s, 0, "第2回 事前相談会\nチームごとの状況報告", size
 t.left, t.top, t.width, t.height = Inches(1.26), Inches(2.45), Inches(10.30), Inches(1.6)
 set_ph(s, 12, "全11チームの進捗状況・使用アプリ・難易度\n10月発表に向けた見込みと課題",
        size=SZ_LEAD, ls=1.3)
-set_ph(s, 2, "2026.07.24", size=SZ_LEAD)
+set_ph(s, 2, "2026.07.27", size=SZ_LEAD)
 drop_ph(s, 10)
 txt(s, Inches(1.26), Inches(5.42), Inches(6.0), Inches(0.34),
     "株式会社Low Code", size=SZ_BODY, color=DK2, bold=True)
@@ -521,29 +532,27 @@ if lg is not None:
     place(lg, parts(53), s, Inches(1.26), Inches(5.85), Inches(2.7), Inches(0.62))
 
 # ==================================================================
-# 2. 目次（1_目次）
+# 2. 本日の内容（目次）
 # ==================================================================
-s = add(LY_TOC)
-set_ph(s, 0, "本日の内容")
-set_ph(s, 2, "第2回 事前相談会（2026年7月22日〜24日 実施）の状況報告",
-       size=SZ_SUB, color=MUTE)
-page_no(s, 2)
+s = content_slide(2, "本日の内容",
+                  "第2回 事前相談会（2026年7月22日〜24日 実施）の状況報告")
 toc = [("01", "本日の目的", "第2回の位置づけと、確認・整理する範囲"),
-       ("02", "エグゼクティブサマリ", "全体の状況と、事務局への依頼事項（重点3点）"),
-       ("03", "各チームの状況一覧", "進捗の段階・難易度・10月発表の見込み"),
+       ("02", "各チームの状況一覧", "進捗の段階・難易度・10月発表の見込み"),
+       ("03", "エグゼクティブサマリ", "全体の状況と、事務局への依頼事項（重点3点）"),
        ("04", "使用アプリ・難易度・ボリューム", "メンター検討の材料としての比較"),
        ("05", "第2回で挙がった課題", "大きく3点に整理"),
        ("06", "各チームの状況", "チーム1〜11の個別状況（1チーム1枚）")]
-ty = Inches(1.68)
+ty = Inches(1.62)
 for num, ttl, note in toc:
-    box(s, CX, ty, Inches(0.72), Inches(0.72), AC4)
-    txt(s, CX, ty, Inches(0.72), Inches(0.72), num, size=SZ_HEAD, color=DK2,
+    box(s, CX, ty, Inches(0.66), Inches(0.66), AC4)
+    txt(s, CX, ty, Inches(0.66), Inches(0.66), num, size=SZ_HEAD, color=DK2,
         bold=True, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
-    txt(s, CX + Inches(0.92), ty + Inches(0.02), Inches(5.2), Inches(0.36),
+    txt(s, CX + Inches(0.86), ty + Inches(0.02), Inches(5.2), Inches(0.34),
         ttl, size=SZ_HEAD, color=DK1, bold=True)
-    txt(s, CX + Inches(0.92), ty + Inches(0.42), Inches(9.5), Inches(0.28),
+    txt(s, CX + Inches(0.86), ty + Inches(0.4), Inches(9.5), Inches(0.26),
         note, size=SZ_BODY, color=MUTE)
     ty += Inches(0.86)
+
 
 # ==================================================================
 # 3. 本日の目的
@@ -583,21 +592,15 @@ for i, (tag, ttl, col, bgc, items) in enumerate([
             body, size=SZ_BODY, ls=1.18)
         iy += Inches(0.94)
 
-box(s, CX, Inches(5.02), CW, Inches(0.56), AC6)
-txt(s, CX + Inches(0.24), Inches(5.02), CW - Inches(0.48), Inches(0.56),
-    "特定の案へ誘導することはせず、各チームの主体的な判断を尊重しながら、"
-    "技術・運用・ガバナンス面の助言を行う方針で実施。",
-    size=SZ_BODY, color=DK1, anchor=MSO_ANCHOR.MIDDLE)
-
-icon(s, "hourglass", CX, Inches(5.74), Inches(0.26))
-txt(s, CX + Inches(0.34), Inches(5.72), CW - Inches(0.34), Inches(0.3),
+icon(s, "hourglass", CX, Inches(5.38), Inches(0.26))
+txt(s, CX + Inches(0.34), Inches(5.36), CW - Inches(0.34), Inches(0.3),
     "全体スケジュール", size=SZ_LEAD, color=DK2, bold=True)
 steps = [("7/9〜13", "事前相談会①", AC4), ("〜7/17", "企画書 提出", AC4),
          ("7/22〜24", "事前相談会②（今回）", AC1), ("8月", "構築・デモ作成", AC3),
          ("9月", "発表準備・運用整理", AC3), ("10月初旬", "最終発表", DK2)]
 sx, stw, sdx = CX, Inches(2.15), Inches(1.95)
 for i, (d, lb, col) in enumerate(steps):
-    sp = s.shapes.add_shape(MSO_SHAPE.CHEVRON, sx + sdx * i, Inches(6.1),
+    sp = s.shapes.add_shape(MSO_SHAPE.CHEVRON, sx + sdx * i, Inches(5.74),
                             stw, Inches(0.6))
     sp.fill.solid(); sp.fill.fore_color.rgb = col
     sp.line.fill.background(); sp.shadow.inherit = False
@@ -611,9 +614,57 @@ for i, (d, lb, col) in enumerate(steps):
     r2.font.color.rgb = ink(col)
 
 # ==================================================================
+# 4. 章区切り 01
+# ==================================================================
+section_slide(4, "01", "全体の状況と課題")
+
+
+# ==================================================================
+# 5. 各チームの状況一覧
+# ==================================================================
+s = content_slide(5, "各チームの状況一覧",
+                  "全11チームが1案に確定／第2回 実施済み＝チーム1・2・3・4・5・10・11")
+txt(s, CX, Inches(1.38), CW, Inches(0.5),
+    "進捗の段階 ▶ ①案の絞り込み中　②2案から選定中　③1案確定（内容の詰めは途上）　"
+    "④設計まで具体化　⑤効果試算まで完了\n"
+    "10月発表の見込み（基準＝発表に向けた道筋の明確さ）▶ "
+    "◎ 道筋が明確で自走できる　○ Copilotとの相談や範囲の絞り込みで間に合う　"
+    "△ 要フォロー（作るものが未確定・再設計中）",
+    size=SZ_NOTE, color=DK1, ls=1.25)
+
+ty0, rowh, hh = Inches(1.94), Inches(0.418), Inches(0.38)
+t = table(s, CX, ty0, CW, 12, 6,
+          [Inches(0.95), Inches(2.45), Inches(2.95), Inches(3.27),
+           Inches(0.85), Inches(1.25)], hh, rowh)
+for c, h in enumerate(["チーム", "進捗の段階", "取り組み内容",
+                       "第2回の主な論点・相談", "難易度", "10月見込み"]):
+    cell(t.cell(0, c), h, size=SZ_TBL, color=WHITE, bold=True, fill=DK2,
+         align=PP_ALIGN.CENTER)
+fcw = {"◎": "◎ 順調", "○": "○ 概ね順調", "△": "△ 要フォロー"}
+for i, (no, lv, name, diff, topic, done) in enumerate(overview, start=1):
+    rf = WHITE if i % 2 else LT1
+    cell(t.cell(i, 0), f"チーム{no}", size=SZ_TBL, color=DK2, bold=True, fill=rf,
+         align=PP_ALIGN.CENTER)
+    cell(t.cell(i, 1), "", fill=rf)
+    cell(t.cell(i, 2), name, size=SZ_TBLS, color=DK1, bold=True, fill=rf)
+    cell(t.cell(i, 3), topic, size=SZ_TBLS, color=DK1, fill=rf)
+    cell(t.cell(i, 4), diff, size=SZ_TBL, color=DK1, bold=True,
+         fill=diff_fill(diff), align=PP_ALIGN.CENTER)
+    cell(t.cell(i, 5), fcw[forecast[no]], size=SZ_TBLS, color=DK1, bold=True,
+         fill=fc_fill(forecast[no]), align=PP_ALIGN.CENTER)
+cx0 = CX + Inches(0.95) + Inches(0.1)
+for i, (no, lv, *_r) in enumerate(overview, start=1):
+    yc = ty0 + hh + rowh * (i - 1) + rowh / 2
+    stages(s, cx0, yc, lv, on=stage_color(lv), step=Inches(0.215),
+           w=Inches(0.24))
+    txt(s, cx0 + Inches(0.215) * 5 + Inches(0.05), yc - Inches(0.13),
+        Inches(1.22), Inches(0.26), f"{NO[lv]} {STAGE_SHORT[lv]}", size=SZ_TBLS,
+        color=DK2, bold=True, anchor=MSO_ANCHOR.MIDDLE)
+
+# ==================================================================
 # 4. エグゼクティブサマリ
 # ==================================================================
-s = content_slide(4, "エグゼクティブサマリ", "全体の状況と、事務局への依頼事項")
+s = content_slide(6, "エグゼクティブサマリ", "全体の状況と、事務局への依頼事項")
 box(s, CX, Inches(1.42), CW, Inches(0.78), DK2)
 txt(s, CX + Inches(0.3), Inches(1.42), CW - Inches(0.6), Inches(0.78),
     "全11チームが企画を1案に固め、構築フェーズへ移行。"
@@ -663,51 +714,9 @@ for i, (num, ttl, note) in enumerate(asks):
         note, size=SZ_FINE, color=DK1, ls=1.16)
 
 # ==================================================================
-# 5. 各チームの状況一覧
-# ==================================================================
-s = content_slide(5, "各チームの状況一覧",
-                  "全11チームが1案に確定／第2回 実施済み＝チーム1・2・3・4・5・10・11")
-txt(s, CX, Inches(1.38), CW, Inches(0.5),
-    "進捗の段階 ▶ ①案の絞り込み中　②2案から選定中　③1案確定（内容の詰めは途上）　"
-    "④設計まで具体化　⑤効果試算まで完了\n"
-    "10月発表の見込み（基準＝発表に向けた道筋の明確さ）▶ "
-    "◎ 道筋が明確で自走できる　○ Copilotとの相談や範囲の絞り込みで間に合う　"
-    "△ 要フォロー（作るものが未確定・再設計中）",
-    size=SZ_NOTE, color=DK1, ls=1.25)
-
-ty0, rowh, hh = Inches(1.94), Inches(0.418), Inches(0.38)
-t = table(s, CX, ty0, CW, 12, 6,
-          [Inches(0.95), Inches(2.45), Inches(2.95), Inches(3.27),
-           Inches(0.85), Inches(1.25)], hh, rowh)
-for c, h in enumerate(["チーム", "進捗の段階", "取り組み内容",
-                       "第2回の主な論点・相談", "難易度", "10月見込み"]):
-    cell(t.cell(0, c), h, size=SZ_TBL, color=WHITE, bold=True, fill=DK2,
-         align=PP_ALIGN.CENTER)
-fcw = {"◎": "◎ 順調", "○": "○ 概ね順調", "△": "△ 要フォロー"}
-for i, (no, lv, name, diff, topic, done) in enumerate(overview, start=1):
-    rf = WHITE if i % 2 else LT1
-    cell(t.cell(i, 0), f"チーム{no}", size=SZ_TBL, color=DK2, bold=True, fill=rf,
-         align=PP_ALIGN.CENTER)
-    cell(t.cell(i, 1), "", fill=rf)
-    cell(t.cell(i, 2), name, size=SZ_TBLS, color=DK1, bold=True, fill=rf)
-    cell(t.cell(i, 3), topic, size=SZ_TBLS, color=DK1, fill=rf)
-    cell(t.cell(i, 4), diff, size=SZ_TBL, color=DK1, bold=True,
-         fill=diff_fill(diff), align=PP_ALIGN.CENTER)
-    cell(t.cell(i, 5), fcw[forecast[no]], size=SZ_TBLS, color=DK1, bold=True,
-         fill=fc_fill(forecast[no]), align=PP_ALIGN.CENTER)
-cx0 = CX + Inches(0.95) + Inches(0.1)
-for i, (no, lv, *_r) in enumerate(overview, start=1):
-    yc = ty0 + hh + rowh * (i - 1) + rowh / 2
-    stages(s, cx0, yc, lv, on=stage_color(lv), step=Inches(0.215),
-           w=Inches(0.24))
-    txt(s, cx0 + Inches(0.215) * 5 + Inches(0.05), yc - Inches(0.13),
-        Inches(1.22), Inches(0.26), f"{NO[lv]} {STAGE_SHORT[lv]}", size=SZ_TBLS,
-        color=DK2, bold=True, anchor=MSO_ANCHOR.MIDDLE)
-
-# ==================================================================
 # 6. 使用アプリ（想定）・難易度・ボリューム
 # ==================================================================
-s = content_slide(6, "使用アプリ（想定）・難易度・ボリュームの比較",
+s = content_slide(7, "使用アプリ（想定）・難易度・ボリュームの比較",
                   "メンター検討の材料／企画書と相談会の内容にもとづく想定")
 ty0, rowh, hh = Inches(1.42), Inches(0.375), Inches(0.70)
 APP_SHOW = [c for c in APP_COLS if c[0] != "CS"]   # CSは全チーム共通のため注記に記載
@@ -758,7 +767,7 @@ txt(s, CX + Inches(0.4), sy + Inches(0.02), CW - Inches(0.54), Inches(0.58),
 # ==================================================================
 # 7. 課題は大きく3点
 # ==================================================================
-s = content_slide(7, "第2回で挙がった課題は、大きく3点",
+s = content_slide(8, "第2回で挙がった課題は、大きく3点",
                   "チーム1・2・3・4・5・10・11で実際に挙がった論点を集約")
 issues = [
     ("01", "使えるデータ・環境", "ガバナンス・制約", AC1, AC6,
@@ -797,7 +806,13 @@ for k, (num, ttl, sub, col, bg, bullets, action) in enumerate(issues):
         "▶ 事務局へ：" + action, size=SZ_FINE, color=DK2, bold=True)
 
 # ==================================================================
-# 8〜18. 各チーム個票
+# 9. 章区切り 02
+# ==================================================================
+section_slide(9, "02", "各チームの状況")
+
+
+# ==================================================================
+# 10〜20. 各チーム個票
 # ==================================================================
 def team_slide(no, page):
     d = detail[no]
@@ -877,7 +892,7 @@ def team_slide(no, page):
 
 
 for k, no in enumerate(range(1, 12)):
-    team_slide(no, 8 + k)
+    team_slide(no, 10 + k)
 
 # テンプレート由来のスライドを削除し、本資料のスライドのみを残す
 delete_slides(prs, range(N_SRC))
