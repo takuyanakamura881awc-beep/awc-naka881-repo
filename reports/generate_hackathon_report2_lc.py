@@ -14,11 +14,18 @@ Copilot Studio 活用ハッカソン 第2回 事前相談会 チームごとの�
 - レイアウト：1_表紙 / 1_目次 / 1_タイトル（章区切り）/ 2_タイトル＋見出し小（本文）
 - 本文領域は x0.81〜12.53、ページ番号は x12.67 y7.00
 """
+import copy
+
 from pptx import Presentation
 from pptx.util import Inches, Pt
+from pptx.opc.constants import RELATIONSHIP_TYPE as RT
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.enum.shapes import MSO_SHAPE
+
+A_NS = "{http://schemas.openxmlformats.org/drawingml/2006/main}"
+R_NS = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
+SVG_NS = "{http://schemas.microsoft.com/office/drawing/2016/SVG/main}"
 
 TEMPLATE = ("/tmp/claude-0/-home-user-awc-naka881-repo/"
             "e4943cfb-89be-5c9f-b59c-004830a57633/scratchpad/tmpl/base.pptx")
@@ -45,16 +52,17 @@ CW = Inches(11.72)         # 本文幅
 CY = Inches(1.45)          # 本文上端
 PGX, PGY = Inches(12.67), Inches(7.00)
 
-# ---- 文字サイズ（テンプレートの実測値に合わせる）----
-# 会議投影を前提に、テンプレートの文字サイズ体系の中で大きめの段階を採用
-SZ_LEAD  = 16.3   # 本文リード
-SZ_HEAD  = 18.1   # カード見出し
-SZ_BODY  = 14.5   # 本文小
-SZ_FINE  = 12.7   # 注記・チップ
-SZ_SUB   = 14.5   # 見出し（サブタイトル）
-SZ_TBL   = 12.0   # 表の標準
-SZ_TBLS  = 11.0   # 表の小（説明列）
-SZ_NOTE  = 10.5   # 凡例（最小）
+# ---- 文字サイズ：テンプレートの体系に準拠 ----
+# テンプレートで実際に使われている段階：25.4(タイトル) / 18.14 / 16.33 / 14.52 / 12.7 / 10.89
+SZ_XL    = 18.14  # スライド内の大見出し
+SZ_HEAD  = 16.33  # カード・セクション見出し
+SZ_LEAD  = 14.52  # 本文（標準）
+SZ_BODY  = 12.7   # 本文小
+SZ_FINE  = 10.89  # 注記・チップ・表の小（テンプレートの最小値）
+SZ_SUB   = 12.7   # 見出し（サブタイトル）
+SZ_TBL   = 12.7   # 表の主要セル
+SZ_TBLS  = 10.89  # 表の説明セル
+SZ_NOTE  = 10.89  # 凡例
 
 prs = Presentation(TEMPLATE)
 SW, SH = prs.slide_width, prs.slide_height
@@ -65,16 +73,69 @@ TOTAL = 18
 # ==================================================================
 # 基本ヘルパー
 # ==================================================================
-def delete_all_slides(p):
+def copy_shape(shape, src_slide, dst_slide):
+    """テンプレート内の図形（画像・SVGを含む）を複製して dst_slide に追加する。
+    画像リレーションは複製先スライドに張り替える。"""
+    el = copy.deepcopy(shape._element)
+    for tag in (A_NS + "blip", SVG_NS + "svgBlip"):
+        for blip in el.iter(tag):
+            rid = blip.get(R_NS + "embed") or blip.get(R_NS + "link")
+            if not rid:
+                continue
+            try:
+                part = src_slide.part.related_part(rid)
+            except KeyError:
+                continue
+            new_rid = dst_slide.part.relate_to(part, RT.IMAGE)
+            if blip.get(R_NS + "embed"):
+                blip.set(R_NS + "embed", new_rid)
+            else:
+                blip.set(R_NS + "link", new_rid)
+    dst_slide.shapes._spTree.append(el)
+    return dst_slide.shapes[-1]
+
+
+def place(shape, src_slide, dst_slide, x, y, w=None, h=None):
+    """図形を複製し、位置（と必要ならサイズ）を指定して配置する"""
+    new = copy_shape(shape, src_slide, dst_slide)
+    if w is not None and h is not None:
+        # 縦横比を保ったまま指定枠に収める
+        ratio = min(w / new.width, h / new.height)
+        new.width = int(new.width * ratio)
+        new.height = int(new.height * ratio)
+    new.left, new.top = x, y
+    return new
+
+
+def delete_slides(p, indices):
+    """指定インデックス（0始まり）のスライドを削除する"""
     lst = p.slides._sldIdLst
-    for sldId in list(lst):
-        rId = sldId.get('{http://schemas.openxmlformats.org/officeDocument/'
-                        '2006/relationships}id')
+    ids = list(lst)
+    for i in sorted(indices, reverse=True):
+        rId = ids[i].get('{http://schemas.openxmlformats.org/officeDocument/'
+                         '2006/relationships}id')
         p.part.drop_rel(rId)
-        lst.remove(sldId)
+        lst.remove(ids[i])
 
 
-delete_all_slides(prs)
+# テンプレートの既存スライドは、アイコン・挿絵の供給元として構築中は保持する
+SRC = list(prs.slides)
+N_SRC = len(SRC)
+
+
+def parts(slide_no):
+    """テンプレートのスライド番号（1始まり）を返す"""
+    return SRC[slide_no - 1]
+
+
+def pick(slide_no, shape_id=None, name=None):
+    """テンプレートのスライドから shape_id または name で図形を取得"""
+    for sh in parts(slide_no).shapes:
+        if shape_id is not None and sh.shape_id == shape_id:
+            return sh
+        if name is not None and sh.name == name:
+            return sh
+    return None
 
 
 def add(layout_idx):
@@ -604,9 +665,10 @@ for i, (no, lv, *_r) in enumerate(overview, start=1):
 s = content_slide(6, "使用アプリ（想定）・難易度・ボリュームの比較",
                   "メンター検討の材料／企画書と相談会の内容にもとづく想定")
 ty0, rowh, hh = Inches(1.46), Inches(0.39), Inches(0.52)
-ncol = 3 + len(APP_COLS) + 1
+APP_SHOW = [c for c in APP_COLS if c[0] != "CS"]   # CSは全チーム共通のため注記に記載
+ncol = 3 + len(APP_SHOW) + 1
 widths = ([Inches(0.9), Inches(0.86), Inches(0.86)]
-          + [Inches(0.73)] * len(APP_COLS) + [Inches(1.8)])
+          + [Inches(0.82)] * len(APP_SHOW) + [Inches(1.72)])
 t = table(s, CX, ty0, CW, 12, ncol, widths, hh, rowh)
 cell(t.cell(0, 0), "チーム", size=SZ_TBLS, color=WHITE, bold=True, fill=DK2,
      align=PP_ALIGN.CENTER)
@@ -614,8 +676,8 @@ cell(t.cell(0, 1), "難易度", size=SZ_TBLS, color=WHITE, bold=True, fill=DK2,
      align=PP_ALIGN.CENTER)
 cell(t.cell(0, 2), "ボリュ\nーム", size=SZ_NOTE, color=WHITE, bold=True, fill=DK2,
      align=PP_ALIGN.CENTER)
-for j, (key, label) in enumerate(APP_COLS):
-    cell(t.cell(0, 3 + j), label, size=10, color=WHITE, bold=True, fill=DK2,
+for j, (key, label) in enumerate(APP_SHOW):
+    cell(t.cell(0, 3 + j), label, size=SZ_FINE, color=WHITE, bold=True, fill=DK2,
          align=PP_ALIGN.CENTER)
 cell(t.cell(0, ncol - 1), "主な制約・留意点", size=SZ_TBLS, color=WHITE, bold=True,
      fill=DK2, align=PP_ALIGN.CENTER)
@@ -627,7 +689,7 @@ for i, (no, lv, name, diff, topic, done) in enumerate(overview, start=1):
          fill=diff_fill(diff), align=PP_ALIGN.CENTER)
     cell(t.cell(i, 2), volume[no], size=SZ_TBL, color=DK1, bold=True,
          fill=vol_fill(volume[no]), align=PP_ALIGN.CENTER)
-    for j, (key, label) in enumerate(APP_COLS):
+    for j, (key, label) in enumerate(APP_SHOW):
         if key in app_use[no]:
             cell(t.cell(i, 3 + j), "●", size=SZ_TBL, color=DK2, bold=True,
                  fill=AC3, align=PP_ALIGN.CENTER)
@@ -637,7 +699,8 @@ for i, (no, lv, name, diff, topic, done) in enumerate(overview, start=1):
 sy = ty0 + hh + rowh * 11 + Inches(0.08)
 box(s, CX, sy, CW, Inches(0.62), AC5)
 txt(s, CX + Inches(0.22), sy + Inches(0.02), CW - Inches(0.44), Inches(0.58),
-    "● ＝ 想定される使用アプリ　／　難易度：中＝M365標準で実現しやすい・"
+    "● ＝ 想定される使用アプリ（Copilot Studio は全11チームが使用のため列を省略）　／　"
+    "難易度：中＝M365標準で実現しやすい・"
     "中〜高＝連携や運用の検証項目が多い・高＝外部連携や制約が大きく再設計や判断を伴う\n"
     "ボリューム ＝ 企画着手から実業務で使い始める（リリース）までに必要な総作業量。"
     "開発するもの＋読み込む資料の整備＋連携・権限・本番移行・運用展開を含む　※暫定評価",
@@ -756,6 +819,9 @@ def team_slide(no, page):
 
 for k, no in enumerate(range(1, 12)):
     team_slide(no, 8 + k)
+
+# テンプレート由来のスライドを削除し、本資料のスライドのみを残す
+delete_slides(prs, range(N_SRC))
 
 prs.save(OUT)
 print("saved:", OUT)
