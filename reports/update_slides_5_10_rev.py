@@ -178,7 +178,12 @@ def diff_fill(v):
 # ==================================================================
 # 表示テキスト（修正依頼を反映）
 # ==================================================================
-# 進捗：詳細設計済みに見えない表現へ
+# 進捗：ステップインジケーター（点灯数）と記号
+STEP = {"T01": 3, "T02": 3, "T03": 3, "T04": 0, "T05": 5, "T06": 3,
+        "T07": 5, "T08": 4, "T09": 4, "T10": 4, "T11": 4}
+STEP_MARK = {"T01": "③", "T02": "③", "T03": "③", "T04": "－", "T05": "⑤",
+             "T06": "③ *", "T07": "⑤ *", "T08": "④", "T09": "④",
+             "T10": "④", "T11": "④"}
 STAGE = {
     "T01": "③ MVP候補と入出力", "T02": "③ MVP候補と入出力",
     "T03": "③ MVP候補と入出力", "T04": "－ 再設計中",
@@ -188,7 +193,7 @@ STAGE = {
     "T11": "④ 概念設計レベル",
 }
 # 適合性：○／△回避可／△確認要／×
-FIT = {"T01": "○", "T02": "○", "T03": "△確認要", "T04": "×",
+FIT = {"T01": "○", "T02": "○", "T03": "△回避可", "T04": "×",
        "T05": "△回避可", "T06": "△回避可", "T07": "○", "T08": "△確認要",
        "T09": "△回避可", "T10": "○", "T11": "○"}
 
@@ -200,8 +205,9 @@ SHORT = {
                 issues="FAQ・ガイドの整備／代表エラーの選定",
                 action="設計相談用プロンプトの見本を配布"),
     "T03": dict(work="営業データ統合とリスク分析・訪問前サマリ",
-                issues="外部Webは手動取得＋SharePoint格納で回避可／営業システム連携の可否",
-                action="営業システムから取得可能なデータ範囲を判断（外部Webは回避方針で進行）"),
+                issues="外部Webは手動取得＋SharePoint格納で回避可／"
+                       "営業データのマスキング有無は要確認（手動マスキングで回避可）",
+                action=""),
     "T04": dict(work="市場調査・企業分析・アイデア出しの自動化",
                 issues="現行案の中核が外部Web参照／代替ユースケースが未確定",
                 action="再設計対象として最優先フォロー。新案確定後に難易度・ボリュームを再評価"),
@@ -266,20 +272,20 @@ PA_RULE_SCOPE = ("対象外：クラウドフローとCopilot Studioエージェ
                  "上記のトリガーを使用する。")
 
 FIT_DETAIL = [
-    ("T03", "外部Web・営業データの取得",
-     "外部Webは人が取得してSharePointに置く方針で回避可能。営業システム連携はMVP対象外とするか、"
-     "取得可能な範囲を事務局が判断。"),
+    ("T03", "外部Webの取得／営業データのマスキング",
+     "外部Webは人が取得してSharePointに置く方針で回避可能。営業システムから取得したデータの"
+     "マスキング有無は要確認だが、手動マスキングで回避可能。"),
     ("T05", "リマインドの自動起動",
      "エージェントフローを直接呼び出さない構成であれば対象外。必要に応じて人の確認を挟む"
      "オンデマンド型で回避可能。"),
     ("T06", "月次自動実行・ファイル保管・会議招集",
      "8月のMVPは人が起点となって資料作成を開始する構成に寄せれば回避可能。"
-     "保管先はSharePoint/OneDriveへ。"),
+     "共有ファイルサーバの直接参照は不可のため、保管先はSharePoint／OneDriveへ。"),
     ("T08", "個人情報・予定表・会議室・メール参照",
      "事務局確認が必要。MVPの範囲をタスク整理側に寄せれば一部は回避可能。"),
     ("T09", "共有ファイルサーバ・社外秘・メール送信",
-     "SharePoint格納と人の確認を前提にすれば大部分は回避可能。"
-     "固定文面の自動送信条件のみ事務局確認。"),
+     "共有ファイルサーバの直接参照は不可。SharePoint格納と人の確認を前提にすれば大部分は"
+     "回避可能。固定文面の自動送信条件のみ事務局確認。"),
 ]
 
 
@@ -296,11 +302,12 @@ txt(s5, CX, Inches(1.3), CW, Inches(0.5),
     "適合性 ▶ ○ 概ね実現可能／△回避可 回避策あり／△確認要 事務局確認待ち／× 中核が抵触",
     size=9.2, color=DK1, ls=1.22)
 
-t = table(s5, CX, Inches(1.9), CW, 12, 8,
-          [Inches(0.72), Inches(1.95), Inches(1.28), Inches(0.66), Inches(0.58),
-           Inches(0.92), Inches(3.06), Inches(2.55)], Inches(0.44), Inches(0.42))
+W5 = [Inches(0.8), Inches(2.5), Inches(1.85), Inches(0.8), Inches(0.7),
+      Inches(1.0), Inches(4.07)]
+TY5, HH5, RH5 = Inches(1.9), Inches(0.44), Inches(0.42)
+t = table(s5, CX, TY5, CW, 12, 7, W5, HH5, RH5)
 for c, h in enumerate(["チーム", "取り組み", "進捗", "10月\n見込み", "難易\n度",
-                       "適合性", "主な論点（回避可否を含む）", "事務局アクション"]):
+                       "適合性", "主な論点（回避可否を含む）"]):
     cell(t.cell(0, c), h, size=SZ_FINE, color=WHITE, bold=True, fill=DK2,
          align=PP_ALIGN.CENTER)
 for i, tid in enumerate(ORDER, start=1):
@@ -309,8 +316,7 @@ for i, tid in enumerate(ORDER, start=1):
     cell(t.cell(i, 0), d["team_label"], size=SZ_FINE, color=DK2, bold=True,
          fill=rf, align=PP_ALIGN.CENTER)
     cell(t.cell(i, 1), sh["work"], size=9.2, color=DK1, bold=True, fill=rf)
-    cell(t.cell(i, 2), STAGE[tid], size=9.2, color=DK2, bold=True, fill=rf,
-         align=PP_ALIGN.CENTER)
+    cell(t.cell(i, 2), "", fill=rf)
     cell(t.cell(i, 3), d["forecast"], size=SZ_BODY, color=DK1, bold=True,
          fill=fc_fill(d["forecast"]), align=PP_ALIGN.CENTER)
     cell(t.cell(i, 4), d["difficulty"], size=SZ_BODY, color=DK1, bold=True,
@@ -318,8 +324,24 @@ for i, tid in enumerate(ORDER, start=1):
     cell(t.cell(i, 5), FIT[tid], size=9.2, color=DK1, bold=True,
          fill=fit_fill(FIT[tid]), align=PP_ALIGN.CENTER)
     cell(t.cell(i, 6), sh["issues"], size=9.2, color=DK1, fill=rf)
-    cell(t.cell(i, 7), sh["action"], size=9.2, color=DK1, fill=rf)
-ny = Inches(1.9) + Inches(0.44) + Inches(0.42) * 11 + Inches(0.06)
+
+# 進捗列：ステップインジケーター（到達段階まで点灯する矢印）
+step_x0 = CX + W5[0] + W5[1] + Inches(0.1)
+STEP_W, STEP_H, STEP_GAP = Inches(0.24), Inches(0.155), Inches(0.22)
+for i, tid in enumerate(ORDER, start=1):
+    yc = TY5 + HH5 + RH5 * (i - 1) + RH5 / 2
+    lit = STEP[tid]
+    on = DK2 if lit >= 5 else AC2
+    for k in range(5):
+        sp = s5.shapes.add_shape(MSO_SHAPE.CHEVRON, step_x0 + STEP_GAP * k,
+                                 yc - STEP_H / 2, STEP_W, STEP_H)
+        sp.fill.solid()
+        sp.fill.fore_color.rgb = on if k < lit else GRAY
+        sp.line.fill.background(); sp.shadow.inherit = False
+    txt(s5, step_x0 + STEP_GAP * 5 + Inches(0.04), yc - Inches(0.12),
+        Inches(0.52), Inches(0.24), STEP_MARK[tid], size=10, color=DK2,
+        bold=True, anchor=MSO_ANCHOR.MIDDLE)
+ny = TY5 + HH5 + RH5 * 11 + Inches(0.06)
 box(s5, CX, ny, CW, Inches(0.44), AC5)
 txt(s5, CX + Inches(0.2), ny, CW - Inches(0.4), Inches(0.44),
     "＊ チーム6・7は第2回 事前相談会が未実施のため、第1回と企画書をもとにした暫定評価。"
@@ -362,12 +384,12 @@ txt(s6, CX, Inches(3.32), CW, Inches(0.44),
     size=9.5, color=DK1, ls=1.2)
 
 pts = [("外部データ", AC4,
-        "外部Web・APIは使用しない。必要な資料は人が取得しSharePointへ格納する方針で回避できるチームがある。"),
+        "外部Web・APIは使用しない。必要な資料は人が取得しSharePointへ格納する方針で回避予定（チーム3・4）。"),
        ("個人情報・権限", AC6,
-        "予定表・会議室・メール・Teams情報の扱いは事務局確認が必要。設計に影響する。"),
+        "予定表・会議室・メール・Teams情報の扱いは事務局確認が必要。設計に影響する（チーム8・9）。"),
        ("ファイル保管", AC4,
-        "共有ファイルサーバの直接参照は避け、SharePoint／OneDrive格納を原則とする。"
-        "個人情報や極秘情報を含む場合はマスキング等の追加対応が必要。"),
+        "共有ファイルサーバの直接参照は不可。SharePoint／OneDrive格納を原則とする。"
+        "個人情報や極秘情報を含む場合はマスキング等の追加対応が必要（チーム5・6・9）。"),
        ("エージェントフロー", AC5,
         "Power Automate側でエージェントフローを呼び出す構成の場合のみ"
         "「When an agent calls the flow」の使用が必要。直接連携しない場合は対象外。")]
@@ -380,11 +402,11 @@ for label, col, note in pts:
         size=9.5, color=DK1, anchor=MSO_ANCHOR.MIDDLE, ls=1.14)
     py += Inches(0.64)
 
-box(s6, CX, Inches(6.62), CW, Inches(0.32), LT1)
-txt(s6, CX + Inches(0.16), Inches(6.6), CW - Inches(0.32), Inches(0.34),
+box(s6, CX, Inches(6.6), CW, Inches(0.36), AC4)
+txt(s6, CX + Inches(0.16), Inches(6.6), CW - Inches(0.32), Inches(0.36),
     "全チーム共有事項：Power Automate側でエージェントフローを呼び出す場合は"
     "「When an agent calls the flow」のみを使用する（詳細はスライド9）。",
-    size=9.5, color=DK1, anchor=MSO_ANCHOR.MIDDLE)
+    size=9.5, color=DK1, bold=True, anchor=MSO_ANCHOR.MIDDLE)
 
 
 # ==================================================================
@@ -547,10 +569,10 @@ rows9 = [
      "予定表・会議室・メール・Teams、社員／協力会社／ゲスト情報の扱い。設計に影響する。",
      "チーム8・9"),
     ("ファイル保管", "横断課題：回避方針あり", AC4,
-     "共有ファイルサーバの直接参照は避け、SharePoint／OneDrive格納を原則とする。"
+     "共有ファイルサーバの直接参照は不可。SharePoint／OneDrive格納を原則とする。"
      "個人情報・極秘情報を含む場合はマスキング等が必要。",
      "チーム5・6・9"),
-    ("本番移行", "事務局判断待ち（急ぎ度：中）", AC5,
+    ("本番移行", "事務局判断待ち", AC6,
      "リリース要件を整理中。10月のデモ時点では必須ではなく、クリティカルパスではない。",
      "チーム11・全チーム共通"),
     ("メール送信", "個別判断", AC5,
