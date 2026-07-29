@@ -1,0 +1,554 @@
+{
+  "meta": {
+    "project": "Microsoft 365 Copilot Studio 活用ハッカソン 事前相談会② 状況報告 スライド5〜8改善",
+    "date_context": "2026-07-29時点",
+    "requested_output": "Claude Codeでpptxを更新するための構造化入力",
+    "priority": "high",
+    "do_not_scope": "スライド9以降のチーム別詳細を全面改修する設計書作成、メンター向け詳細構築手順書作成は今回の主目的ではない。",
+    "version": "v2_power_automate_trigger_rule_clarified"
+  },
+  "constraints": {
+    "purpose": "事務局向けに、各チームの現在状況・10月発表見込み・構築ボリューム・横断課題を正しく報告するため、既存のスライド5〜8を精緻化する。必要に応じてスライドを追加してよい。",
+    "primary_scope": "priority_high: 7/27版状況報告資料のスライド5〜8相当の品質向上。スライド9以降のチーム別詳細やメンター向け設計書は今回の主対象外。",
+    "input_priority": [
+      "最新版企画書 T01〜T11",
+      "事前相談会②トランスクリプト",
+      "事前相談会①トランスクリプト",
+      "既存 20260727 状況報告pptx"
+    ],
+    "architecture_rule": "企画書内の『エージェント構成・アーキテクチャイメージ』欄や別紙構成図は、各チームの想像であり誤っている可能性があるため正として採用しない。チーム名、エージェント名、業務スコープ、課題、解決策、削減時間、実現可能性、展開運用、前提条件から、M365/Power Platform/Copilot Studio中心の正しい構成を再設計する。",
+    "hard_constraints": [
+      "【最重要：Power Automate起動ルール】\nPower Automate側でエージェントフローを呼び出すときは、必ず「When an agent calls the flow（エージェントがフローを呼び出したとき）」のみ利用すること。\nほかのトリガーでは従量課金（Copilot Credits消費）が発生する可能性があるため、必ず守ること。\n\n使用禁止例：\n❌ スケジュール実行\n❌ Dataverse更新トリガー\n❌ Forms回答トリガー\n❌ 手動ボタントリガー\n❌ メール受信トリガー\n❌ その他 Power Automate の通常トリガー\n\n推奨構成：\nCopilot Studio → When an agent calls the flow → Power Automate → SharePoint / Teams / Outlook 等\n\nメンターは設計レビュー時に、Power Automateの開始トリガーが「When an agent calls the flow」になっているか必ず確認すること。\n「When an agent calls the flow」以外のトリガーが含まれている場合は、構成を修正させること。\n",
+      "外部Web参照・Web検索・スクレイピングは不可",
+      "外部接続コネクタは使用しない",
+      "プレミアムコネクタは使用しない",
+      "従量課金が発生する構成・機能・設定は行わない",
+      "Dataverseは使用しない",
+      "外部API・外部サービス連携は不可",
+      "Graph APIやHTTPは一律NGとはしない。ただし、標準コネクタ内のM365内部データアクセスとして利用可能なものに限る。外部Web・外部API・プレミアムHTTPアクションは不可"
+    ],
+    "difficulty_definition": {
+      "1": "Copilot Studio標準機能・SharePointナレッジ中心で成立。フローや権限設計が軽い。",
+      "2": "M365標準アプリを複数使うが、標準的な設定・単純な連携で成立。",
+      "3": "ナレッジ設計、AI判定、ファイル入出力、権限整理、人の確認設計など、設計力が必要。",
+      "4": "技術検証・運用設計・権限/情報分類判断が多い。MVPスコープを強く絞る必要がある。",
+      "-": "現行案が制約に抵触、または作るものが再設計中であり、現案の難易度評価は行わない。新案で再評価する。"
+    },
+    "forecast_definition": {
+      "S": "10月発表成功が非常に高い。MVP範囲・入力・出力・デモ筋書きが明確で自走可能。",
+      "A": "発表見込み高い。軽微な設計整理やプロンプト/ナレッジ整備でデモ化できる。",
+      "B": "重点フォロー必要。制約確認、スコープ再定義、権限/データ配置整理が必要。",
+      "C": "現行案のままでは難しい。再設計または別案化が必要。"
+    },
+    "guideline_fit_definition": {
+      "○": "制約内で実現可能。標準コネクタ・M365内データ・エージェント呼び出しフローで構成可能。",
+      "△": "実現可能性はあるが、事務局判断または設計変更が必要。",
+      "×": "現行案が制約に抵触。再設計が必要。"
+    },
+    "volume_definition": "スライド向けの相対値。各アプリ別に0〜40程度で見積もり、合計を構築ボリュームとする。アクション数やステップ数などの詳細内訳は優先度中のメンター設計書で扱う。",
+    "power_automate_agent_flow_rule": {
+      "importance": "★★★★★",
+      "rule": "Power Automate側でエージェントフローを呼び出すときは、必ず『When an agent calls the flow（エージェントがフローを呼び出したとき）』のみ利用すること。ほかのトリガーでは従量課金（Copilot Credits消費）が発生する可能性があるため、必ず守ること。",
+      "allowed_trigger": "When an agent calls the flow（エージェントがフローを呼び出したとき）",
+      "prohibited_triggers": [
+        "スケジュール実行",
+        "Dataverse更新トリガー",
+        "Forms回答トリガー",
+        "手動ボタントリガー",
+        "メール受信トリガー",
+        "その他 Power Automate の通常トリガー"
+      ],
+      "mentor_check": "メンターは設計レビュー時にPower Automateの開始トリガーを必ず確認し、許可トリガー以外が含まれている場合は構成を修正させる。"
+    }
+  },
+  "slides_recommendation": [
+    {
+      "slide_no": "5",
+      "title": "各チームの状況一覧（S/A/B/C・進捗・制約適合性）",
+      "goal": "事務局が、どのチームが順調で、どのチームにフォローが必要かを一覧で把握できるようにする。",
+      "content_type": "table",
+      "columns": [
+        "チーム",
+        "取り組み",
+        "進捗",
+        "10月見込み",
+        "難易度",
+        "ガイドライン適合性",
+        "主な論点",
+        "事務局アクション"
+      ],
+      "data_source": "teams 配列"
+    },
+    {
+      "slide_no": "6",
+      "title": "エグゼクティブサマリ：全体状況とフォロー優先順位",
+      "goal": "S/A/B/Cの分布、重点フォロー対象、事務局が判断すべき事項を短く提示する。",
+      "content_type": "summary_cards",
+      "summary": {
+        "S": "T07",
+        "A": "T01, T02, T05, T10, T11",
+        "B": "T03, T06, T08, T09",
+        "C": "T04"
+      },
+      "message": "多くのチームはMVP化で10月発表可能。ただし、外部Web/外部連携/通常トリガー/個人情報/ファイルサーバ/本番移行の判断が進捗を左右する。"
+    },
+    {
+      "slide_no": "7",
+      "title": "使用アプリ想定と構築ボリューム（相対値）",
+      "goal": "アプリ数の多さではなく、各アプリでの構築量の相対値を示し、合計ボリュームで比較する。",
+      "content_type": "matrix_or_stacked_bar",
+      "apps": [
+        "Copilot Studio",
+        "Power Automate",
+        "SharePoint",
+        "Teams",
+        "Outlook",
+        "Forms",
+        "Power BI",
+        "Excel",
+        "Word/PPT",
+        "その他"
+      ],
+      "data_source": "teams[*].apps_volume と total_volume"
+    },
+    {
+      "slide_no": "8",
+      "title": "難易度とガイドライン適合性の分離評価",
+      "goal": "作る量（ボリューム）、作り方の難しさ（難易度）、制約適合性を混同しない。",
+      "content_type": "table_or_scatter",
+      "note": "難易度『-』は、現行案が制約に抵触し、案自体の再設計が必要なため現案では評価不可を意味する。"
+    },
+    {
+      "slide_no": "9_new",
+      "title": "事務局判断待ち・横断課題一覧",
+      "goal": "複数チームに共通する事務局の判断事項を、カテゴリごとに整理する。",
+      "content_type": "issue_table",
+      "issues": [
+        {
+          "category": "コスト/ライセンス",
+          "item": "Power Automate側でエージェントフローを呼び出すときは、必ず『When an agent calls the flow（エージェントがフローを呼び出したとき）』のみ利用すること。ほかのトリガーでは従量課金が発生する可能性があるため使用しない。",
+          "teams": "全チーム、特にT05/T06/T08/T09"
+        },
+        {
+          "category": "外部Web/外部API",
+          "item": "Web検索・RSS・外部API・スクレイピング不可。",
+          "teams": "T03/T04"
+        },
+        {
+          "category": "個人情報/権限",
+          "item": "社員・協力会社・ゲストの予定表、メール、Teams情報の利用可否。",
+          "teams": "T08/T09"
+        },
+        {
+          "category": "ファイル保管",
+          "item": "共有ファイルサーバではなくSharePoint/OneDriveへの格納を原則化できるか。",
+          "teams": "T05/T06/T09"
+        },
+        {
+          "category": "本番移行",
+          "item": "開発環境から本番環境への移行、申請、承認、リリース判定。",
+          "teams": "T11、全チーム共通"
+        },
+        {
+          "category": "メール送信",
+          "item": "固定文面のTeams/Outlook通知で人確認が必要な条件。",
+          "teams": "T09/T06/T08"
+        }
+      ]
+    },
+    {
+      "slide_no": "10_new_optional",
+      "title": "8月デモに向けた進め方の型",
+      "goal": "事務局からチームへ配布する進め方の統一メッセージを提示する。",
+      "content_type": "process",
+      "steps": [
+        "1. MVPを1本に絞る",
+        "2. 入力・処理・出力を1例で定義",
+        "3. Copilot Studioから開始する",
+        "4. フローはエージェント呼び出しのみ",
+        "5. 8月は一本通すデモ、9月は発表・運用整理"
+      ],
+      "note": "このスライドは必要に応じて追加。既存スライド8の情報量が多い場合に分割する。"
+    }
+  ],
+  "forecast_counts": {
+    "A": 5,
+    "B": 4,
+    "C": 1,
+    "S": 1
+  },
+  "teams": [
+    {
+      "team_id": "T01",
+      "team_label": "チーム1",
+      "agent": "カクニンジャ / 様式チェックAIエージェント",
+      "initiative": "加盟店から提出される様式の記載漏れ・形式不備をAIが確認し、修正指示を生成する。修正・外部確認は人が実施。",
+      "current_assessment": "企画は1案化済み。作るものは明確だが、AI判定のばらつきと開発手順の型が課題。",
+      "progress_stage": "③ 1案確定（内容の詰めは途上）",
+      "forecast": "A",
+      "difficulty": "3",
+      "guideline_fit": "○",
+      "forecast_reason": "標準機能中心でMVP化しやすい。チェック項目を固定し、AI判定と人の最終確認を分ければ10月発表可能。",
+      "difficulty_reason": "アプリ数は少ないが、判定基準の構造化、出力形式の固定、再現性確認が重要。",
+      "recommended_architecture": "利用者がCopilot Studioに提出様式とチェック基準を渡す。SharePointにチェック基準・サンプル・手順を置き、Copilot Studioが不備確認と修正指示案を返す。Power Automateは必要時のみ、エージェント呼び出しフローで結果保存やテンプレート出力に限定する。",
+      "apps_volume": {
+        "Copilot Studio": 25,
+        "SharePoint": 10,
+        "Excel": 15,
+        "Power Automate": 5,
+        "Teams": 0,
+        "Outlook": 0,
+        "Forms": 0,
+        "Power BI": 0,
+        "Word/PPT": 0,
+        "その他": 0
+      },
+      "total_volume": 55,
+      "key_issues": [
+        "AI判定結果の揺れ",
+        "判定基準の粒度",
+        "人が最終確認する境界の明確化"
+      ],
+      "office_action": "開発手順の型、8〜9月スケジュール、プロンプト例を共有。"
+    },
+    {
+      "team_id": "T02",
+      "team_label": "チーム2",
+      "agent": "受付Cエラー原因ナビゲーター",
+      "initiative": "カード会社が申請した受付Cエラーファイルをもとに、原因・修正方法・再申請手順を案内する。",
+      "current_assessment": "対象エラーとFAQ・マニュアルを絞ればMVP化しやすい。",
+      "progress_stage": "③ 1案確定（内容の詰めは途上）",
+      "forecast": "A",
+      "difficulty": "3",
+      "guideline_fit": "○",
+      "forecast_reason": "代表的なエラーパターンに限定すれば、FAQ/ガイド参照型エージェントとして発表可能。",
+      "difficulty_reason": "FAQ・ガイド整備とファイル入力形式の揃え込みが必要。",
+      "recommended_architecture": "Copilot StudioをTeamsまたはWebチャネルで提供。SharePointに受付Cマニュアル、過去QA、エラーパターンを整理。利用者がエラーファイルやエラー内容を入力し、エージェントが原因・修正・再申請手順を回答。Power Automateは必要時のみ、エージェント呼び出しフローで問い合わせログ保存に限定。",
+      "apps_volume": {
+        "Copilot Studio": 30,
+        "SharePoint": 15,
+        "Teams": 5,
+        "Power Automate": 5,
+        "Excel": 5,
+        "Outlook": 0,
+        "Forms": 0,
+        "Power BI": 0,
+        "Word/PPT": 0,
+        "その他": 0
+      },
+      "total_volume": 60,
+      "key_issues": [
+        "FAQ/ガイドの整備",
+        "代表エラーの選定",
+        "回答根拠の明示"
+      ],
+      "office_action": "設計相談用プロンプトの見本を配布。"
+    },
+    {
+      "team_id": "T03",
+      "team_label": "チーム3",
+      "agent": "加盟店防衛マネジメントエージェント",
+      "initiative": "営業データを統合し、リスク分析・訪問優先順位・訪問前サマリ・次アクション提案を行う。",
+      "current_assessment": "構想は明確だが、Salesforce/N-MARK等の取得可否、外部情報、情報区分が大きな論点。MVP範囲を絞る必要あり。",
+      "progress_stage": "③ 1案確定（制約整理が必要）",
+      "forecast": "B",
+      "difficulty": "4",
+      "guideline_fit": "△",
+      "forecast_reason": "M365内に置ける静的サンプルデータや人手取得データに限定すれば発表可能。自動取得や外部情報前提では厳しい。",
+      "difficulty_reason": "データ分類、権限、データ統合、リスク分析ロジック、Power BI可視化まで範囲が広い。",
+      "recommended_architecture": "MVPでは外部Web参照や外部システム自動取得を使わない。人手で取得した営業データをExcel/CSVとしてSharePointに格納し、Power QueryまたはExcelで整形。Power BIは必要なら閲覧用。Copilot Studioは整理済みデータや説明資料を参照し、訪問前サマリ・確認観点を生成する。フローはエージェント呼び出し時のみ実行。",
+      "apps_volume": {
+        "Copilot Studio": 30,
+        "SharePoint": 20,
+        "Excel": 20,
+        "Power Automate": 10,
+        "Power BI": 15,
+        "Teams": 0,
+        "Outlook": 0,
+        "Forms": 0,
+        "Word/PPT": 5,
+        "その他": 10
+      },
+      "total_volume": 110,
+      "key_issues": [
+        "Salesforce等の自動取得可否",
+        "外部Web参照不可",
+        "情報区分・機密データ",
+        "対象データのMVP絞り込み"
+      ],
+      "office_action": "使えるデータをM365内/M365外/外部Webに分類し、可否判断を明文化。"
+    },
+    {
+      "team_id": "T04",
+      "team_label": "チーム4",
+      "agent": "市場・企業分析エージェント",
+      "initiative": "企業名・キーワード・業界キーワードを起点に市場調査、企業分析、新規事業アイデア出しを自動化する。",
+      "current_assessment": "企画の中心が外部Web/RSS/API参照のため、現行案は制約に大きく抵触。新しい案または外部参照なしの案へ再設計が必要。",
+      "progress_stage": "再設計中",
+      "forecast": "C",
+      "difficulty": "-",
+      "guideline_fit": "×",
+      "forecast_reason": "現状のままでは外部Web禁止に抵触し、作るものが定まっていない。新案で再評価が必要。",
+      "difficulty_reason": "現行案の難易度ではなく、案自体の成立可否が問題。",
+      "recommended_architecture": "現行案は採用しない。代替案として、事前に人が取得済みの調査資料・過去調査DB・社内資料をSharePointに格納し、Copilot Studioが差分整理、要約、提案書ドラフトを作る構成に変更する。外部Web検索、RSS、外部API、スクレイピングは使わない。",
+      "apps_volume": {
+        "Copilot Studio": 0,
+        "SharePoint": 0,
+        "Power Automate": 0,
+        "Teams": 0,
+        "Outlook": 0,
+        "Forms": 0,
+        "Power BI": 0,
+        "Excel": 0,
+        "Word/PPT": 0,
+        "その他": 0
+      },
+      "total_volume": 0,
+      "key_issues": [
+        "外部Web参照禁止",
+        "現行案の中核機能が制約抵触",
+        "代替ユースケース未確定"
+      ],
+      "office_action": "再設計対象として最優先フォロー。新案確定後に難易度・ボリュームを再評価。"
+    },
+    {
+      "team_id": "T05",
+      "team_label": "チーム5",
+      "agent": "おはようリマインドくん",
+      "initiative": "依頼事項を登録し、対象者への通知、回答集約、未回答者へのリマインド、管理者向け可視化を行う。",
+      "current_assessment": "業務効果・構成は具体化済み。ただしForms回答トリガーやスケジュールリマインドはクレジット消費リスクがあるため、エージェント呼び出しフロー型に寄せる必要がある。",
+      "progress_stage": "⑤ 効果試算まで完了",
+      "forecast": "A",
+      "difficulty": "3",
+      "guideline_fit": "△",
+      "forecast_reason": "MVPは1依頼の登録→通知→回答集約→確認まで一本通す構成で発表可能。リマインドの自動起動設計は見直しが必要。",
+      "difficulty_reason": "標準アプリ中心だが、通常トリガーを避けるため、運用設計と起動方法の整理が重要。",
+      "recommended_architecture": "取りまとめ担当者がCopilot Studioから依頼を登録。エージェントが『When an agent calls the flow』でフローを呼び、Teams通知や回答先を作成。Forms回答トリガーやスケジュールトリガーは使わない。MVPでは回答状況確認とリマインド送信は、担当者がエージェントに依頼したタイミングで実行するオンデマンド型とする。",
+      "apps_volume": {
+        "Copilot Studio": 25,
+        "Power Automate": 25,
+        "Teams": 15,
+        "Forms": 10,
+        "SharePoint": 10,
+        "Excel": 0,
+        "Outlook": 0,
+        "Power BI": 0,
+        "Word/PPT": 0,
+        "その他": 5
+      },
+      "total_volume": 90,
+      "key_issues": [
+        "Forms回答トリガー不可",
+        "スケジュールリマインド不可",
+        "回答状況の保存先",
+        "運用定着"
+      ],
+      "office_action": "通常トリガー禁止とエージェント呼び出しフロー限定のルールをチームへ必ず周知。 Power Automateを使う場合は、必ず『When an agent calls the flow』起動に限定することを確認。"
+    },
+    {
+      "team_id": "T06",
+      "team_label": "チーム6",
+      "agent": "Forecast ONE",
+      "initiative": "月次フォーキャスト会議の資料作成と会議招集を自動化する。",
+      "current_assessment": "企画は明確だが、第2回未実施。資料自動生成、ファイル保管場所、会議通知の役割分担を分解して検証する必要あり。",
+      "progress_stage": "③ 1案確定（第2回未実施）",
+      "forecast": "B",
+      "difficulty": "4",
+      "guideline_fit": "△",
+      "forecast_reason": "PowerPoint生成と会議招集は発表映えするが、ファイルサーバ参照、月次自動起動、PPT生成方式に制約がある。MVPはエージェント起動で資料作成支援に絞る必要がある。",
+      "difficulty_reason": "ファイル収集、前月資料の再利用、PPT生成、Outlook/Teams通知と工程が多い。スケジュールトリガー禁止にも注意。",
+      "recommended_architecture": "月次スケジュール実行ではなく、担当者がCopilot Studioに『今月資料を作成』と依頼して開始する。必要ファイルはSharePointまたはOneDriveに配置。エージェント呼び出しフローでファイル取得、更新箇所抽出、資料ドラフト作成支援、通知文案作成までを行う。会議招集はMVPでは人の確認後に送信する。",
+      "apps_volume": {
+        "Copilot Studio": 25,
+        "Power Automate": 30,
+        "SharePoint": 15,
+        "OneDrive": 10,
+        "Outlook": 10,
+        "Teams": 10,
+        "Word/PPT": 30,
+        "Excel": 15,
+        "Forms": 0,
+        "Power BI": 0,
+        "その他": 0
+      },
+      "total_volume": 145,
+      "key_issues": [
+        "ファイルサーバ参照不可の可能性",
+        "スケジュール実行不可",
+        "PPT自動生成の現実性",
+        "会議招集の人確認"
+      ],
+      "office_action": "SharePoint/OneDrive格納前提に変更し、月次自動起動ではなくエージェント起動型にするよう助言。 Power Automateを使う場合は、必ず『When an agent calls the flow』起動に限定することを確認。"
+    },
+    {
+      "team_id": "T07",
+      "team_label": "チーム7",
+      "agent": "加盟店課金精算チェックエージェント",
+      "initiative": "人手で取得したN-Mark、J-SCRUM、CNC等のデータと請求ファイルを照合し、不整合をチェックしてレポート出力する。",
+      "current_assessment": "外部システム連携を行わず、人手取得データを入力とするため制約適合性は高い。第2回未実施だが構成は明確。",
+      "progress_stage": "⑤ 効果試算まで完了（第2回未実施）",
+      "forecast": "S",
+      "difficulty": "3",
+      "guideline_fit": "○",
+      "forecast_reason": "固定の判定基準と毎月の入力ファイルの分離が明確で、MVPを作りやすい。",
+      "difficulty_reason": "照合ロジック、判定基準の明文化、出力レポート設計は必要だが、標準範囲で成立しやすい。",
+      "recommended_architecture": "SharePointに固定チェックリストと入力ファイル置き場を用意。利用者がCopilot Studioから対象ファイルを指定し、エージェントが照合観点を整理して差異・確認箇所レポートを出す。Power Automateは必要時のみ、エージェント呼び出しフローで結果保存。外部システム直接連携はしない。",
+      "apps_volume": {
+        "Copilot Studio": 25,
+        "SharePoint": 15,
+        "Excel": 25,
+        "Power Automate": 5,
+        "Teams": 0,
+        "Outlook": 0,
+        "Forms": 0,
+        "Power BI": 0,
+        "Word/PPT": 5,
+        "その他": 0
+      },
+      "total_volume": 75,
+      "key_issues": [
+        "ファイル命名規則の維持",
+        "判定基準の固定化",
+        "最終確認は人が実施"
+      ],
+      "office_action": "第2回未実施のため、初回メンター定例でMVP入力・出力例を確認。"
+    },
+    {
+      "team_id": "T08",
+      "team_label": "チーム8",
+      "agent": "段取（Dandori）AI",
+      "initiative": "会議調整、空き時間・会議室候補確認、タスク抽出、レビュー観点蓄積を支援する。",
+      "current_assessment": "構想は具体化しているが、Outlook/Teams/予定表/会議室/メール参照に個人情報・社外秘が含まれるため事務局判断が必要。メール着信時などの通常トリガーは避ける必要がある。",
+      "progress_stage": "④ 設計まで具体化",
+      "forecast": "B",
+      "difficulty": "4",
+      "guideline_fit": "△",
+      "forecast_reason": "範囲を会議調整またはタスク整理のどちらかに絞り、オンデマンド型にすれば発表可能。個人情報・権限判断が残る。",
+      "difficulty_reason": "Outlook予定表、会議室、Teams、メール参照、個人情報の扱い、権限が絡む。",
+      "recommended_architecture": "メール着信時・日次起動ではなく、利用者がCopilot Studioから依頼して開始する。Outlook/Teams参照は組織ルールで認められる範囲に限定。Power Automateはエージェント呼び出しフローのみ。MVPは会議調整支援またはタスク整理の一方に絞り、候補提示後は人が確認して登録・送信する。",
+      "apps_volume": {
+        "Copilot Studio": 30,
+        "Power Automate": 25,
+        "Outlook": 25,
+        "Teams": 15,
+        "SharePoint": 10,
+        "Excel": 0,
+        "Forms": 0,
+        "Power BI": 0,
+        "Word/PPT": 0,
+        "その他": 5
+      },
+      "total_volume": 110,
+      "key_issues": [
+        "個人情報・社外秘の取り扱い",
+        "予定表/会議室アクセス権限",
+        "日次/メール着信トリガー不可",
+        "MVP範囲の絞り込み"
+      ],
+      "office_action": "個人情報・ゲスト/協力会社情報の扱いと予定表参照可否を事務局判断事項として提示。 Power Automateを使う場合は、必ず『When an agent calls the flow』起動に限定することを確認。"
+    },
+    {
+      "team_id": "T09",
+      "team_label": "チーム9",
+      "agent": "レビュー進捗管理アシスタント",
+      "initiative": "レビュー対象物の一覧化、レビュー依頼、完了確認、未実施者リマインドを管理する。",
+      "current_assessment": "3フェーズ分解と分業方針は明確。ただしファイルサーバ、社外秘、メール送信、人確認、通常トリガー制約の整理が必要。",
+      "progress_stage": "④ 設計まで具体化",
+      "forecast": "B",
+      "difficulty": "4",
+      "guideline_fit": "△",
+      "forecast_reason": "エージェント起動型に変更し、ファイルをSharePointに置ければ発表可能。メール受信トリガーや自動送信は避ける必要がある。",
+      "difficulty_reason": "ファイル収集、レビュー管理表、通知/返信、社外秘、分業、権限整理が複合的。",
+      "recommended_architecture": "メール受信トリガーやスケジュール実行は使わず、担当者がCopilot Studioにレビュー依頼情報を入力して開始する。SharePointにレビュー対象・管理表を配置し、エージェント呼び出しフローで管理表更新・通知文案作成・Teams通知を行う。外部共有サーバや社外秘ファイルはMVP対象外または人手アップロード。メール送信は人確認後に行う。",
+      "apps_volume": {
+        "Copilot Studio": 30,
+        "Power Automate": 35,
+        "SharePoint": 25,
+        "Outlook": 15,
+        "Teams": 10,
+        "Excel": 20,
+        "Forms": 0,
+        "Power BI": 0,
+        "Word/PPT": 5,
+        "その他": 10
+      },
+      "total_volume": 150,
+      "key_issues": [
+        "共有ファイルサーバの扱い",
+        "社外秘資料",
+        "定型メール自動送信の判断",
+        "メール受信トリガー不可",
+        "チーム内分業"
+      ],
+      "office_action": "固定文面送信時の人確認要否、ファイルサーバの代替方針、リリース判定要件を整理。 Power Automateを使う場合は、必ず『When an agent calls the flow』起動に限定することを確認。"
+    },
+    {
+      "team_id": "T10",
+      "team_label": "チーム10",
+      "agent": "対面クライテリア議事録ドラフト生成",
+      "initiative": "Teams会議の文字起こし、会議資料、出席者情報から議事録ドラフトを作成する。",
+      "current_assessment": "構成は明確。トランスクリプト取得権限と議事録フォーマットへの転記品質を確認すれば進めやすい。",
+      "progress_stage": "④ 設計まで具体化",
+      "forecast": "A",
+      "difficulty": "3",
+      "guideline_fit": "○",
+      "forecast_reason": "サンプル会議資料・文字起こし・議事録テンプレートを用意すれば、デモ化しやすい。",
+      "difficulty_reason": "会議トランスクリプト権限、出力フォーマット固定、ドラフト品質評価が必要。",
+      "recommended_architecture": "Teams会議の文字起こしと会議資料をSharePointに保存し、利用者がCopilot Studioで議事録ドラフト生成を依頼する。エージェントは資料と文字起こしを参照し、所定フォーマットのWordドラフトを生成する。最終確認・修正・送付は人が行う。",
+      "apps_volume": {
+        "Copilot Studio": 25,
+        "Teams": 20,
+        "SharePoint": 15,
+        "Word/PPT": 20,
+        "Power Automate": 5,
+        "Outlook": 0,
+        "Forms": 0,
+        "Power BI": 0,
+        "Excel": 0,
+        "その他": 0
+      },
+      "total_volume": 85,
+      "key_issues": [
+        "トランスクリプト取得権限",
+        "議事録テンプレート",
+        "AI出力の人確認"
+      ],
+      "office_action": "サンプル素材と評価観点を準備し、実機確認で精度を担保するよう案内。"
+    },
+    {
+      "team_id": "T11",
+      "team_label": "チーム11",
+      "agent": "社内LAN問い合わせチャットボット",
+      "initiative": "社内LAN問い合わせの一次受付として、FAQ・申請種別案内・問い合わせ切り分けを行う。",
+      "current_assessment": "FAQ参照型で制約適合性は高い。本番移行、利用ルール、FAQ整備、運用保守が主課題。",
+      "progress_stage": "④ 設計まで具体化",
+      "forecast": "A",
+      "difficulty": "3",
+      "guideline_fit": "○",
+      "forecast_reason": "チャットボット型のMVPを作りやすく、社内データもSharePoint化可能。ただし本番移行と運用項目の整理が必要。",
+      "difficulty_reason": "FAQ整備、参照資料品質、フェーズ展開、手順書/利用ルールの洗い出しが必要。",
+      "recommended_architecture": "SharePointにFAQ・申請種別・手順書を整備し、Copilot Studioが問い合わせを一次受付。必要に応じてTeamsチャネルやチャット画面から利用。Power Automateは原則不要。使う場合はエージェント呼び出しフローで問い合わせログ保存程度に限定。",
+      "apps_volume": {
+        "Copilot Studio": 30,
+        "SharePoint": 20,
+        "Teams": 10,
+        "Power Automate": 5,
+        "Outlook": 0,
+        "Forms": 0,
+        "Power BI": 0,
+        "Excel": 0,
+        "Word/PPT": 5,
+        "その他": 5
+      },
+      "total_volume": 75,
+      "key_issues": [
+        "FAQ整備",
+        "本番移行",
+        "利用ルール",
+        "運用保守",
+        "段階展開"
+      ],
+      "office_action": "本番移行の申請フローと運用項目テンプレートを確認・提示。"
+    }
+  ]
+}
