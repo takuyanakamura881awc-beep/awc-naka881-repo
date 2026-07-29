@@ -1,0 +1,1802 @@
+{
+ "teams": [
+  {
+   "id": "T01",
+   "name": "提出様式チェックAI（カクニンジャ）",
+   "kind": "ナレッジ参照＋ファイル確認型",
+   "purpose": "提出様式の記載漏れ・形式不備をAIで確認し、修正指示案を出す。",
+   "mvp_idea": "1種類の提出様式、10項目程度のチェック基準で、AI判定→人確認まで一本通す。",
+   "inputs": "提出様式ファイル、チェック基準、記載例",
+   "outputs": "不備一覧、修正指示案、確認コメント",
+   "apps": [
+    "Copilot Studio",
+    "SharePoint",
+    "Excel",
+    "Power Automate 任意",
+    "Teams 任意"
+   ],
+   "roles": [
+    "人: 入力準備、最終確認、承認、例外対応",
+    "Copilot Studio: 意図理解、判断支援、生成、案内、確認観点の提示",
+    "Power Automate: 必要時のみ、標準コネクタで保存・通知・一覧更新",
+    "SharePoint/OneDrive/Excel: データ・ナレッジ・結果の保管"
+   ],
+   "fit": "外部Web/API、Dataverse、Premium、Power BI、Formsに依存しない設計とする。",
+   "mermaid": "flowchart LR\n  U[利用者/メンター] --> CS[Copilot Studio]\n  CS --> SP[SharePoint / OneDrive]\n  CS --> OUT[出力: 不備一覧、修正指示案、確認コメント]\n  PA[Power Automate 標準範囲] -.必要時.-> SP\n  SP --> CS\n  OUT --> H[人の確認・修正]",
+   "mermaid_out": "不備一覧、修正指示案、確認コメント",
+   "mvp_goal": "1種類の提出様式、10項目程度のチェック基準で、AI判定→人確認まで一本通す。",
+   "mvp_scope": [
+    "入力はダミーデータ1パターン",
+    "処理は代表ユースケース1本",
+    "出力は確認可能な形式1つ",
+    "人の確認を必ず含める"
+   ],
+   "mvp_out": [
+    "全量データ対応",
+    "本番移行",
+    "高度な例外処理",
+    "外部Web/API連携",
+    "Power BI / Dataverse / Premium"
+   ],
+   "steps": [
+    {
+     "title": "Step 1: SharePoint準備",
+     "items": [
+      "チーム別サイトまたは検証用サイトにライブラリ/リストを作成",
+      "入力データ、ナレッジ、出力結果を分けて保管"
+     ]
+    },
+    {
+     "title": "Step 2: ダミーデータ配置",
+     "items": [
+      "`07_dummy_data_spec.md` に沿ってExcel/CSV/テキストを作成",
+      "個人情報・実データは使わない"
+     ]
+    },
+    {
+     "title": "Step 3: Copilot Studio構築",
+     "items": [
+      "エージェント名を設定",
+      "目的・制約・回答ルールをシステム指示に記載",
+      "SharePointナレッジまたは入力ファイルを参照する流れを作る"
+     ]
+    },
+    {
+     "title": "Step 4: Power Automate（必要時のみ）",
+     "items": [
+      "標準コネクタでSPO/Teams/Outlookに限定",
+      "エージェントフローを直接呼ぶ場合は When an agent calls the flow",
+      "直接連携しない場合は、人手操作やSPOアイテム作成を介した回避設計を検討"
+     ]
+    },
+    {
+     "title": "Step 5: テスト",
+     "items": [
+      "`08_minimum_test_cases.md` の正常系・不足系・例外系を実施",
+      "AI出力を人が確認し、誤りや不足を記録"
+     ]
+    }
+   ],
+   "risks": [
+    "AI判定の揺れ",
+    "チェック基準の粒度不足",
+    "人の最終確認範囲が曖昧"
+   ],
+   "advice": [
+    "チェック項目を表形式で固定する",
+    "AI出力は必ず人確認を挟む",
+    "まず正常/不備ありの2サンプルで検証する"
+   ],
+   "precheck": [
+    "ダミーデータ1件で期待出力が出るか",
+    "AI出力の根拠が説明できるか",
+    "人の確認ポイントが明確か",
+    "制約違反となるアプリやコネクタを使っていないか"
+   ],
+   "dummy_files": [
+    "`T01_sample_input.xlsx`",
+    "`T01_sample_knowledge.xlsx`",
+    "`T01_expected_output.xlsx`"
+   ],
+   "dummy_cols": [
+    "ID",
+    "タイトル",
+    "内容",
+    "カテゴリ",
+    "担当候補",
+    "期限",
+    "ステータス",
+    "備考"
+   ],
+   "dummy_policy": [
+    "実名・実店舗名・実案件名は使用しない",
+    "5〜10件程度でよい",
+    "正常データ、軽微な不備データ、判断が難しいデータを混ぜる"
+   ],
+   "dummy_io": [
+    "入力: 提出様式ファイル、チェック基準、記載例",
+    "期待出力: 不備一覧、修正指示案、確認コメント"
+   ],
+   "testcases": [
+    [
+     "No",
+     "種別",
+     "入力",
+     "期待結果",
+     "確認観点"
+    ],
+    [
+     "1",
+     "正常系",
+     "代表的な入力データ1件",
+     "期待する出力が生成される",
+     "MVPが一本通るか"
+    ],
+    [
+     "2",
+     "入力不足",
+     "必須項目が欠けたデータ",
+     "不足項目を質問または要確認として返す",
+     "AIが勝手に補完しないか"
+    ],
+    [
+     "3",
+     "想定外",
+     "形式が崩れたデータ",
+     "エラーまたは確認依頼を返す",
+     "例外時に止まらないか"
+    ],
+    [
+     "4",
+     "人確認",
+     "判断が分かれるデータ",
+     "人の確認が必要と明示する",
+     "自動判断しすぎないか"
+    ],
+    [
+     "5",
+     "制約確認",
+     "外部Web/APIを使わずに実行",
+     "SharePoint/Excel等だけで処理できる",
+     "ハッカソン制約に適合するか"
+    ]
+   ],
+   "banner": "/tmp/claude-0/-home-user-awc-naka881-repo/e4943cfb-89be-5c9f-b59c-004830a57633/scratchpad/pm/v1/T01/T01_architecture_banner.png"
+  },
+  {
+   "id": "T02",
+   "name": "受付Cエラー原因ナビゲーター",
+   "kind": "FAQ/マニュアル参照型",
+   "purpose": "受付Cエラーの原因、修正方法、再申請手順を案内する。",
+   "mvp_idea": "代表エラー5件に限定し、FAQ/手順書参照から回答生成まで一本通す。",
+   "inputs": "エラーコード、エラー文、申請画面キャプチャまたはサンプルファイル",
+   "outputs": "原因候補、修正方法、再申請手順、エスカレーション案",
+   "apps": [
+    "Copilot Studio",
+    "SharePoint",
+    "Teams",
+    "Power Automate 任意",
+    "Excel 任意"
+   ],
+   "roles": [
+    "人: 入力準備、最終確認、承認、例外対応",
+    "Copilot Studio: 意図理解、判断支援、生成、案内、確認観点の提示",
+    "Power Automate: 必要時のみ、標準コネクタで保存・通知・一覧更新",
+    "SharePoint/OneDrive/Excel: データ・ナレッジ・結果の保管"
+   ],
+   "fit": "外部Web/API、Dataverse、Premium、Power BI、Formsに依存しない設計とする。",
+   "mermaid": "flowchart LR\n  U[利用者/メンター] --> CS[Copilot Studio]\n  CS --> SP[SharePoint / OneDrive]\n  CS --> OUT[出力: 原因候補、修正方法、再申請手順、エスカレーション案]\n  PA[Power Automate 標準範囲] -.必要時.-> SP\n  SP --> CS\n  OUT --> H[人の確認・修正]",
+   "mermaid_out": "原因候補、修正方法、再申請手順、エスカレーション案",
+   "mvp_goal": "代表エラー5件に限定し、FAQ/手順書参照から回答生成まで一本通す。",
+   "mvp_scope": [
+    "入力はダミーデータ1パターン",
+    "処理は代表ユースケース1本",
+    "出力は確認可能な形式1つ",
+    "人の確認を必ず含める"
+   ],
+   "mvp_out": [
+    "全量データ対応",
+    "本番移行",
+    "高度な例外処理",
+    "外部Web/API連携",
+    "Power BI / Dataverse / Premium"
+   ],
+   "steps": [
+    {
+     "title": "Step 1: SharePoint準備",
+     "items": [
+      "チーム別サイトまたは検証用サイトにライブラリ/リストを作成",
+      "入力データ、ナレッジ、出力結果を分けて保管"
+     ]
+    },
+    {
+     "title": "Step 2: ダミーデータ配置",
+     "items": [
+      "`07_dummy_data_spec.md` に沿ってExcel/CSV/テキストを作成",
+      "個人情報・実データは使わない"
+     ]
+    },
+    {
+     "title": "Step 3: Copilot Studio構築",
+     "items": [
+      "エージェント名を設定",
+      "目的・制約・回答ルールをシステム指示に記載",
+      "SharePointナレッジまたは入力ファイルを参照する流れを作る"
+     ]
+    },
+    {
+     "title": "Step 4: Power Automate（必要時のみ）",
+     "items": [
+      "標準コネクタでSPO/Teams/Outlookに限定",
+      "エージェントフローを直接呼ぶ場合は When an agent calls the flow",
+      "直接連携しない場合は、人手操作やSPOアイテム作成を介した回避設計を検討"
+     ]
+    },
+    {
+     "title": "Step 5: テスト",
+     "items": [
+      "`08_minimum_test_cases.md` の正常系・不足系・例外系を実施",
+      "AI出力を人が確認し、誤りや不足を記録"
+     ]
+    }
+   ],
+   "risks": [
+    "FAQ整備不足",
+    "エラーコードと原因の対応表不足",
+    "回答根拠が不明確"
+   ],
+   "advice": [
+    "代表エラーを先に絞る",
+    "回答テンプレートを固定する",
+    "根拠資料名を必ず返す"
+   ],
+   "precheck": [
+    "ダミーデータ1件で期待出力が出るか",
+    "AI出力の根拠が説明できるか",
+    "人の確認ポイントが明確か",
+    "制約違反となるアプリやコネクタを使っていないか"
+   ],
+   "dummy_files": [
+    "`T02_sample_input.xlsx`",
+    "`T02_sample_knowledge.xlsx`",
+    "`T02_expected_output.xlsx`"
+   ],
+   "dummy_cols": [
+    "ID",
+    "タイトル",
+    "内容",
+    "カテゴリ",
+    "担当候補",
+    "期限",
+    "ステータス",
+    "備考"
+   ],
+   "dummy_policy": [
+    "実名・実店舗名・実案件名は使用しない",
+    "5〜10件程度でよい",
+    "正常データ、軽微な不備データ、判断が難しいデータを混ぜる"
+   ],
+   "dummy_io": [
+    "入力: エラーコード、エラー文、申請画面キャプチャまたはサンプルファイル",
+    "期待出力: 原因候補、修正方法、再申請手順、エスカレーション案"
+   ],
+   "testcases": [
+    [
+     "No",
+     "種別",
+     "入力",
+     "期待結果",
+     "確認観点"
+    ],
+    [
+     "1",
+     "正常系",
+     "代表的な入力データ1件",
+     "期待する出力が生成される",
+     "MVPが一本通るか"
+    ],
+    [
+     "2",
+     "入力不足",
+     "必須項目が欠けたデータ",
+     "不足項目を質問または要確認として返す",
+     "AIが勝手に補完しないか"
+    ],
+    [
+     "3",
+     "想定外",
+     "形式が崩れたデータ",
+     "エラーまたは確認依頼を返す",
+     "例外時に止まらないか"
+    ],
+    [
+     "4",
+     "人確認",
+     "判断が分かれるデータ",
+     "人の確認が必要と明示する",
+     "自動判断しすぎないか"
+    ],
+    [
+     "5",
+     "制約確認",
+     "外部Web/APIを使わずに実行",
+     "SharePoint/Excel等だけで処理できる",
+     "ハッカソン制約に適合するか"
+    ]
+   ],
+   "banner": "/tmp/claude-0/-home-user-awc-naka881-repo/e4943cfb-89be-5c9f-b59c-004830a57633/scratchpad/pm/v1/T02/T02_architecture_banner.png"
+  },
+  {
+   "id": "T03",
+   "name": "加盟店防衛マネジメント支援",
+   "kind": "データ分析＋訪問前サマリ型",
+   "purpose": "人手で取得した営業データを整理し、訪問前サマリとリスク観点を生成する。",
+   "mvp_idea": "1部署・数店舗のダミーデータをSPOに置き、Excelで整形、Copilot Studioでサマリ生成。",
+   "inputs": "加盟店基本情報、取引情報、リスクメモ、過去履歴、人手取得済み外部資料",
+   "outputs": "訪問前サマリ、重点確認事項、リスク観点、推奨アクション案",
+   "apps": [
+    "Copilot Studio",
+    "SharePoint",
+    "Excel Power Query/ピボット",
+    "Teams",
+    "Power Automate 任意"
+   ],
+   "roles": [
+    "人: 入力準備、最終確認、承認、例外対応",
+    "Copilot Studio: 意図理解、判断支援、生成、案内、確認観点の提示",
+    "Power Automate: 必要時のみ、標準コネクタで保存・通知・一覧更新",
+    "SharePoint/OneDrive/Excel: データ・ナレッジ・結果の保管"
+   ],
+   "fit": "外部Web/API、Dataverse、Premium、Power BI、Formsに依存しない設計とする。",
+   "mermaid": "flowchart LR\n  U[利用者/メンター] --> CS[Copilot Studio]\n  CS --> SP[SharePoint / OneDrive]\n  CS --> OUT[出力: 訪問前サマリ、重点確認事項、リスク観点、推奨アクション案]\n  PA[Power Automate 標準範囲] -.必要時.-> SP\n  SP --> CS\n  OUT --> H[人の確認・修正]",
+   "mermaid_out": "訪問前サマリ、重点確認事項、リスク観点、推奨アクション案",
+   "mvp_goal": "1部署・数店舗のダミーデータをSPOに置き、Excelで整形、Copilot Studioでサマリ生成。",
+   "mvp_scope": [
+    "入力はダミーデータ1パターン",
+    "処理は代表ユースケース1本",
+    "出力は確認可能な形式1つ",
+    "人の確認を必ず含める"
+   ],
+   "mvp_out": [
+    "全量データ対応",
+    "本番移行",
+    "高度な例外処理",
+    "外部Web/API連携",
+    "Power BI / Dataverse / Premium"
+   ],
+   "steps": [
+    {
+     "title": "Step 1: SharePoint準備",
+     "items": [
+      "チーム別サイトまたは検証用サイトにライブラリ/リストを作成",
+      "入力データ、ナレッジ、出力結果を分けて保管"
+     ]
+    },
+    {
+     "title": "Step 2: ダミーデータ配置",
+     "items": [
+      "`07_dummy_data_spec.md` に沿ってExcel/CSV/テキストを作成",
+      "個人情報・実データは使わない"
+     ]
+    },
+    {
+     "title": "Step 3: Copilot Studio構築",
+     "items": [
+      "エージェント名を設定",
+      "目的・制約・回答ルールをシステム指示に記載",
+      "SharePointナレッジまたは入力ファイルを参照する流れを作る"
+     ]
+    },
+    {
+     "title": "Step 4: Power Automate（必要時のみ）",
+     "items": [
+      "標準コネクタでSPO/Teams/Outlookに限定",
+      "エージェントフローを直接呼ぶ場合は When an agent calls the flow",
+      "直接連携しない場合は、人手操作やSPOアイテム作成を介した回避設計を検討"
+     ]
+    },
+    {
+     "title": "Step 5: テスト",
+     "items": [
+      "`08_minimum_test_cases.md` の正常系・不足系・例外系を実施",
+      "AI出力を人が確認し、誤りや不足を記録"
+     ]
+    }
+   ],
+   "risks": [
+    "外部Web/API禁止",
+    "営業データの機密・マスキング",
+    "データ項目が多くMVPが膨らむ"
+   ],
+   "advice": [
+    "外部情報は人手取得＋SPO格納に限定",
+    "MVPは店舗数と項目数を強く絞る",
+    "Power BIは使わずExcel/SharePointで代替"
+   ],
+   "precheck": [
+    "ダミーデータ1件で期待出力が出るか",
+    "AI出力の根拠が説明できるか",
+    "人の確認ポイントが明確か",
+    "制約違反となるアプリやコネクタを使っていないか"
+   ],
+   "dummy_files": [
+    "`T03_sample_input.xlsx`",
+    "`T03_sample_knowledge.xlsx`",
+    "`T03_expected_output.xlsx`"
+   ],
+   "dummy_cols": [
+    "ID",
+    "タイトル",
+    "内容",
+    "カテゴリ",
+    "担当候補",
+    "期限",
+    "ステータス",
+    "備考"
+   ],
+   "dummy_policy": [
+    "実名・実店舗名・実案件名は使用しない",
+    "5〜10件程度でよい",
+    "正常データ、軽微な不備データ、判断が難しいデータを混ぜる"
+   ],
+   "dummy_io": [
+    "入力: 加盟店基本情報、取引情報、リスクメモ、過去履歴、人手取得済み外部資料",
+    "期待出力: 訪問前サマリ、重点確認事項、リスク観点、推奨アクション案"
+   ],
+   "testcases": [
+    [
+     "No",
+     "種別",
+     "入力",
+     "期待結果",
+     "確認観点"
+    ],
+    [
+     "1",
+     "正常系",
+     "代表的な入力データ1件",
+     "期待する出力が生成される",
+     "MVPが一本通るか"
+    ],
+    [
+     "2",
+     "入力不足",
+     "必須項目が欠けたデータ",
+     "不足項目を質問または要確認として返す",
+     "AIが勝手に補完しないか"
+    ],
+    [
+     "3",
+     "想定外",
+     "形式が崩れたデータ",
+     "エラーまたは確認依頼を返す",
+     "例外時に止まらないか"
+    ],
+    [
+     "4",
+     "人確認",
+     "判断が分かれるデータ",
+     "人の確認が必要と明示する",
+     "自動判断しすぎないか"
+    ],
+    [
+     "5",
+     "制約確認",
+     "外部Web/APIを使わずに実行",
+     "SharePoint/Excel等だけで処理できる",
+     "ハッカソン制約に適合するか"
+    ]
+   ],
+   "banner": "/tmp/claude-0/-home-user-awc-naka881-repo/e4943cfb-89be-5c9f-b59c-004830a57633/scratchpad/pm/v1/T03/T03_architecture_banner.png"
+  },
+  {
+   "id": "T05",
+   "name": "おはようリマインドくん",
+   "kind": "ワークフロー支援型",
+   "purpose": "依頼事項登録、通知、回答状況確認、未回答リマインドを支援する。",
+   "mvp_idea": "1件の依頼登録→対象者通知→回答状況確認→未回答者通知まで一本通す。",
+   "inputs": "依頼タイトル、依頼内容、対象者、期限、優先度",
+   "outputs": "依頼管理リスト、Teams通知、未回答者一覧、リマインド文案",
+   "apps": [
+    "Copilot Studio",
+    "Power Automate",
+    "SharePointリスト",
+    "Teams",
+    "アダプティブカード"
+   ],
+   "roles": [
+    "人: 入力準備、最終確認、承認、例外対応",
+    "Copilot Studio: 意図理解、判断支援、生成、案内、確認観点の提示",
+    "Power Automate: 必要時のみ、標準コネクタで保存・通知・一覧更新",
+    "SharePoint/OneDrive/Excel: データ・ナレッジ・結果の保管"
+   ],
+   "fit": "外部Web/API、Dataverse、Premium、Power BI、Formsに依存しない設計とする。",
+   "mermaid": "flowchart LR\n  U[利用者/メンター] --> CS[Copilot Studio]\n  CS --> SP[SharePoint / OneDrive]\n  CS --> OUT[出力: 依頼管理リスト、Teams通知、未回答者一覧、リマインド文案]\n  PA[Power Automate 標準範囲] -.必要時.-> SP\n  SP --> CS\n  OUT --> H[人の確認・修正]",
+   "mermaid_out": "依頼管理リスト、Teams通知、未回答者一覧、リマインド文案",
+   "mvp_goal": "1件の依頼登録→対象者通知→回答状況確認→未回答者通知まで一本通す。",
+   "mvp_scope": [
+    "入力はダミーデータ1パターン",
+    "処理は代表ユースケース1本",
+    "出力は確認可能な形式1つ",
+    "人の確認を必ず含める"
+   ],
+   "mvp_out": [
+    "全量データ対応",
+    "本番移行",
+    "高度な例外処理",
+    "外部Web/API連携",
+    "Power BI / Dataverse / Premium"
+   ],
+   "steps": [
+    {
+     "title": "Step 1: SharePoint準備",
+     "items": [
+      "チーム別サイトまたは検証用サイトにライブラリ/リストを作成",
+      "入力データ、ナレッジ、出力結果を分けて保管"
+     ]
+    },
+    {
+     "title": "Step 2: ダミーデータ配置",
+     "items": [
+      "`07_dummy_data_spec.md` に沿ってExcel/CSV/テキストを作成",
+      "個人情報・実データは使わない"
+     ]
+    },
+    {
+     "title": "Step 3: Copilot Studio構築",
+     "items": [
+      "エージェント名を設定",
+      "目的・制約・回答ルールをシステム指示に記載",
+      "SharePointナレッジまたは入力ファイルを参照する流れを作る"
+     ]
+    },
+    {
+     "title": "Step 4: Power Automate（必要時のみ）",
+     "items": [
+      "標準コネクタでSPO/Teams/Outlookに限定",
+      "エージェントフローを直接呼ぶ場合は When an agent calls the flow",
+      "直接連携しない場合は、人手操作やSPOアイテム作成を介した回避設計を検討"
+     ]
+    },
+    {
+     "title": "Step 5: テスト",
+     "items": [
+      "`08_minimum_test_cases.md` の正常系・不足系・例外系を実施",
+      "AI出力を人が確認し、誤りや不足を記録"
+     ]
+    }
+   ],
+   "risks": [
+    "Formsに寄せすぎる",
+    "定時リマインドを前提にしがち",
+    "回答ステータス管理の設計不足"
+   ],
+   "advice": [
+    "Formsは使わず会話入力/カードで代替",
+    "リマインドは人起点またはエージェント経由で実行",
+    "SPOリスト項目を先に固める"
+   ],
+   "precheck": [
+    "ダミーデータ1件で期待出力が出るか",
+    "AI出力の根拠が説明できるか",
+    "人の確認ポイントが明確か",
+    "制約違反となるアプリやコネクタを使っていないか"
+   ],
+   "dummy_files": [
+    "`T05_sample_input.xlsx`",
+    "`T05_sample_knowledge.xlsx`",
+    "`T05_expected_output.xlsx`"
+   ],
+   "dummy_cols": [
+    "ID",
+    "タイトル",
+    "内容",
+    "カテゴリ",
+    "担当候補",
+    "期限",
+    "ステータス",
+    "備考"
+   ],
+   "dummy_policy": [
+    "実名・実店舗名・実案件名は使用しない",
+    "5〜10件程度でよい",
+    "正常データ、軽微な不備データ、判断が難しいデータを混ぜる"
+   ],
+   "dummy_io": [
+    "入力: 依頼タイトル、依頼内容、対象者、期限、優先度",
+    "期待出力: 依頼管理リスト、Teams通知、未回答者一覧、リマインド文案"
+   ],
+   "testcases": [
+    [
+     "No",
+     "種別",
+     "入力",
+     "期待結果",
+     "確認観点"
+    ],
+    [
+     "1",
+     "正常系",
+     "代表的な入力データ1件",
+     "期待する出力が生成される",
+     "MVPが一本通るか"
+    ],
+    [
+     "2",
+     "入力不足",
+     "必須項目が欠けたデータ",
+     "不足項目を質問または要確認として返す",
+     "AIが勝手に補完しないか"
+    ],
+    [
+     "3",
+     "想定外",
+     "形式が崩れたデータ",
+     "エラーまたは確認依頼を返す",
+     "例外時に止まらないか"
+    ],
+    [
+     "4",
+     "人確認",
+     "判断が分かれるデータ",
+     "人の確認が必要と明示する",
+     "自動判断しすぎないか"
+    ],
+    [
+     "5",
+     "制約確認",
+     "外部Web/APIを使わずに実行",
+     "SharePoint/Excel等だけで処理できる",
+     "ハッカソン制約に適合するか"
+    ]
+   ],
+   "banner": "/tmp/claude-0/-home-user-awc-naka881-repo/e4943cfb-89be-5c9f-b59c-004830a57633/scratchpad/pm/v1/T05/T05_architecture_banner.png"
+  },
+  {
+   "id": "T06",
+   "name": "Forecast ONE",
+   "kind": "資料作成＋会議通知支援型",
+   "purpose": "前月資料と入力資料をもとに、会議資料ドラフト要点と通知文案を作成する。",
+   "mvp_idea": "人が資料作成を開始し、資料候補収集→要点生成→人確認→通知文案作成まで一本通す。",
+   "inputs": "前月資料、今回入力資料、会議メモ、通知先情報",
+   "outputs": "PPTドラフト要点、通知文案、確認チェックリスト",
+   "apps": [
+    "Copilot Studio",
+    "SharePoint/OneDrive",
+    "Power Automate",
+    "PowerPoint",
+    "Outlook/Teams",
+    "Excel"
+   ],
+   "roles": [
+    "人: 入力準備、最終確認、承認、例外対応",
+    "Copilot Studio: 意図理解、判断支援、生成、案内、確認観点の提示",
+    "Power Automate: 必要時のみ、標準コネクタで保存・通知・一覧更新",
+    "SharePoint/OneDrive/Excel: データ・ナレッジ・結果の保管"
+   ],
+   "fit": "外部Web/API、Dataverse、Premium、Power BI、Formsに依存しない設計とする。",
+   "mermaid": "flowchart LR\n  U[利用者/メンター] --> CS[Copilot Studio]\n  CS --> SP[SharePoint / OneDrive]\n  CS --> OUT[出力: PPTドラフト要点、通知文案、確認チェックリスト]\n  PA[Power Automate 標準範囲] -.必要時.-> SP\n  SP --> CS\n  OUT --> H[人の確認・修正]",
+   "mermaid_out": "PPTドラフト要点、通知文案、確認チェックリスト",
+   "mvp_goal": "人が資料作成を開始し、資料候補収集→要点生成→人確認→通知文案作成まで一本通す。",
+   "mvp_scope": [
+    "入力はダミーデータ1パターン",
+    "処理は代表ユースケース1本",
+    "出力は確認可能な形式1つ",
+    "人の確認を必ず含める"
+   ],
+   "mvp_out": [
+    "全量データ対応",
+    "本番移行",
+    "高度な例外処理",
+    "外部Web/API連携",
+    "Power BI / Dataverse / Premium"
+   ],
+   "steps": [
+    {
+     "title": "Step 1: SharePoint準備",
+     "items": [
+      "チーム別サイトまたは検証用サイトにライブラリ/リストを作成",
+      "入力データ、ナレッジ、出力結果を分けて保管"
+     ]
+    },
+    {
+     "title": "Step 2: ダミーデータ配置",
+     "items": [
+      "`07_dummy_data_spec.md` に沿ってExcel/CSV/テキストを作成",
+      "個人情報・実データは使わない"
+     ]
+    },
+    {
+     "title": "Step 3: Copilot Studio構築",
+     "items": [
+      "エージェント名を設定",
+      "目的・制約・回答ルールをシステム指示に記載",
+      "SharePointナレッジまたは入力ファイルを参照する流れを作る"
+     ]
+    },
+    {
+     "title": "Step 4: Power Automate（必要時のみ）",
+     "items": [
+      "標準コネクタでSPO/Teams/Outlookに限定",
+      "エージェントフローを直接呼ぶ場合は When an agent calls the flow",
+      "直接連携しない場合は、人手操作やSPOアイテム作成を介した回避設計を検討"
+     ]
+    },
+    {
+     "title": "Step 5: テスト",
+     "items": [
+      "`08_minimum_test_cases.md` の正常系・不足系・例外系を実施",
+      "AI出力を人が確認し、誤りや不足を記録"
+     ]
+    }
+   ],
+   "risks": [
+    "月次自動実行前提になりやすい",
+    "PPT完全自動生成の過度な期待",
+    "ファイル保管場所が曖昧"
+   ],
+   "advice": [
+    "8月MVPは人起点にする",
+    "PPTは完成版ではなく要点/構成案生成に絞る",
+    "SPO/OneDriveに入力資料を集約"
+   ],
+   "precheck": [
+    "ダミーデータ1件で期待出力が出るか",
+    "AI出力の根拠が説明できるか",
+    "人の確認ポイントが明確か",
+    "制約違反となるアプリやコネクタを使っていないか"
+   ],
+   "dummy_files": [
+    "`T06_sample_input.xlsx`",
+    "`T06_sample_knowledge.xlsx`",
+    "`T06_expected_output.xlsx`"
+   ],
+   "dummy_cols": [
+    "ID",
+    "タイトル",
+    "内容",
+    "カテゴリ",
+    "担当候補",
+    "期限",
+    "ステータス",
+    "備考"
+   ],
+   "dummy_policy": [
+    "実名・実店舗名・実案件名は使用しない",
+    "5〜10件程度でよい",
+    "正常データ、軽微な不備データ、判断が難しいデータを混ぜる"
+   ],
+   "dummy_io": [
+    "入力: 前月資料、今回入力資料、会議メモ、通知先情報",
+    "期待出力: PPTドラフト要点、通知文案、確認チェックリスト"
+   ],
+   "testcases": [
+    [
+     "No",
+     "種別",
+     "入力",
+     "期待結果",
+     "確認観点"
+    ],
+    [
+     "1",
+     "正常系",
+     "代表的な入力データ1件",
+     "期待する出力が生成される",
+     "MVPが一本通るか"
+    ],
+    [
+     "2",
+     "入力不足",
+     "必須項目が欠けたデータ",
+     "不足項目を質問または要確認として返す",
+     "AIが勝手に補完しないか"
+    ],
+    [
+     "3",
+     "想定外",
+     "形式が崩れたデータ",
+     "エラーまたは確認依頼を返す",
+     "例外時に止まらないか"
+    ],
+    [
+     "4",
+     "人確認",
+     "判断が分かれるデータ",
+     "人の確認が必要と明示する",
+     "自動判断しすぎないか"
+    ],
+    [
+     "5",
+     "制約確認",
+     "外部Web/APIを使わずに実行",
+     "SharePoint/Excel等だけで処理できる",
+     "ハッカソン制約に適合するか"
+    ]
+   ],
+   "banner": "/tmp/claude-0/-home-user-awc-naka881-repo/e4943cfb-89be-5c9f-b59c-004830a57633/scratchpad/pm/v1/T06/T06_architecture_banner.png"
+  },
+  {
+   "id": "T07",
+   "name": "加盟店課金精算チェック",
+   "kind": "データ照合型",
+   "purpose": "月次課金精算データを固定チェックリストで照合し、差異レポートを出す。",
+   "mvp_idea": "3種類のExcel/CSVをSPOに置き、固定ルールで差異確認し、Excelレポートを出す。",
+   "inputs": "N-Mark風データ、J-SCRUM風データ、CNC風データ、請求ルール一覧",
+   "outputs": "差異一覧、未計上/二重計上候補、確認コメント",
+   "apps": [
+    "Copilot Studio",
+    "SharePoint",
+    "Excel",
+    "Power Automate 任意",
+    "Teams 任意"
+   ],
+   "roles": [
+    "人: 入力準備、最終確認、承認、例外対応",
+    "Copilot Studio: 意図理解、判断支援、生成、案内、確認観点の提示",
+    "Power Automate: 必要時のみ、標準コネクタで保存・通知・一覧更新",
+    "SharePoint/OneDrive/Excel: データ・ナレッジ・結果の保管"
+   ],
+   "fit": "外部Web/API、Dataverse、Premium、Power BI、Formsに依存しない設計とする。",
+   "mermaid": "flowchart LR\n  U[利用者/メンター] --> CS[Copilot Studio]\n  CS --> SP[SharePoint / OneDrive]\n  CS --> OUT[出力: 差異一覧、未計上/二重計上候補、確認コメント]\n  PA[Power Automate 標準範囲] -.必要時.-> SP\n  SP --> CS\n  OUT --> H[人の確認・修正]",
+   "mermaid_out": "差異一覧、未計上/二重計上候補、確認コメント",
+   "mvp_goal": "3種類のExcel/CSVをSPOに置き、固定ルールで差異確認し、Excelレポートを出す。",
+   "mvp_scope": [
+    "入力はダミーデータ1パターン",
+    "処理は代表ユースケース1本",
+    "出力は確認可能な形式1つ",
+    "人の確認を必ず含める"
+   ],
+   "mvp_out": [
+    "全量データ対応",
+    "本番移行",
+    "高度な例外処理",
+    "外部Web/API連携",
+    "Power BI / Dataverse / Premium"
+   ],
+   "steps": [
+    {
+     "title": "Step 1: SharePoint準備",
+     "items": [
+      "チーム別サイトまたは検証用サイトにライブラリ/リストを作成",
+      "入力データ、ナレッジ、出力結果を分けて保管"
+     ]
+    },
+    {
+     "title": "Step 2: ダミーデータ配置",
+     "items": [
+      "`07_dummy_data_spec.md` に沿ってExcel/CSV/テキストを作成",
+      "個人情報・実データは使わない"
+     ]
+    },
+    {
+     "title": "Step 3: Copilot Studio構築",
+     "items": [
+      "エージェント名を設定",
+      "目的・制約・回答ルールをシステム指示に記載",
+      "SharePointナレッジまたは入力ファイルを参照する流れを作る"
+     ]
+    },
+    {
+     "title": "Step 4: Power Automate（必要時のみ）",
+     "items": [
+      "標準コネクタでSPO/Teams/Outlookに限定",
+      "エージェントフローを直接呼ぶ場合は When an agent calls the flow",
+      "直接連携しない場合は、人手操作やSPOアイテム作成を介した回避設計を検討"
+     ]
+    },
+    {
+     "title": "Step 5: テスト",
+     "items": [
+      "`08_minimum_test_cases.md` の正常系・不足系・例外系を実施",
+      "AI出力を人が確認し、誤りや不足を記録"
+     ]
+    }
+   ],
+   "risks": [
+    "ファイル名・列名の揺れ",
+    "突合キーの設計",
+    "差異理由の説明不足"
+   ],
+   "advice": [
+    "列仕様を固定する",
+    "チェックリストをSPOに置く",
+    "人が最終承認する前提にする"
+   ],
+   "precheck": [
+    "ダミーデータ1件で期待出力が出るか",
+    "AI出力の根拠が説明できるか",
+    "人の確認ポイントが明確か",
+    "制約違反となるアプリやコネクタを使っていないか"
+   ],
+   "dummy_files": [
+    "`T07_sample_input.xlsx`",
+    "`T07_sample_knowledge.xlsx`",
+    "`T07_expected_output.xlsx`"
+   ],
+   "dummy_cols": [
+    "ID",
+    "タイトル",
+    "内容",
+    "カテゴリ",
+    "担当候補",
+    "期限",
+    "ステータス",
+    "備考"
+   ],
+   "dummy_policy": [
+    "実名・実店舗名・実案件名は使用しない",
+    "5〜10件程度でよい",
+    "正常データ、軽微な不備データ、判断が難しいデータを混ぜる"
+   ],
+   "dummy_io": [
+    "入力: N-Mark風データ、J-SCRUM風データ、CNC風データ、請求ルール一覧",
+    "期待出力: 差異一覧、未計上/二重計上候補、確認コメント"
+   ],
+   "testcases": [
+    [
+     "No",
+     "種別",
+     "入力",
+     "期待結果",
+     "確認観点"
+    ],
+    [
+     "1",
+     "正常系",
+     "代表的な入力データ1件",
+     "期待する出力が生成される",
+     "MVPが一本通るか"
+    ],
+    [
+     "2",
+     "入力不足",
+     "必須項目が欠けたデータ",
+     "不足項目を質問または要確認として返す",
+     "AIが勝手に補完しないか"
+    ],
+    [
+     "3",
+     "想定外",
+     "形式が崩れたデータ",
+     "エラーまたは確認依頼を返す",
+     "例外時に止まらないか"
+    ],
+    [
+     "4",
+     "人確認",
+     "判断が分かれるデータ",
+     "人の確認が必要と明示する",
+     "自動判断しすぎないか"
+    ],
+    [
+     "5",
+     "制約確認",
+     "外部Web/APIを使わずに実行",
+     "SharePoint/Excel等だけで処理できる",
+     "ハッカソン制約に適合するか"
+    ]
+   ],
+   "banner": "/tmp/claude-0/-home-user-awc-naka881-repo/e4943cfb-89be-5c9f-b59c-004830a57633/scratchpad/pm/v1/T07/T07_architecture_banner.png"
+  },
+  {
+   "id": "T08",
+   "name": "段取AI（会議と依頼整理）",
+   "kind": "Outlook/Teams連携＋タスク整理型",
+   "purpose": "会議メモや依頼内容からタスクを抽出し、段取り案を生成・共有する。",
+   "mvp_idea": "予定表・会議室自動参照は避け、会議メモからタスク抽出→SPO保存→Teams共有まで一本通す。",
+   "inputs": "会議メモ、依頼文、期限、担当候補、関連資料",
+   "outputs": "タスク一覧、段取り案、確認事項、Teams共有メッセージ",
+   "apps": [
+    "Copilot Studio",
+    "SharePointリスト",
+    "Teams",
+    "Outlook 任意",
+    "Power Automate 任意"
+   ],
+   "roles": [
+    "人: 入力準備、最終確認、承認、例外対応",
+    "Copilot Studio: 意図理解、判断支援、生成、案内、確認観点の提示",
+    "Power Automate: 必要時のみ、標準コネクタで保存・通知・一覧更新",
+    "SharePoint/OneDrive/Excel: データ・ナレッジ・結果の保管"
+   ],
+   "fit": "外部Web/API、Dataverse、Premium、Power BI、Formsに依存しない設計とする。",
+   "mermaid": "flowchart LR\n  U[利用者/メンター] --> CS[Copilot Studio]\n  CS --> SP[SharePoint / OneDrive]\n  CS --> OUT[出力: タスク一覧、段取り案、確認事項、Teams共有メッセージ]\n  PA[Power Automate 標準範囲] -.必要時.-> SP\n  SP --> CS\n  OUT --> H[人の確認・修正]",
+   "mermaid_out": "タスク一覧、段取り案、確認事項、Teams共有メッセージ",
+   "mvp_goal": "予定表・会議室自動参照は避け、会議メモからタスク抽出→SPO保存→Teams共有まで一本通す。",
+   "mvp_scope": [
+    "入力はダミーデータ1パターン",
+    "処理は代表ユースケース1本",
+    "出力は確認可能な形式1つ",
+    "人の確認を必ず含める"
+   ],
+   "mvp_out": [
+    "全量データ対応",
+    "本番移行",
+    "高度な例外処理",
+    "外部Web/API連携",
+    "Power BI / Dataverse / Premium"
+   ],
+   "steps": [
+    {
+     "title": "Step 1: SharePoint準備",
+     "items": [
+      "チーム別サイトまたは検証用サイトにライブラリ/リストを作成",
+      "入力データ、ナレッジ、出力結果を分けて保管"
+     ]
+    },
+    {
+     "title": "Step 2: ダミーデータ配置",
+     "items": [
+      "`07_dummy_data_spec.md` に沿ってExcel/CSV/テキストを作成",
+      "個人情報・実データは使わない"
+     ]
+    },
+    {
+     "title": "Step 3: Copilot Studio構築",
+     "items": [
+      "エージェント名を設定",
+      "目的・制約・回答ルールをシステム指示に記載",
+      "SharePointナレッジまたは入力ファイルを参照する流れを作る"
+     ]
+    },
+    {
+     "title": "Step 4: Power Automate（必要時のみ）",
+     "items": [
+      "標準コネクタでSPO/Teams/Outlookに限定",
+      "エージェントフローを直接呼ぶ場合は When an agent calls the flow",
+      "直接連携しない場合は、人手操作やSPOアイテム作成を介した回避設計を検討"
+     ]
+    },
+    {
+     "title": "Step 5: テスト",
+     "items": [
+      "`08_minimum_test_cases.md` の正常系・不足系・例外系を実施",
+      "AI出力を人が確認し、誤りや不足を記録"
+     ]
+    }
+   ],
+   "risks": [
+    "個人情報/予定表/会議室参照の可否",
+    "MVP範囲が広がる",
+    "自動会議招集に寄りがち"
+   ],
+   "advice": [
+    "まずタスク整理に寄せる",
+    "予定表・会議室参照は事務局確認後",
+    "人が会議招集する前提で設計"
+   ],
+   "precheck": [
+    "ダミーデータ1件で期待出力が出るか",
+    "AI出力の根拠が説明できるか",
+    "人の確認ポイントが明確か",
+    "制約違反となるアプリやコネクタを使っていないか"
+   ],
+   "dummy_files": [
+    "`T08_sample_input.xlsx`",
+    "`T08_sample_knowledge.xlsx`",
+    "`T08_expected_output.xlsx`"
+   ],
+   "dummy_cols": [
+    "ID",
+    "タイトル",
+    "内容",
+    "カテゴリ",
+    "担当候補",
+    "期限",
+    "ステータス",
+    "備考"
+   ],
+   "dummy_policy": [
+    "実名・実店舗名・実案件名は使用しない",
+    "5〜10件程度でよい",
+    "正常データ、軽微な不備データ、判断が難しいデータを混ぜる"
+   ],
+   "dummy_io": [
+    "入力: 会議メモ、依頼文、期限、担当候補、関連資料",
+    "期待出力: タスク一覧、段取り案、確認事項、Teams共有メッセージ"
+   ],
+   "testcases": [
+    [
+     "No",
+     "種別",
+     "入力",
+     "期待結果",
+     "確認観点"
+    ],
+    [
+     "1",
+     "正常系",
+     "代表的な入力データ1件",
+     "期待する出力が生成される",
+     "MVPが一本通るか"
+    ],
+    [
+     "2",
+     "入力不足",
+     "必須項目が欠けたデータ",
+     "不足項目を質問または要確認として返す",
+     "AIが勝手に補完しないか"
+    ],
+    [
+     "3",
+     "想定外",
+     "形式が崩れたデータ",
+     "エラーまたは確認依頼を返す",
+     "例外時に止まらないか"
+    ],
+    [
+     "4",
+     "人確認",
+     "判断が分かれるデータ",
+     "人の確認が必要と明示する",
+     "自動判断しすぎないか"
+    ],
+    [
+     "5",
+     "制約確認",
+     "外部Web/APIを使わずに実行",
+     "SharePoint/Excel等だけで処理できる",
+     "ハッカソン制約に適合するか"
+    ]
+   ],
+   "banner": "/tmp/claude-0/-home-user-awc-naka881-repo/e4943cfb-89be-5c9f-b59c-004830a57633/scratchpad/pm/v1/T08/T08_architecture_banner.png"
+  },
+  {
+   "id": "T09",
+   "name": "レビュー進捗管理アシスタント",
+   "kind": "レビュー管理ワークフロー型",
+   "purpose": "レビュー対象の登録、観点整理、進捗更新、通知を支援する。",
+   "mvp_idea": "レビュー対象をSPOへ置き、Copilot Studioが観点整理、SPO管理表更新、Teams通知まで一本通す。",
+   "inputs": "レビュー対象ファイル、依頼情報、期限、担当者、レビュー観点",
+   "outputs": "レビュー観点一覧、管理表、Teams通知、メール文案",
+   "apps": [
+    "Copilot Studio",
+    "SharePoint",
+    "Power Automate",
+    "Teams",
+    "Outlook 人確認後",
+    "Excel"
+   ],
+   "roles": [
+    "人: 入力準備、最終確認、承認、例外対応",
+    "Copilot Studio: 意図理解、判断支援、生成、案内、確認観点の提示",
+    "Power Automate: 必要時のみ、標準コネクタで保存・通知・一覧更新",
+    "SharePoint/OneDrive/Excel: データ・ナレッジ・結果の保管"
+   ],
+   "fit": "外部Web/API、Dataverse、Premium、Power BI、Formsに依存しない設計とする。",
+   "mermaid": "flowchart LR\n  U[利用者/メンター] --> CS[Copilot Studio]\n  CS --> SP[SharePoint / OneDrive]\n  CS --> OUT[出力: レビュー観点一覧、管理表、Teams通知、メール文案]\n  PA[Power Automate 標準範囲] -.必要時.-> SP\n  SP --> CS\n  OUT --> H[人の確認・修正]",
+   "mermaid_out": "レビュー観点一覧、管理表、Teams通知、メール文案",
+   "mvp_goal": "レビュー対象をSPOへ置き、Copilot Studioが観点整理、SPO管理表更新、Teams通知まで一本通す。",
+   "mvp_scope": [
+    "入力はダミーデータ1パターン",
+    "処理は代表ユースケース1本",
+    "出力は確認可能な形式1つ",
+    "人の確認を必ず含める"
+   ],
+   "mvp_out": [
+    "全量データ対応",
+    "本番移行",
+    "高度な例外処理",
+    "外部Web/API連携",
+    "Power BI / Dataverse / Premium"
+   ],
+   "steps": [
+    {
+     "title": "Step 1: SharePoint準備",
+     "items": [
+      "チーム別サイトまたは検証用サイトにライブラリ/リストを作成",
+      "入力データ、ナレッジ、出力結果を分けて保管"
+     ]
+    },
+    {
+     "title": "Step 2: ダミーデータ配置",
+     "items": [
+      "`07_dummy_data_spec.md` に沿ってExcel/CSV/テキストを作成",
+      "個人情報・実データは使わない"
+     ]
+    },
+    {
+     "title": "Step 3: Copilot Studio構築",
+     "items": [
+      "エージェント名を設定",
+      "目的・制約・回答ルールをシステム指示に記載",
+      "SharePointナレッジまたは入力ファイルを参照する流れを作る"
+     ]
+    },
+    {
+     "title": "Step 4: Power Automate（必要時のみ）",
+     "items": [
+      "標準コネクタでSPO/Teams/Outlookに限定",
+      "エージェントフローを直接呼ぶ場合は When an agent calls the flow",
+      "直接連携しない場合は、人手操作やSPOアイテム作成を介した回避設計を検討"
+     ]
+    },
+    {
+     "title": "Step 5: テスト",
+     "items": [
+      "`08_minimum_test_cases.md` の正常系・不足系・例外系を実施",
+      "AI出力を人が確認し、誤りや不足を記録"
+     ]
+    }
+   ],
+   "risks": [
+    "共有ファイルサーバ直接参照",
+    "メール自動送信の判断",
+    "対象ファイルの社外秘/個人情報"
+   ],
+   "advice": [
+    "SPO格納へ寄せる",
+    "メールは人確認後に送信",
+    "3フェーズに分けて試作する"
+   ],
+   "precheck": [
+    "ダミーデータ1件で期待出力が出るか",
+    "AI出力の根拠が説明できるか",
+    "人の確認ポイントが明確か",
+    "制約違反となるアプリやコネクタを使っていないか"
+   ],
+   "dummy_files": [
+    "`T09_sample_input.xlsx`",
+    "`T09_sample_knowledge.xlsx`",
+    "`T09_expected_output.xlsx`"
+   ],
+   "dummy_cols": [
+    "ID",
+    "タイトル",
+    "内容",
+    "カテゴリ",
+    "担当候補",
+    "期限",
+    "ステータス",
+    "備考"
+   ],
+   "dummy_policy": [
+    "実名・実店舗名・実案件名は使用しない",
+    "5〜10件程度でよい",
+    "正常データ、軽微な不備データ、判断が難しいデータを混ぜる"
+   ],
+   "dummy_io": [
+    "入力: レビュー対象ファイル、依頼情報、期限、担当者、レビュー観点",
+    "期待出力: レビュー観点一覧、管理表、Teams通知、メール文案"
+   ],
+   "testcases": [
+    [
+     "No",
+     "種別",
+     "入力",
+     "期待結果",
+     "確認観点"
+    ],
+    [
+     "1",
+     "正常系",
+     "代表的な入力データ1件",
+     "期待する出力が生成される",
+     "MVPが一本通るか"
+    ],
+    [
+     "2",
+     "入力不足",
+     "必須項目が欠けたデータ",
+     "不足項目を質問または要確認として返す",
+     "AIが勝手に補完しないか"
+    ],
+    [
+     "3",
+     "想定外",
+     "形式が崩れたデータ",
+     "エラーまたは確認依頼を返す",
+     "例外時に止まらないか"
+    ],
+    [
+     "4",
+     "人確認",
+     "判断が分かれるデータ",
+     "人の確認が必要と明示する",
+     "自動判断しすぎないか"
+    ],
+    [
+     "5",
+     "制約確認",
+     "外部Web/APIを使わずに実行",
+     "SharePoint/Excel等だけで処理できる",
+     "ハッカソン制約に適合するか"
+    ]
+   ],
+   "banner": "/tmp/claude-0/-home-user-awc-naka881-repo/e4943cfb-89be-5c9f-b59c-004830a57633/scratchpad/pm/v1/T09/T09_architecture_banner.png"
+  },
+  {
+   "id": "T10",
+   "name": "議事録ドラフト生成エージェント",
+   "kind": "議事録生成型",
+   "purpose": "Teams文字起こしと会議資料から議事録ドラフトを生成する。",
+   "mvp_idea": "サンプル文字起こしと資料をSPOに置き、Wordテンプレートに沿ったドラフト生成まで一本通す。",
+   "inputs": "会議文字起こし、会議資料、議事録テンプレート、会議メタ情報",
+   "outputs": "議事録ドラフト、決定事項、ToDo、不明点リスト",
+   "apps": [
+    "Copilot Studio",
+    "Teams",
+    "SharePoint",
+    "Word",
+    "Power Automate 任意"
+   ],
+   "roles": [
+    "人: 入力準備、最終確認、承認、例外対応",
+    "Copilot Studio: 意図理解、判断支援、生成、案内、確認観点の提示",
+    "Power Automate: 必要時のみ、標準コネクタで保存・通知・一覧更新",
+    "SharePoint/OneDrive/Excel: データ・ナレッジ・結果の保管"
+   ],
+   "fit": "外部Web/API、Dataverse、Premium、Power BI、Formsに依存しない設計とする。",
+   "mermaid": "flowchart LR\n  U[利用者/メンター] --> CS[Copilot Studio]\n  CS --> SP[SharePoint / OneDrive]\n  CS --> OUT[出力: 議事録ドラフト、決定事項、ToDo、不明点リスト]\n  PA[Power Automate 標準範囲] -.必要時.-> SP\n  SP --> CS\n  OUT --> H[人の確認・修正]",
+   "mermaid_out": "議事録ドラフト、決定事項、ToDo、不明点リスト",
+   "mvp_goal": "サンプル文字起こしと資料をSPOに置き、Wordテンプレートに沿ったドラフト生成まで一本通す。",
+   "mvp_scope": [
+    "入力はダミーデータ1パターン",
+    "処理は代表ユースケース1本",
+    "出力は確認可能な形式1つ",
+    "人の確認を必ず含める"
+   ],
+   "mvp_out": [
+    "全量データ対応",
+    "本番移行",
+    "高度な例外処理",
+    "外部Web/API連携",
+    "Power BI / Dataverse / Premium"
+   ],
+   "steps": [
+    {
+     "title": "Step 1: SharePoint準備",
+     "items": [
+      "チーム別サイトまたは検証用サイトにライブラリ/リストを作成",
+      "入力データ、ナレッジ、出力結果を分けて保管"
+     ]
+    },
+    {
+     "title": "Step 2: ダミーデータ配置",
+     "items": [
+      "`07_dummy_data_spec.md` に沿ってExcel/CSV/テキストを作成",
+      "個人情報・実データは使わない"
+     ]
+    },
+    {
+     "title": "Step 3: Copilot Studio構築",
+     "items": [
+      "エージェント名を設定",
+      "目的・制約・回答ルールをシステム指示に記載",
+      "SharePointナレッジまたは入力ファイルを参照する流れを作る"
+     ]
+    },
+    {
+     "title": "Step 4: Power Automate（必要時のみ）",
+     "items": [
+      "標準コネクタでSPO/Teams/Outlookに限定",
+      "エージェントフローを直接呼ぶ場合は When an agent calls the flow",
+      "直接連携しない場合は、人手操作やSPOアイテム作成を介した回避設計を検討"
+     ]
+    },
+    {
+     "title": "Step 5: テスト",
+     "items": [
+      "`08_minimum_test_cases.md` の正常系・不足系・例外系を実施",
+      "AI出力を人が確認し、誤りや不足を記録"
+     ]
+    }
+   ],
+   "risks": [
+    "文字起こし取得権限",
+    "テンプレート適用品質",
+    "AI出力の事実確認"
+   ],
+   "advice": [
+    "サンプル会議で検証",
+    "人の確認・修正を必須にする",
+    "不明点は「要確認」と出す"
+   ],
+   "precheck": [
+    "ダミーデータ1件で期待出力が出るか",
+    "AI出力の根拠が説明できるか",
+    "人の確認ポイントが明確か",
+    "制約違反となるアプリやコネクタを使っていないか"
+   ],
+   "dummy_files": [
+    "`T10_sample_input.xlsx`",
+    "`T10_sample_knowledge.xlsx`",
+    "`T10_expected_output.xlsx`"
+   ],
+   "dummy_cols": [
+    "ID",
+    "タイトル",
+    "内容",
+    "カテゴリ",
+    "担当候補",
+    "期限",
+    "ステータス",
+    "備考"
+   ],
+   "dummy_policy": [
+    "実名・実店舗名・実案件名は使用しない",
+    "5〜10件程度でよい",
+    "正常データ、軽微な不備データ、判断が難しいデータを混ぜる"
+   ],
+   "dummy_io": [
+    "入力: 会議文字起こし、会議資料、議事録テンプレート、会議メタ情報",
+    "期待出力: 議事録ドラフト、決定事項、ToDo、不明点リスト"
+   ],
+   "testcases": [
+    [
+     "No",
+     "種別",
+     "入力",
+     "期待結果",
+     "確認観点"
+    ],
+    [
+     "1",
+     "正常系",
+     "代表的な入力データ1件",
+     "期待する出力が生成される",
+     "MVPが一本通るか"
+    ],
+    [
+     "2",
+     "入力不足",
+     "必須項目が欠けたデータ",
+     "不足項目を質問または要確認として返す",
+     "AIが勝手に補完しないか"
+    ],
+    [
+     "3",
+     "想定外",
+     "形式が崩れたデータ",
+     "エラーまたは確認依頼を返す",
+     "例外時に止まらないか"
+    ],
+    [
+     "4",
+     "人確認",
+     "判断が分かれるデータ",
+     "人の確認が必要と明示する",
+     "自動判断しすぎないか"
+    ],
+    [
+     "5",
+     "制約確認",
+     "外部Web/APIを使わずに実行",
+     "SharePoint/Excel等だけで処理できる",
+     "ハッカソン制約に適合するか"
+    ]
+   ],
+   "banner": "/tmp/claude-0/-home-user-awc-naka881-repo/e4943cfb-89be-5c9f-b59c-004830a57633/scratchpad/pm/v1/T10/T10_architecture_banner.png"
+  },
+  {
+   "id": "T11",
+   "name": "社内LAN問い合わせチャットボット",
+   "kind": "FAQ/ナレッジ参照型",
+   "purpose": "社内LANに関する問い合わせを一次受付し、FAQ・手順・申請種別を案内する。",
+   "mvp_idea": "FAQ/手順書20件程度をSPOに置き、問い合わせ回答と切り分けまで一本通す。",
+   "inputs": "問い合わせ文、FAQ、手順書、申請種別一覧、過去QA",
+   "outputs": "一次回答、手順案内、切り分け結果、エスカレーション案",
+   "apps": [
+    "Copilot Studio",
+    "SharePoint",
+    "Teams",
+    "Power Automate 任意",
+    "Excel 任意"
+   ],
+   "roles": [
+    "人: 入力準備、最終確認、承認、例外対応",
+    "Copilot Studio: 意図理解、判断支援、生成、案内、確認観点の提示",
+    "Power Automate: 必要時のみ、標準コネクタで保存・通知・一覧更新",
+    "SharePoint/OneDrive/Excel: データ・ナレッジ・結果の保管"
+   ],
+   "fit": "外部Web/API、Dataverse、Premium、Power BI、Formsに依存しない設計とする。",
+   "mermaid": "flowchart LR\n  U[利用者/メンター] --> CS[Copilot Studio]\n  CS --> SP[SharePoint / OneDrive]\n  CS --> OUT[出力: 一次回答、手順案内、切り分け結果、エスカレーション案]\n  PA[Power Automate 標準範囲] -.必要時.-> SP\n  SP --> CS\n  OUT --> H[人の確認・修正]",
+   "mermaid_out": "一次回答、手順案内、切り分け結果、エスカレーション案",
+   "mvp_goal": "FAQ/手順書20件程度をSPOに置き、問い合わせ回答と切り分けまで一本通す。",
+   "mvp_scope": [
+    "入力はダミーデータ1パターン",
+    "処理は代表ユースケース1本",
+    "出力は確認可能な形式1つ",
+    "人の確認を必ず含める"
+   ],
+   "mvp_out": [
+    "全量データ対応",
+    "本番移行",
+    "高度な例外処理",
+    "外部Web/API連携",
+    "Power BI / Dataverse / Premium"
+   ],
+   "steps": [
+    {
+     "title": "Step 1: SharePoint準備",
+     "items": [
+      "チーム別サイトまたは検証用サイトにライブラリ/リストを作成",
+      "入力データ、ナレッジ、出力結果を分けて保管"
+     ]
+    },
+    {
+     "title": "Step 2: ダミーデータ配置",
+     "items": [
+      "`07_dummy_data_spec.md` に沿ってExcel/CSV/テキストを作成",
+      "個人情報・実データは使わない"
+     ]
+    },
+    {
+     "title": "Step 3: Copilot Studio構築",
+     "items": [
+      "エージェント名を設定",
+      "目的・制約・回答ルールをシステム指示に記載",
+      "SharePointナレッジまたは入力ファイルを参照する流れを作る"
+     ]
+    },
+    {
+     "title": "Step 4: Power Automate（必要時のみ）",
+     "items": [
+      "標準コネクタでSPO/Teams/Outlookに限定",
+      "エージェントフローを直接呼ぶ場合は When an agent calls the flow",
+      "直接連携しない場合は、人手操作やSPOアイテム作成を介した回避設計を検討"
+     ]
+    },
+    {
+     "title": "Step 5: テスト",
+     "items": [
+      "`08_minimum_test_cases.md` の正常系・不足系・例外系を実施",
+      "AI出力を人が確認し、誤りや不足を記録"
+     ]
+    }
+   ],
+   "risks": [
+    "FAQ品質",
+    "参照資料の更新運用",
+    "本番移行・利用ルール"
+   ],
+   "advice": [
+    "まずFAQ範囲を絞る",
+    "エスカレーション条件を決める",
+    "本番移行は10月発表の必須条件にしない"
+   ],
+   "precheck": [
+    "ダミーデータ1件で期待出力が出るか",
+    "AI出力の根拠が説明できるか",
+    "人の確認ポイントが明確か",
+    "制約違反となるアプリやコネクタを使っていないか"
+   ],
+   "dummy_files": [
+    "`T11_sample_input.xlsx`",
+    "`T11_sample_knowledge.xlsx`",
+    "`T11_expected_output.xlsx`"
+   ],
+   "dummy_cols": [
+    "ID",
+    "タイトル",
+    "内容",
+    "カテゴリ",
+    "担当候補",
+    "期限",
+    "ステータス",
+    "備考"
+   ],
+   "dummy_policy": [
+    "実名・実店舗名・実案件名は使用しない",
+    "5〜10件程度でよい",
+    "正常データ、軽微な不備データ、判断が難しいデータを混ぜる"
+   ],
+   "dummy_io": [
+    "入力: 問い合わせ文、FAQ、手順書、申請種別一覧、過去QA",
+    "期待出力: 一次回答、手順案内、切り分け結果、エスカレーション案"
+   ],
+   "testcases": [
+    [
+     "No",
+     "種別",
+     "入力",
+     "期待結果",
+     "確認観点"
+    ],
+    [
+     "1",
+     "正常系",
+     "代表的な入力データ1件",
+     "期待する出力が生成される",
+     "MVPが一本通るか"
+    ],
+    [
+     "2",
+     "入力不足",
+     "必須項目が欠けたデータ",
+     "不足項目を質問または要確認として返す",
+     "AIが勝手に補完しないか"
+    ],
+    [
+     "3",
+     "想定外",
+     "形式が崩れたデータ",
+     "エラーまたは確認依頼を返す",
+     "例外時に止まらないか"
+    ],
+    [
+     "4",
+     "人確認",
+     "判断が分かれるデータ",
+     "人の確認が必要と明示する",
+     "自動判断しすぎないか"
+    ],
+    [
+     "5",
+     "制約確認",
+     "外部Web/APIを使わずに実行",
+     "SharePoint/Excel等だけで処理できる",
+     "ハッカソン制約に適合するか"
+    ]
+   ],
+   "banner": "/tmp/claude-0/-home-user-awc-naka881-repo/e4943cfb-89be-5c9f-b59c-004830a57633/scratchpad/pm/v1/T11/T11_architecture_banner.png"
+  }
+ ],
+ "common": {
+  "context": {
+   "raw": "# 今回依頼の前提情報\n\n## 目的\nメンターが各チームのMVPを事前に手元で試作し、各チームが躓きそうな課題を早期に把握する。\n\n## 対象\nT01〜T11。ただしT04は現行案が再設計中のため、今回の詳細構築設計から除外する。\n\n## 読者\nメンター。Power Platformの基本的な知識がある前提。業務背景の深掘りより、目的・入力・出力・構築手順・躓きポイントを重視する。\n\n## 成果物\n- Mermaidアーキテクチャ図\n- Copilot生成の人向けバナー画像\n- MVP設計\n- メンター向け構築手順\n- ダミーデータ仕様\n- 最低限テストケース\n- 躓きポイントと助言\n\n## 役割分担\nCopilot: 設計、画像生成、レビュー。\nClaude Code: 最終整形、PPT/Excel化、貼り付け、品質チェック。\n",
+   "sections": {
+    "目的": [
+     "メンターが各チームのMVPを事前に手元で試作し、各チームが躓きそうな課題を早期に把握する。"
+    ],
+    "対象": [
+     "T01〜T11。ただしT04は現行案が再設計中のため、今回の詳細構築設計から除外する。"
+    ],
+    "読者": [
+     "メンター。Power Platformの基本的な知識がある前提。業務背景の深掘りより、目的・入力・出力・構築手順・躓きポイントを重視する。"
+    ],
+    "成果物": [
+     "- Mermaidアーキテクチャ図",
+     "- Copilot生成の人向けバナー画像",
+     "- MVP設計",
+     "- メンター向け構築手順",
+     "- ダミーデータ仕様",
+     "- 最低限テストケース",
+     "- 躓きポイントと助言"
+    ],
+    "役割分担": [
+     "Copilot: 設計、画像生成、レビュー。",
+     "Claude Code: 最終整形、PPT/Excel化、貼り付け、品質チェック。"
+    ]
+   },
+   "bullets": [
+    "Mermaidアーキテクチャ図",
+    "Copilot生成の人向けバナー画像",
+    "MVP設計",
+    "メンター向け構築手順",
+    "ダミーデータ仕様",
+    "最低限テストケース",
+    "躓きポイントと助言"
+   ]
+  },
+  "constraints": {
+   "raw": "# 共通制約\n\n- Copilot StudioをMVPに必ず含める。\n- Dataverseは使用しない。\n- プレミアムコネクタは使用しない。\n- 外部接続コネクタ・外部Web/API・スクレイピングは使用しない。\n- Power BIは使用しない。Excel Power Query、ピボット、SharePointリストビューで代替する。\n- Formsは原則使用しない。Copilot Studioの会話入力やアダプティブカードで代替する。\n- 共有ファイルサーバ直接参照は避け、SharePoint/OneDrive格納を原則とする。\n- 個人情報・極秘情報はダミー化、マスキング、人確認で扱う。\n- Power Automate側でエージェントフローを呼び出す場合は When an agent calls the flow を使用する。\n- 通常トリガーからエージェントフローを直接呼び出したい場合は、SPOリスト作成、フォルダへのダミーファイル作成、人の確認操作などの間接起動で回避できるか検討する。ただし従量課金を回避できることが確認できる場合に限る。\n",
+   "sections": {},
+   "bullets": [
+    "Copilot StudioをMVPに必ず含める。",
+    "Dataverseは使用しない。",
+    "プレミアムコネクタは使用しない。",
+    "外部接続コネクタ・外部Web/API・スクレイピングは使用しない。",
+    "Power BIは使用しない。Excel Power Query、ピボット、SharePointリストビューで代替する。",
+    "Formsは原則使用しない。Copilot Studioの会話入力やアダプティブカードで代替する。",
+    "共有ファイルサーバ直接参照は避け、SharePoint/OneDrive格納を原則とする。",
+    "個人情報・極秘情報はダミー化、マスキング、人確認で扱う。",
+    "Power Automate側でエージェントフローを呼び出す場合は When an agent calls the flow を使用する。",
+    "通常トリガーからエージェントフローを直接呼び出したい場合は、SPOリスト作成、フォルダへのダミーファイル作成、人の確認操作などの間接起動で回避できるか検討する。ただし従量課金を回避できることが確認できる場合に限る。"
+   ]
+  },
+  "principles": {
+   "raw": "# 共通アーキテクチャ原則\n\n1. 入力・処理・出力を1つに絞る。\n2. Copilot Studioは、判断・案内・生成・確認支援の中核として使う。\n3. SharePointはナレッジ、ファイル、リストの標準保管先とする。\n4. Power Automateは標準コネクタ中心で必要最小限に使う。\n5. 人の確認ポイントを必ず設ける。\n6. 8月MVPは完成版ではなく、一本通して動くことを優先する。\n",
+   "sections": {},
+   "bullets": []
+  },
+  "apps": {
+   "raw": "# 利用アプリ方針\n\n## 利用可\n- Copilot Studio\n- Power Automate（標準範囲）\n- SharePoint\n- OneDrive for Business\n- Teams\n- Outlook\n- Excel\n- Word / PowerPoint\n\n## 原則使わない\n- Forms（会話入力/アダプティブカードで代替）\n- Power BI（Excel/SharePointで代替）\n- Dataverse\n- Premium Connector\n- 外部API\n- 外部Web検索\n",
+   "sections": {
+    "利用可": [
+     "- Copilot Studio",
+     "- Power Automate（標準範囲）",
+     "- SharePoint",
+     "- OneDrive for Business",
+     "- Teams",
+     "- Outlook",
+     "- Excel",
+     "- Word / PowerPoint"
+    ],
+    "原則使わない": [
+     "- Forms（会話入力/アダプティブカードで代替）",
+     "- Power BI（Excel/SharePointで代替）",
+     "- Dataverse",
+     "- Premium Connector",
+     "- 外部API",
+     "- 外部Web検索"
+    ]
+   },
+   "bullets": [
+    "Copilot Studio",
+    "Power Automate（標準範囲）",
+    "SharePoint",
+    "OneDrive for Business",
+    "Teams",
+    "Outlook",
+    "Excel",
+    "Word / PowerPoint",
+    "Forms（会話入力/アダプティブカードで代替）",
+    "Power BI（Excel/SharePointで代替）",
+    "Dataverse",
+    "Premium Connector",
+    "外部API",
+    "外部Web検索"
+   ]
+  },
+  "checklist": {
+   "raw": "# メンターレビュー確認リスト\n\n- MVPは1つの入力→処理→出力に絞れているか\n- Copilot Studioの価値が明確か\n- SharePoint格納場所が定義されているか\n- 人の確認ポイントがあるか\n- 個人情報・機密情報を使わないダミーデータで試せるか\n- Power Automateが過剰になっていないか\n- エラー時の人手対応が想定されているか\n- 8月中に一本通せる粒度か\n",
+   "sections": {},
+   "bullets": [
+    "MVPは1つの入力→処理→出力に絞れているか",
+    "Copilot Studioの価値が明確か",
+    "SharePoint格納場所が定義されているか",
+    "人の確認ポイントがあるか",
+    "個人情報・機密情報を使わないダミーデータで試せるか",
+    "Power Automateが過剰になっていないか",
+    "エラー時の人手対応が想定されているか",
+    "8月中に一本通せる粒度か"
+   ]
+  },
+  "sample_policy": {
+   "raw": "# ダミーデータ方針\n\n- 実顧客名、実社員名、実取引先名を使わない。\n- 店舗名、案件名、担当者名は架空名称にする。\n- 実メールアドレス、電話番号、住所を使わない。\n- 金額・件数は現実的だが仮の値にする。\n- 機密情報はカテゴリ名だけで表現する。\n",
+   "sections": {},
+   "bullets": [
+    "実顧客名、実社員名、実取引先名を使わない。",
+    "店舗名、案件名、担当者名は架空名称にする。",
+    "実メールアドレス、電話番号、住所を使わない。",
+    "金額・件数は現実的だが仮の値にする。",
+    "機密情報はカテゴリ名だけで表現する。"
+   ]
+  },
+  "attention": {
+   "raw": "# 横断的な要注意ポイント\n\n## 1. SharePoint設計\nライブラリ、リスト、権限、命名規則を先に決める。\n\n## 2. 個人情報\nT08/T09は特に注意。予定表、会議室、メール、Teams情報の利用は確認が必要。\n\n## 3. Power Automate\nエージェントフロー直接呼び出しは When an agent calls the flow。該当しない場合は対象外だが、従量課金回避の確認が必要。\n\n## 4. 外部Web/API\n使わない。人手取得＋SPO格納で回避する。\n\n## 5. メール送信\n自動送信の可否は内容次第。T09は特に人確認を前提にする。\n\n## 6. MVP肥大化\nT03/T06/T08/T09は範囲が広がりやすい。1ユースケースに絞る。\n",
+   "sections": {
+    "1. SharePoint設計": [
+     "ライブラリ、リスト、権限、命名規則を先に決める。"
+    ],
+    "2. 個人情報": [
+     "T08/T09は特に注意。予定表、会議室、メール、Teams情報の利用は確認が必要。"
+    ],
+    "3. Power Automate": [
+     "エージェントフロー直接呼び出しは When an agent calls the flow。該当しない場合は対象外だが、従量課金回避の確認が必要。"
+    ],
+    "4. 外部Web/API": [
+     "使わない。人手取得＋SPO格納で回避する。"
+    ],
+    "5. メール送信": [
+     "自動送信の可否は内容次第。T09は特に人確認を前提にする。"
+    ],
+    "6. MVP肥大化": [
+     "T03/T06/T08/T09は範囲が広がりやすい。1ユースケースに絞る。"
+    ]
+   },
+   "bullets": []
+  },
+  "t04": "# T04 除外メモ\n\nT04は現行案の中核が外部Web参照に依存しており、案自体の再設計が必要なため、今回のメンター試作用詳細設計対象外とする。\n\n今後作成する場合は、社内資料、人手取得済み資料、過去調査結果をSharePointに格納し、Copilot Studioで整理・要約・提案書ドラフト化する代替案を検討する。\n",
+  "quality": {
+   "実施した確認": [
+    "- T04を詳細設計対象から除外した",
+    "- Forms/Power BI/Dataverse/Premium/外部Web/APIを利用しない前提を全資料に反映",
+    "- 各チームにMermaid、バナー画像、MVP、構築手順、ダミーデータ、テストケースを作成",
+    "- Power Automate/Agent Flowの注意点を共通制約に記載",
+    "- ダミーデータは実データ・個人情報を含めない前提にした"
+   ],
+   "追加確認が望ましい点": [
+    "- 各チームの最新企画書との差分確認",
+    "- T07の事前相談②実施後の更新",
+    "- T08の個人情報/予定表/会議室利用可否",
+    "- T09のメール送信条件",
+    "- Agent Flow間接起動案が従量課金回避になるかの最終確認"
+   ]
+  },
+  "img_map": "/tmp/claude-0/-home-user-awc-naka881-repo/e4943cfb-89be-5c9f-b59c-004830a57633/scratchpad/pm/v1/images/mentor_overview_map.png",
+  "img_principles": "/tmp/claude-0/-home-user-awc-naka881-repo/e4943cfb-89be-5c9f-b59c-004830a57633/scratchpad/pm/v1/images/common_architecture_principles.png"
+ }
+}

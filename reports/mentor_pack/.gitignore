@@ -1,0 +1,4 @@
+# 生成中間物（納品物は out/*.pptx と out/*.zip）
+out/priority_medium_mentor_design_final/
+prev/
+__pycache__/
