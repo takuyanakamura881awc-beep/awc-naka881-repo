@@ -150,54 +150,59 @@ txt(s, CX + Inches(1.5), Inches(1.6), CW - Inches(1.65), Inches(0.3),
     size=9.5, color=DK1, anchor=MSO_ANCHOR.MIDDLE)
 
 # ==================================================================
-# 中段：全チーム評価一覧
+# 中段：難易度 × ガイドライン適合性のマトリクス（分布）
 # ==================================================================
 txt(s, CX, Inches(1.98), CW, Inches(0.24),
-    "全チームの評価一覧（難易度と適合性は別の軸として評価）",
+    "難易度 × ガイドライン適合性の分布　－　難しさと制約論点は別の軸。事務局が見るべき位置を示す",
     size=SZ_BODY, color=DK2, bold=True)
 
-ROWS = [
-    ("チーム1", "3", "○", "進行可", "伴走のみ"),
-    ("チーム2", "3", "○", "進行可", "伴走のみ"),
-    ("チーム3", "4", "△回避可", "回避策あり", "データ利用範囲・マスキングを確認"),
-    ("チーム4", "－", "×", "再設計", "最優先フォロー（新案レビュー）"),
-    ("チーム5", "3", "△回避可", "回避策あり", "起動方式を確認"),
-    ("チーム6", "4", "△回避可", "回避策あり", "MVP範囲を絞る／保管方針"),
-    ("チーム7", "3", "○", "進行可", "伴走のみ"),
-    ("チーム8", "4", "△確認要", "事務局判断待ち", "個人情報・権限の判断"),
-    ("チーム9", "4", "△回避可", "回避策あり", "メール送信条件を確認"),
-    ("チーム10", "3", "○", "進行可", "伴走のみ"),
-    ("チーム11", "3", "○", "進行可", "伴走のみ"),
-]
-TW = [Inches(0.78), Inches(0.52), Inches(0.88), Inches(1.06), Inches(2.56)]
-TY, HH, RH = Inches(2.24), Inches(0.3), Inches(0.3)
-for side, rows in ((0, ROWS[:6]), (1, ROWS[6:])):
-    x = CX + Inches(5.92) * side
-    t = table(s, x, TY, Inches(5.8), len(rows) + 1, 5, TW, HH, RH)
-    for c, h in enumerate(["チーム", "難易\n度", "適合性", "状態", "事務局視点"]):
-        cell(t.cell(0, c), h, size=8.6, color=WHITE, bold=True, fill=DK2,
-             align=PP_ALIGN.CENTER)
-    for i, (team, diff, fit, state, view) in enumerate(rows, start=1):
-        emph = (fit == "△確認要")
-        rf = AC6 if emph else (WHITE if i % 2 else LT1)
-        cell(t.cell(i, 0), team, size=9.2, color=DK2, bold=True, fill=rf,
-             align=PP_ALIGN.CENTER)
-        cell(t.cell(i, 1), diff, size=9.2, color=DK1, bold=True,
-             fill=diff_fill(diff), align=PP_ALIGN.CENTER)
-        cell(t.cell(i, 2), fit, size=8.8, color=DK1, bold=True,
-             fill=fit_fill(fit), align=PP_ALIGN.CENTER)
-        cell(t.cell(i, 3), state, size=8.8, color=DK1, bold=emph, fill=rf,
-             align=PP_ALIGN.CENTER)
-        cell(t.cell(i, 4), view, size=8.8, color=DK1, bold=emph, fill=rf)
+MROWS = [("○", "伴走のみ", AC4),
+         ("△回避可", "チーム側で進行", AC5),
+         ("△確認要", "事務局判断が必要", AC6),
+         ("×", "再設計", AC6)]
+MCOLS = ["1〜2", "3", "4", "－"]
+MATRIX = {("○", "3"): "チーム1・2・7・10・11",
+          ("△回避可", "3"): "チーム5",
+          ("△回避可", "4"): "チーム3・6・9",
+          ("△確認要", "4"): "チーム8",
+          ("×", "－"): "チーム4"}
+
+MX, MY = CX + Inches(1.45), Inches(2.26)
+MCW, MRH = Inches(2.56), Inches(0.38)
+HDR_H = Inches(0.28)
+txt(s, CX, MY - Inches(0.02), Inches(1.4), HDR_H, "適合性＼難易度",
+    size=8.6, color=DK2, bold=True, align=PP_ALIGN.CENTER,
+    anchor=MSO_ANCHOR.MIDDLE)
+for j, c in enumerate(MCOLS):
+    box(s, MX + MCW * j, MY, MCW - Inches(0.04), HDR_H, DK2)
+    txt(s, MX + MCW * j, MY, MCW - Inches(0.04), HDR_H, c, size=9.5,
+        color=WHITE, bold=True, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
+for i, (fit, act, col) in enumerate(MROWS):
+    y = MY + HDR_H + Inches(0.02) + (MRH + Inches(0.02)) * i
+    box(s, CX, y, Inches(1.4), MRH, col)
+    txt(s, CX, y, Inches(1.4), MRH, f"{fit}\n{act}", size=8.6, color=DK1,
+        bold=True, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE, ls=1.05)
+    for j, c in enumerate(MCOLS):
+        teams = MATRIX.get((fit, c))
+        box(s, MX + MCW * j, y, MCW - Inches(0.04), MRH,
+            col if teams else LT1)
+        if teams:
+            txt(s, MX + MCW * j, y, MCW - Inches(0.04), MRH, teams,
+                size=SZ_FINE, color=DK2, bold=True, align=PP_ALIGN.CENTER,
+                anchor=MSO_ANCHOR.MIDDLE)
+txt(s, CX, Inches(4.2), CW, Inches(0.22),
+    "※ 5チームは制約論点なしで進行可。4チームは回避策があり、チーム側で進めながら整理できる。"
+    "事務局判断が必要なのはチーム8、再設計はチーム4のみ（各チームの詳細はスライド5を参照）。",
+    size=9.0, color=DK1)
 
 # ==================================================================
 # 下段：重点フォロー対象＋ポイント
 # ==================================================================
-txt(s, CX, Inches(4.42), Inches(4.6), Inches(0.44),
+txt(s, CX, Inches(4.5), Inches(4.6), Inches(0.44),
     "重点フォロー対象：論点と回避可否", size=SZ_BODY, color=DK2, bold=True,
     anchor=MSO_ANCHOR.MIDDLE)
-box(s, CX + Inches(4.7), Inches(4.4), Inches(7.83), Inches(0.48), AC4)
-txt(s, CX + Inches(4.86), Inches(4.4), Inches(7.55), Inches(0.48),
+box(s, CX + Inches(4.7), Inches(4.48), Inches(7.83), Inches(0.46), AC4)
+txt(s, CX + Inches(4.86), Inches(4.48), Inches(7.55), Inches(0.46),
     "ポイント：「難易度が高い」ことと「制約に抵触する」ことは別。多くの△は手動運用や"
     "SharePoint格納で回避可能。事務局判断が必要なのは、主に個人情報・権限、"
     "メール送信条件、再設計案の確認。",
@@ -220,7 +225,7 @@ FOLLOW = [
      "SharePoint格納と人の確認で大部分を回避", "メール送信条件を確認"),
 ]
 FW = [Inches(0.8), Inches(0.9), Inches(2.5), Inches(4.6), Inches(2.92)]
-FY, FHH, FRH = Inches(4.96), Inches(0.28), Inches(0.28)
+FY, FHH, FRH = Inches(5.0), Inches(0.28), Inches(0.28)
 t = table(s, CX, FY, CW, 7, 5, FW, FHH, FRH)
 for c, h in enumerate(["チーム", "適合性", "主な論点", "回避策", "事務局判断"]):
     cell(t.cell(0, c), h, size=8.8, color=WHITE, bold=True, fill=DK2,
