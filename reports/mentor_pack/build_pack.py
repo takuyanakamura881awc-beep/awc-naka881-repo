@@ -69,7 +69,7 @@ def build_overview_md():
          "## 収録内容", "",
          "| ファイル | 内容 |", "|---|---|",
          "| `priority_medium_mentor_design_final.pptx` | "
-         "メンター向けPowerPoint（32ページ） |",
+         "メンター向けPowerPoint（32ページ・別ファイルで納品） |",
          "| `common/` | 共通制約・共通アーキテクチャ原則・利用アプリ方針・"
          "レビュー確認リスト・ダミーデータ方針・横断的な要注意ポイント（V1原文） |",
          "| `teams/T0x_design.md` | チーム別設計資料（V1の01〜08を結合、原文のまま） |",
@@ -93,6 +93,9 @@ def build_overview_md():
 def build_readme():
     L = ["# priority_medium_mentor_design_final", "",
          "優先度中「メンター向け設計資料一式」の成果物。", "",
+         "本ZIPと `priority_medium_mentor_design_final.pptx` の2ファイルで一式。",
+         "PowerPointは単体で約17MBあるため、配信サイズの都合で別ファイルとしている。",
+         "",
          "## 正本と方針", "",
          "- 正本は `priority_medium_mentor_design_v1.zip`（V1）。",
          "- V2 / V3 / V4 / アイコン差し替え版は使用していない。",
@@ -232,7 +235,7 @@ def main():
     with open(os.path.join(PACK, "README.md"), "w", encoding="utf-8") as f:
         f.write(build_readme())
     build_xlsx(os.path.join(PACK, "02_team_summary.xlsx"))
-    shutil.copy2(PPTX, PACK)
+    # PowerPoint本体は単体で17MBあり、同梱するとZIPが配信上限を超えるため別ファイルで納品する
 
     with zipfile.ZipFile(ZIPF, "w", zipfile.ZIP_DEFLATED) as z:
         for root, _, files in os.walk(PACK):
