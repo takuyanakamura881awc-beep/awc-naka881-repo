@@ -1,0 +1,4 @@
+# 分割ZIP・展開済みパックは xlsx とスクリプトから再生成できるため管理外
+out/priority_medium_detailed_excel_design_final/
+out/*.zip
+__pycache__/
