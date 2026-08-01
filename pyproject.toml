@@ -1,0 +1,15 @@
+[project]
+name = "jp-stock-ai"
+version = "0.1.0"
+description = "AI が自律的・総合的に判断して日本株を売買する PoC（マルチエージェント / ペーパートレード）"
+requires-python = ">=3.10"
+dependencies = ["anthropic>=0.69"]
+
+[project.optional-dependencies]
+data = ["yfinance>=0.2.40"]
+
+[project.scripts]
+jp-stock-ai = "jp_stock_ai.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

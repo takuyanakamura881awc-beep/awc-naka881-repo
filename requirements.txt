@@ -1,0 +1,5 @@
+# Core: Claude 呼び出し（online モードで必要）
+anthropic>=0.69
+
+# Optional: 実データ取得（--provider yfinance 使用時）
+# yfinance>=0.2.40
